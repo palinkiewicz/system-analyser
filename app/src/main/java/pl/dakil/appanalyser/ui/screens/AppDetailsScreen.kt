@@ -163,40 +163,6 @@ fun AppDetailsContent(details: AppDetails, modifier: Modifier = Modifier) {
                 DetailRow("Last Update", dateFormat.format(Date(details.lastUpdateTime)))
             }
         }
-
-        // Sandbox Notice
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.errorContainer
-            ),
-            shape = MaterialTheme.shapes.medium
-        ) {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Warning,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier.padding(end = 16.dp)
-                )
-                Column {
-                    Text(
-                        text = "Restricted by Android Security Sandbox",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Real-time CPU, RAM, and live battery power consumption cannot be tracked for individual apps without system privileges.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                }
-            }
-        }
         
         Spacer(modifier = Modifier.height(32.dp))
     }
