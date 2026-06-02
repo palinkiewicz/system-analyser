@@ -122,12 +122,12 @@ fun AppDetailsContent(details: AppDetails, modifier: Modifier = Modifier) {
             ) {
                 Column {
                     Text(
-                        text = "Detected Framework",
+                        text = if (details.techStacks.size > 1) "Detected Frameworks" else "Detected Framework",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                     Text(
-                        text = details.techStack.displayName,
+                        text = details.techStacks.joinToString { it.displayName },
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         fontWeight = FontWeight.Bold

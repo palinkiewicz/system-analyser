@@ -27,14 +27,18 @@ class AppAnalyzerRepository(private val context: Context) {
         }
 
         installedApps.mapNotNull { appInfo ->
-            val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+            val isUpdatedSystemApp = (appInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
+            val isSystemFlag = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
             
-            if (!showSystemApps && isSystemApp) {
+            val isUserApp = !isSystemFlag || isUpdatedSystemApp
+            val isPureSystemApp = isSystemFlag && !isUpdatedSystemApp
+            
+            // If showSystemApps is false, we want User Apps.
+            // If showSystemApps is true, we want System Apps.
+            if (showSystemApps && !isPureSystemApp) {
                 return@mapNotNull null
             }
-            
-            val intent = packageManager.getLaunchIntentForPackage(appInfo.packageName)
-            if (!showSystemApps && intent == null) {
+            if (!showSystemApps && !isUserApp) {
                 return@mapNotNull null
             }
 
@@ -42,7 +46,7 @@ class AppAnalyzerRepository(private val context: Context) {
                 name = appInfo.loadLabel(packageManager).toString(),
                 packageName = appInfo.packageName,
                 icon = appInfo.loadIcon(packageManager),
-                isSystemApp = isSystemApp
+                isSystemApp = isPureSystemApp
             )
         }.sortedBy { it.name.lowercase() }
     }
@@ -84,7 +88,7 @@ class AppAnalyzerRepository(private val context: Context) {
             val firstInstallTime = packageInfo.firstInstallTime
             val lastUpdateTime = packageInfo.lastUpdateTime
 
-            val techStack = determineTechStack(sourceDir)
+            val techStacks = determineTechStack(sourceDir)
 
             AppDetails(
                 appInfo = basicInfo,
@@ -95,26 +99,18 @@ class AppAnalyzerRepository(private val context: Context) {
                 targetSdk = targetSdk,
                 firstInstallTime = firstInstallTime,
                 lastUpdateTime = lastUpdateTime,
-                techStack = techStack
+                techStacks = techStacks
             )
         } catch (e: PackageManager.NameNotFoundException) {
             null
         }
     }
 
-    private fun determineTechStack(apkPath: String): TechStack {
+    private fun determineTechStack(apkPath: String): List<TechStack> {
         val file = File(apkPath)
-        if (!file.exists() || !file.canRead()) return TechStack.UNKNOWN
+        if (!file.exists() || !file.canRead()) return listOf(TechStack.UNKNOWN)
 
-        var isFlutter = false
-        var isReactNative = false
-        var isCompose = false
-        var isXamarin = false
-        var isCordova = false
-        var isNativeScript = false
-        var isUnity = false
-        var isUnreal = false
-        var isGodot = false
+        val detectedStacks = mutableSetOf<TechStack>()
 
         try {
             ZipInputStream(file.inputStream()).use { zis ->
@@ -123,31 +119,58 @@ class AppAnalyzerRepository(private val context: Context) {
                     val name = entry.name
 
                     if (name.contains("libflutter.so") || name.contains("libapp.so") || name.startsWith("assets/flutter_assets/")) {
-                        isFlutter = true
+                        detectedStacks.add(TechStack.FLUTTER)
                     }
                     if (name.contains("libreactnativejni.so") || name.contains("libhermes.so") || name == "assets/index.android.bundle") {
-                        isReactNative = true
+                        detectedStacks.add(TechStack.REACT_NATIVE)
                     }
                     if (name.contains("META-INF/androidx.compose.ui_ui.version") || name.contains("META-INF/androidx.compose.runtime_runtime.version")) {
-                        isCompose = true
+                        detectedStacks.add(TechStack.JETPACK_COMPOSE)
                     }
                     if (name.contains("libmonosgen-2.0.so") || name.contains("libassemblies.arm64-v8a.blob.so")) {
-                        isXamarin = true
+                        detectedStacks.add(TechStack.XAMARIN)
                     }
                     if (name == "assets/www/index.html" || name == "assets/www/cordova.js") {
-                        isCordova = true
+                        detectedStacks.add(TechStack.CORDOVA)
                     }
                     if (name.contains("libNativeScript.so")) {
-                        isNativeScript = true
+                        detectedStacks.add(TechStack.NATIVESCRIPT)
                     }
                     if (name.contains("libunity.so") || name.startsWith("assets/bin/Data/")) {
-                        isUnity = true
+                        detectedStacks.add(TechStack.UNITY)
                     }
                     if (name.contains("libUnrealEngine.so") || name.contains("libUE4.so")) {
-                        isUnreal = true
+                        detectedStacks.add(TechStack.UNREAL_ENGINE)
                     }
                     if (name.contains("libgodot_android.so") || name == "project.godot") {
-                        isGodot = true
+                        detectedStacks.add(TechStack.GODOT)
+                    }
+                    if (name.startsWith("assets/compose-resources/")) {
+                        detectedStacks.add(TechStack.COMPOSE_MULTIPLATFORM)
+                    }
+                    if (name.startsWith("META-INF/") && name.endsWith(".kotlin_module")) {
+                        detectedStacks.add(TechStack.KOTLIN_MULTIPLATFORM)
+                    }
+                    if (name.contains("libtauri.so") || name == "assets/public/index.html") {
+                        detectedStacks.add(TechStack.TAURI)
+                    }
+                    if (name.contains("libv8android.so") || name == "assets/app/bundle.js") {
+                        detectedStacks.add(TechStack.SVELTE_NATIVE)
+                    }
+                    if (name.contains("libtitanium.so") || name.contains("AssetCryptImpl.class")) {
+                        detectedStacks.add(TechStack.TITANIUM)
+                    }
+                    if (name.contains("libQt6Core.so") || name.contains("libQt6Gui.so") || name == "assets/qt.conf") {
+                        detectedStacks.add(TechStack.QT)
+                    }
+                    if (name.contains("libpython3") || name.contains("libmain.so") || name == "assets/private.mp3" || name == "assets/private.tar") {
+                        detectedStacks.add(TechStack.KIVY)
+                    }
+                    if (name.contains("libpython3") || name == "assets/python/stdlib.zip") {
+                        detectedStacks.add(TechStack.BEEWARE)
+                    }
+                    if (name.contains("librubymotion.so") || name.contains("libpayload.so") || name.contains("rb_")) {
+                        detectedStacks.add(TechStack.RUBYMOTION)
                     }
 
                     zis.closeEntry()
@@ -158,17 +181,10 @@ class AppAnalyzerRepository(private val context: Context) {
             e.printStackTrace()
         }
 
-        return when {
-            isUnity -> TechStack.UNITY
-            isUnreal -> TechStack.UNREAL_ENGINE
-            isGodot -> TechStack.GODOT
-            isFlutter -> TechStack.FLUTTER
-            isReactNative -> TechStack.REACT_NATIVE
-            isXamarin -> TechStack.XAMARIN
-            isCordova -> TechStack.CORDOVA
-            isNativeScript -> TechStack.NATIVESCRIPT
-            isCompose -> TechStack.JETPACK_COMPOSE
-            else -> TechStack.NATIVE
+        if (detectedStacks.isEmpty()) {
+            detectedStacks.add(TechStack.NATIVE)
         }
+
+        return detectedStacks.toList()
     }
 }

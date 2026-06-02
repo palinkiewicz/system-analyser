@@ -9,5 +9,5 @@ data class AppDetails(
     val targetSdk: Int,
     val firstInstallTime: Long,
     val lastUpdateTime: Long,
-    val techStack: TechStack
+    val techStacks: List<TechStack>
 )

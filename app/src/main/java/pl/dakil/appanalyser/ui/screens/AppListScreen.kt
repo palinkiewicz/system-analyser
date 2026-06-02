@@ -34,10 +34,15 @@ fun AppListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Installed Apps") },
+                title = { Text(if (showSystemApps) "System Apps" else "User Apps") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    TextButton(onClick = { viewModel.toggleSystemApps(!showSystemApps) }) {
+                        Text(if (showSystemApps) "Show User Apps" else "Show System Apps")
                     }
                 }
             )
@@ -58,19 +63,6 @@ fun AppListScreen(
                 singleLine = true,
                 shape = MaterialTheme.shapes.extraLarge
             )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Show System Apps", modifier = Modifier.weight(1f))
-                Switch(
-                    checked = showSystemApps,
-                    onCheckedChange = { viewModel.toggleSystemApps(it) }
-                )
-            }
 
             if (isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

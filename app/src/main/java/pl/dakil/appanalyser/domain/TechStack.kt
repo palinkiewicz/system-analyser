@@ -10,6 +10,15 @@ enum class TechStack(val displayName: String) {
     UNITY("Unity Engine"),
     UNREAL_ENGINE("Unreal Engine"),
     GODOT("Godot Engine"),
+    COMPOSE_MULTIPLATFORM("Compose Multiplatform"),
+    KOTLIN_MULTIPLATFORM("Kotlin Multiplatform"),
+    TAURI("Tauri Mobile"),
+    SVELTE_NATIVE("Svelte Native"),
+    TITANIUM("Titanium SDK"),
+    QT("Qt"),
+    KIVY("Kivy"),
+    BEEWARE("BeeWare"),
+    RUBYMOTION("RubyMotion"),
     NATIVE("Native (XML Java/Kotlin)"),
     UNKNOWN("Unknown")
 }
