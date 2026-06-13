@@ -54,18 +54,6 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
                 text = "App Analyser detects the core tech stack of your installed applications by reading their APK signatures dynamically without fully extracting them. It maps file entries such as 'libflutter.so' or 'libreactnativejni.so' to determine the underlying framework.",
                 style = MaterialTheme.typography.bodyMedium
             )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Platform Limits",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = "Due to the Android Security Sandbox, modern Android versions block access to other applications' live runtime metrics. This prevents non-root applications from polling per-app real-time CPU, RAM, or Battery usage.",
-                style = MaterialTheme.typography.bodyMedium
-            )
         }
     }
 }
