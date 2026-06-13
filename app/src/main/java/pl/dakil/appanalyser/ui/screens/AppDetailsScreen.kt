@@ -20,7 +20,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import pl.dakil.appanalyser.domain.AppDetails
+import pl.dakil.appanalyser.domain.DetectedFramework
 import pl.dakil.appanalyser.viewmodel.AppAnalyzerViewModel
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.ui.graphics.Color
+import pl.dakil.appanalyser.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -107,36 +113,140 @@ fun AppDetailsContent(details: AppDetails, modifier: Modifier = Modifier) {
             }
         }
 
-        // Tech Stack Badge
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            ),
-            shape = MaterialTheme.shapes.medium
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+        Text(
+            text = "Frameworks detected",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+
+        details.detectedFrameworks.forEach { framework ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                ),
+                shape = MaterialTheme.shapes.medium
             ) {
-                Column {
-                    Text(
-                        text = if (details.techStacks.size > 1) "Detected Frameworks" else "Detected Framework",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                    Text(
-                        text = details.techStacks.joinToString { it.displayName },
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        fontWeight = FontWeight.Bold
-                    )
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = framework.techStack.displayName,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        
+                        // Probability Badge
+                        val isDark = isSystemInDarkTheme()
+                        val (badgeColor, textColor) = when {
+                            framework.probability >= 75 -> { // Green
+                                if (isDark) {
+                                    ProbabilityGreenContainerDark to ProbabilityOnGreenContainerDark
+                                } else {
+                                    ProbabilityGreenContainerLight to ProbabilityOnGreenContainerLight
+                                }
+                            }
+                            framework.probability >= 50 -> { // Yellow
+                                if (isDark) {
+                                    ProbabilityYellowContainerDark to ProbabilityOnYellowContainerDark
+                                } else {
+                                    ProbabilityYellowContainerLight to ProbabilityOnYellowContainerLight
+                                }
+                            }
+                            framework.probability >= 25 -> { // Orange
+                                if (isDark) {
+                                    ProbabilityOrangeContainerDark to ProbabilityOnOrangeContainerDark
+                                } else {
+                                    ProbabilityOrangeContainerLight to ProbabilityOnOrangeContainerLight
+                                }
+                            }
+                            else -> { // Red
+                                if (isDark) {
+                                    ProbabilityRedContainerDark to ProbabilityOnRedContainerDark
+                                } else {
+                                    ProbabilityRedContainerLight to ProbabilityOnRedContainerLight
+                                }
+                            }
+                        }
+                        
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = badgeColor),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(50)
+                        ) {
+                            Text(
+                                text = "${framework.probability}%",
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = textColor
+                            )
+                        }
+                    }
+
+                    if (framework.matchedFiles.isNotEmpty()) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            val maxVisibleFiles = 5
+                            val filesToShow = framework.matchedFiles.take(maxVisibleFiles)
+                            
+                            filesToShow.forEach { file ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "•",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.padding(horizontal = 6.dp),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = file,
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            fontFamily = FontFamily.Monospace
+                                        ),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            if (framework.matchedFiles.size > maxVisibleFiles) {
+                                val remaining = framework.matchedFiles.size - maxVisibleFiles
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Spacer(modifier = Modifier.width(22.dp))
+                                    Text(
+                                        text = "+ $remaining more files",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
 
-        // Static Data Stats
+        Text(
+            text = "App information",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -148,13 +258,6 @@ fun AppDetailsContent(details: AppDetails, modifier: Modifier = Modifier) {
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = "App Information",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-
                 DetailRow("Size", Formatter.formatFileSize(context, details.sizeBytes))
                 DetailRow("Version", "${details.versionName} (${details.versionCode})")
                 DetailRow("Target SDK", details.targetSdk.toString())
@@ -182,7 +285,8 @@ fun DetailRow(label: String, value: String) {
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.End
         )
     }
 }

@@ -1,5 +1,11 @@
 package pl.dakil.appanalyser.domain
 
+data class DetectedFramework(
+    val techStack: TechStack,
+    val probability: Int,
+    val matchedFiles: List<String>
+)
+
 data class AppDetails(
     val appInfo: AppInfo,
     val sizeBytes: Long,
@@ -9,5 +15,6 @@ data class AppDetails(
     val targetSdk: Int,
     val firstInstallTime: Long,
     val lastUpdateTime: Long,
-    val techStacks: List<TechStack>
+    val detectedFrameworks: List<DetectedFramework>
 )
+
