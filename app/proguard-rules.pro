@@ -5,17 +5,28 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# ---------------------------------------------------------------------------
+# Stack trace readability
+# ---------------------------------------------------------------------------
+# Preserve source file names and line numbers so crash reports are readable.
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# ---------------------------------------------------------------------------
+# Kotlin
+# ---------------------------------------------------------------------------
+# Keep Kotlin metadata so reflection-based libraries can inspect types.
+-keepattributes *Annotation*, RuntimeVisibleAnnotations
+-keep class kotlin.Metadata { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# ---------------------------------------------------------------------------
+# Accompanist DrawablePainter
+# ---------------------------------------------------------------------------
+# Accompanist accesses Drawable subclass members via reflection at runtime.
+-keep class com.google.accompanist.drawablepainter.** { *; }
+
+# ---------------------------------------------------------------------------
+# Android / Jetpack internals
+# ---------------------------------------------------------------------------
+# Navigation component uses class names as route keys.
+-keepnames class androidx.navigation.** { *; }
