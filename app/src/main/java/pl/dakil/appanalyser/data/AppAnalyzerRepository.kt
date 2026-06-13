@@ -143,12 +143,13 @@ class AppAnalyzerRepository(private val context: Context) {
         }
 
         val rawScores = activeDetectors.associate { it.techStack to it.calculateRawScore() }
-        val maxCertainty = activeDetectors.maxOf { it.getMaxCertainty() }
+        val maxCertaintyOfAll = activeDetectors.maxOf { it.getMaxCertainty() }
 
-        val nativeScore = (1.0f - maxCertainty).coerceAtLeast(0f)
+        val includeNative = maxCertaintyOfAll < 0.75f
+        val nativeScore = if (includeNative) (1.0f - maxCertaintyOfAll).coerceAtLeast(0f) else 0f
 
         var totalScore = rawScores.values.sum()
-        if (nativeScore > 0f) {
+        if (includeNative && nativeScore > 0f) {
             totalScore += nativeScore
         }
 
@@ -166,7 +167,7 @@ class AppAnalyzerRepository(private val context: Context) {
             )
         }
 
-        if (nativeScore > 0f) {
+        if (includeNative && nativeScore > 0f) {
             val probability = (nativeScore / totalScore * 100f)
             val probInt = probability.roundToInt()
             if (probInt > 0) {
@@ -270,7 +271,7 @@ class AppAnalyzerRepository(private val context: Context) {
             FrameworkDetector(TechStack.RUBYMOTION, listOf(
                 SignatureRule.Contains("librubymotion.so", 1.0f),
                 SignatureRule.Contains("libpayload.so", 0.9f),
-                SignatureRule.Contains("rb_", 0.8f)
+                SignatureRule.StartsWith("rb_", 0.8f)
             ))
         )
     }
@@ -278,21 +279,23 @@ class AppAnalyzerRepository(private val context: Context) {
 
 sealed class SignatureRule {
     abstract val weight: Float
+    open val isMultiFile: Boolean = false
     abstract fun matches(name: String): Boolean
 
     data class Equals(val path: String, override val weight: Float) : SignatureRule() {
         override fun matches(name: String) = name == path
     }
 
-    data class Contains(val substring: String, override val weight: Float) : SignatureRule() {
+    data class Contains(val substring: String, override val weight: Float, override val isMultiFile: Boolean = false) : SignatureRule() {
         override fun matches(name: String) = name.contains(substring)
     }
 
     data class StartsWith(val prefix: String, override val weight: Float) : SignatureRule() {
+        override val isMultiFile: Boolean = true
         override fun matches(name: String) = name.startsWith(prefix)
     }
 
-    data class Custom(val predicate: (String) -> Boolean, override val weight: Float) : SignatureRule() {
+    data class Custom(val predicate: (String) -> Boolean, override val weight: Float, override val isMultiFile: Boolean = true) : SignatureRule() {
         override fun matches(name: String) = predicate(name)
     }
 }
@@ -314,13 +317,35 @@ class FrameworkDetector(val techStack: TechStack, val rules: List<SignatureRule>
 
     fun calculateRawScore(): Float {
         if (!hasMatches()) return 0f
-        val sumOfMatchedWeights = matchedFilesByRule.keys.sumOf { it.weight.toDouble() }.toFloat()
-        return sumOfMatchedWeights / rules.size
+        var sumOfMatchedScores = 0f
+        for ((rule, files) in matchedFilesByRule) {
+            val fileCount = files.size
+            val fileFactor = if (rule.isMultiFile) {
+                (0.4 * Math.pow(fileCount.toDouble(), 0.4)).toFloat()
+            } else {
+                1.0f
+            }
+            sumOfMatchedScores += rule.weight * fileFactor
+        }
+        return sumOfMatchedScores / rules.size
     }
 
     fun getMaxCertainty(): Float {
         if (!hasMatches()) return 0f
-        return matchedFilesByRule.keys.maxOf { it.weight }
+        var maxCertainty = 0f
+        for ((rule, files) in matchedFilesByRule) {
+            val fileCount = files.size
+            val fileFactor = if (rule.isMultiFile) {
+                (0.4 * Math.pow(fileCount.toDouble(), 0.4)).toFloat()
+            } else {
+                1.0f
+            }
+            val certainty = rule.weight * fileFactor
+            if (certainty > maxCertainty) {
+                maxCertainty = certainty
+            }
+        }
+        return maxCertainty
     }
 }
 
