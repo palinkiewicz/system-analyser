@@ -1,0 +1,98 @@
+<resources>
+    <string name="app_name">Analizator</string>
+    <string name="version_x">Wersja %1$s</string>
+
+    <!--  HOME SCREEN  -->
+    <string name="home_analyse_an_app">Analizuj aplikację</string>
+    <string name="home_analyse_an_app_description">Poznaj technologię oraz sprawdź metadane zainstalowanych aplikacji</string>
+    <string name="home_about_this_app">O aplikacji</string>
+    <string name="home_about_this_app_description">Dowiedz się o autorach i działaniu aplikacji</string>
+
+    <!--  ABOUT SCREEN  -->
+    <string name="about_title">O Analizatorze</string>
+    <string name="about_how_it_works">Jak to działa</string>
+    <string name="about_how_it_works_description">Analizator wykrywa technologie, w których została napisana dana aplikacja na podstawie dynamicznego odczytu z sygnatur plików APK bez pełnego rozpakowywania. Mapuje on nazwy plików znajdujących się w tym archiwum, aby zdeterminować w jakim framework\'u została ona utworzona.</string>
+
+    <!--  APP LIST SCREEN  -->
+    <string name="app_list_system_apps_title">Aplikacje systemowe</string>
+    <string name="app_list_user_apps_title">Aplikacje użytkownika</string>
+    <string name="app_list_show_user_apps">Pokaż użytkownika</string>
+    <string name="app_list_show_system_apps">Pokaż systemowe</string>
+    <string name="app_list_search_apps">Wyszukaj aplikację...</string>
+    <string name="app_list_system_app_label">Systemowa</string>
+
+    <!--  APP DETAILS SCREEN  -->
+    <string name="app_details_title">Szczegóły aplikacji</string>
+    <string name="app_details_frameworks_detected">Wykryte technologie</string>
+    <string name="app_details_app_information">Informacje o aplikacji</string>
+    <string name="app_details_size">Rozmiar</string>
+    <string name="app_details_version">Wersja</string>
+    <string name="app_details_target_sdk">Docelowe SDK</string>
+    <string name="app_details_min_sdk">Minimalne SDK</string>
+    <string name="app_details_first_install">Pierwsza instalacja</string>
+    <string name="app_details_last_update">Ostatnia aktualizacja</string>
+    <string name="app_details_framework_more_files">+ jeszcze %1$d plików</string>
+    <string name="app_details_description">Opis</string>
+    <string name="app_details_framework_files_found">Wykryte pliki</string>
+
+    <!--  TECH STACKS  -->
+    <string name="tech_stack_flutter_name">Flutter</string>
+    <string name="tech_stack_flutter_description">Stworzony przez Google, Flutter wykorzystuje język Dart do kompilacji bezpośrednio do natywnego kodu maszynowego, co zapewnia wysoką wydajność. Renderuje interfejs użytkownika przy użyciu własnego silnika graficznego (Impeller/Skia), gwarantując wyjątkowo płynne animacje w 60+ kl./s na różnych platformach. Ta architektura czyni go bardzo efektywnym, choć skutkuje nieco większym początkowym rozmiarem pliku binarnego.</string>
+
+    <string name="tech_stack_react_native_name">React Native</string>
+    <string name="tech_stack_react_native_description">Opracowany przez Meta, React Native wykorzystuje JavaScript lub TypeScript do komunikacji z natywnymi komponentami interfejsu platformy za pomocą mostka (bridge). Oferuje solidną prędkość renderowania dla standardowych aplikacji, jednak intensywne zadania obliczeniowe mogą wprowadzać opóźnienia z powodu komunikacji przez mostek JavaScript-natywność. Pozostaje wysoce efektywny w szybkim programowaniu wieloplatformowym dzięki swojemu ogromnemu ekosystemowi.</string>
+
+    <string name="tech_stack_jetpack_compose_name">Jetpack Compose</string>
+    <string name="tech_stack_jetpack_compose_description">Stworzony przez Google, Jetpack Compose to nowoczesny, deklaratywny zestaw narzędzi do budowy interfejsu użytkownika systemu Android, napisany w całości w Kotlinie. Działa natywnie na systemie Android z wyjątkową wydajnością, eliminując narzut związany z układami XML dzięki zoptymalizowanemu pod kątem kompilatora środowisku uruchomieniowemu. Zapewnia szybkie renderowanie i głęboką integrację z systemem, choć jest zasadniczo ograniczony do natywnych kompilacji na system Android.</string>
+
+    <string name="tech_stack_xamarin_name">Xamarin / .NET MAUI</string>
+    <string name="tech_stack_xamarin_description">Opracowany przez Microsoft, Xamarin (obecnie .NET MAUI) wykorzystuje język C# i platformę .NET do budowania aplikacji wieloplatformowych. Osiąga wydajność zbliżoną do natywnej dzięki kompilacji bezpośrednio do natywnych plików binarnych na systemie iOS oraz użyciu zoptymalizowanej maszyny wirtualnej na systemie Android. Jest wysoce efektywny w środowiskach korporacyjnych mocno zainwestowanych w ekosystem Microsoftu.</string>
+
+    <string name="tech_stack_cordova_name">Cordova / Ionic / Capacitor</string>
+    <string name="tech_stack_cordova_description">Pochodzący od Adobe/Apache pakiet (obejmujący Ionic i Capacitor) opakowuje technologie webowe, takie jak HTML, CSS i JavaScript, wewnątrz natywnego kontenera. Opiera się na systemowym komponencie WebView, co skutkuje niższą wydajnością i mniejszą prędkością wykonywania w porównaniu do kompilowanych frameworków. Jest wysoce efektywny pod względem szybkości programowania, ale słabo nadaje się do aplikacji wymagających intensywnego przetwarzania zasobów.</string>
+
+    <string name="tech_stack_nativescript_name">NativeScript</string>
+    <string name="tech_stack_nativescript_description">Stworzony przez Progress (Telerik), a obecnie rozwijany przez społeczność, NativeScript pozwala programistom na używanie JavaScriptu, TypeScriptu lub Angulara/Vue do budowania aplikacji wieloplatformowych. Oferuje bezpośredni, pozbawiony mostków dostęp do natywnych API, co zapewnia lepszą wydajność i szybkość niż standardowe kontenery WebView. Choć jest efektywny pod kątem wykorzystania umiejętności webowych, jego wątek interfejsu użytkownika może czasami stanowić wąskie gardło podczas ciężkiego przetwarzania.</string>
+
+    <string name="tech_stack_unity_name">Unity Engine</string>
+    <string name="tech_stack_unity_description">Stworzony przez Unity Technologies, tyn potężny wieloplatformowy silnik gier wykorzystuje głównie język C# do skryptowania. Jest silnie zoptymalizowany pod kątem grafiki w czasie rzeczywistym, zapewniając wyjątkową prędkość wykonywania i wydajność renderowania w grach oraz interaktywnych symulacjach. Choć jest niezwykle wydajny w multimediach, narzut jego środowiska uruchomieniowego czyni go mniej efektywnym w przypadku lekkich, standardowych aplikacji opartych na klasycznym interfejsie użytkownika.</string>
+
+    <string name="tech_stack_unreal_engine_name">Unreal Engine</string>
+    <string name="tech_stack_unreal_engine_description">Opracowany przez Epic Games, Unreal Engine wykorzystuje C++ oraz wizualny system skryptowy o nazwie Blueprints, aby zapewnić wiodącą w branży wydajność. Jest silnie zoptymalizowany pod kątem zaawansowanej grafiki 3D i złożonej logiki, oferując wyjątkową prędkość kosztem dużego zużycia baterii i zasobów. Ze względu na ogromny rozmiar silnika uruchomieniowego jest nieefektywny w przypadku tradycyjnych aplikacji mobilnych opartych głównie na tekście.</string>
+
+    <string name="tech_stack_godot_name">Godot Engine</string>
+    <string name="tech_stack_godot_description">Rozwijany przez społeczność Godot jako projekt open-source, ten lekki silnik gier wykorzystuje GDScript, C# oraz C++. Jest niezwykle szybki i lekki, oferując wysoką wydajność graficzną przy minimalnym rozmiarze silnika w porównaniu do większych konkurentów. Doskonale równoważy wydajność w przypadku mobilnych gier 2D i średniej klasy gier 3D.</string>
+
+    <string name="tech_stack_compose_multiplatform_name">Compose Multiplatform</string>
+    <string name="tech_stack_compose_multiplatform_description">Opracowany przez JetBrains na bazie Jetpack Compose od Google, framework ten umożliwia współdzielenie deklaratywnego interfejsu użytkownika między systemami Android, iOS, komputerami stacjonarnymi i webem przy użyciu Kotlinu. Kompiluje się bezpośrednio do kodu natywnego i wykorzystuje Skiko do renderowania interfejsu, dorównując płynności działania Fluttera. Zapewnia doskonałą efektywność programowania, pozwalając na pełne współdzielenie logiki i interfejsu użytkownika między platformami.</string>
+
+    <string name="tech_stack_kotlin_multiplatform_name">Kotlin Multiplatform</string>
+    <string name="tech_stack_kotlin_multiplatform_description">Stworzony przez JetBrains, Kotlin Multiplatform pozwala na współdzielenie logiki biznesowej między systemami iOS i Android przy użyciu Kotlinu, zachowując jednocześnie w pełni natywny interfejs użytkownika. Ponieważ kompiluje się do natywnych plików binarnych, działa z 100% natywną prędkością bez narzutu związanego z mostkiem uruchomieniowym. Oferuje maksymalną wydajność, choć programiści muszą pisać interfejsy specyficzne dla danej platformy, chyba że połączą go z Compose.</string>
+
+    <string name="tech_stack_tauri_name">Tauri Mobile</string>
+    <string name="tech_stack_tauri_description">Rozwijany przez społeczność Tauri, Tauri Mobile przenosi swoją lekką architekturę desktopową na urządzenia mobilne, wykorzystując język Rust do logiki backendowej oraz standardowe technologie webowe dla frontendu. Omija ciężkie środowiska uruchomieniowe, korzystając z natywnego systemowego komponentu WebView, co skutkuje niezwykle małymi rozmiarami plików binarnych i wysoką efektywnością. Wydajność jest szybka w przypadku zadań interfejsu, choć przekazywanie danych między JavaScriptem a Rustem może wprowadzać niewielki narzut.</string>
+
+    <string name="tech_stack_svelte_native_name">Svelte Native</string>
+    <string name="tech_stack_svelte_native_description">Rozwijany jako projekt społecznościowy, Svelte Native łączy framework webowy Svelte z NativeScript w celu tworzenia aplikacji mobilnych. Wykorzystuje JavaScript lub TypeScript, ale kompiluje interfejs użytkownika w czasie budowania, eliminując wirtualny DOM, co pozwala osiągnąć szybsze wykonywanie kodu i mniejsze zużycie pamięci. Zapewnia wysoce wydajne działanie w porównaniu do standardowych frameworków hybrydowych poprzez bezpośrednie manipulowanie natywnymi widżetami mobilnymi.</string>
+
+    <string name="tech_stack_titanium_name">Titanium SDK</string>
+    <string name="tech_stack_titanium_description">Stworzony przez Appcelerator, Titanium SDK używa JavaScriptu do bezpośredniego mapowania na natywne komponenty interfejsu użytkownika systemów iOS i Android. Jest wykonywany za pomocą środowiska uruchomieniowego JavaScript na urządzeniu, oferując przyzwoitą prędkość renderowania, ale cierpiąc na spadki wydajności podczas intensywnego przetwarzania danych. Choć był efektywny do szybkiego prototypowania we wczesnej erze mobilnej, jego ekosystem i współczesna popularność znacznie spadły.</string>
+
+    <string name="tech_stack_qt_name">Qt</string>
+    <string name="tech_stack_qt_description">Opracowany przez The Qt Company oraz Qt Project, Qt to wieloplatformowy framework wykorzystujący C++ i QML. Kompiluje się bezpośrednio do natywnego kodu maszynowego, zapewniając błyskawiczną prędkość, wysoką wydajność renderowania i wyjątkową efektywność pamięciową, odpowiednią zarówno dla systemów wbudowanych, jak i aplikacji mobilnych. Jednak jego ciężka struktura oparta na C++ może wiązać się ze stromą krzywą uczenia się i większymi plikami binarnymi aplikacji.</string>
+
+    <string name="tech_stack_kivy_name">Kivy</string>
+    <string name="tech_stack_kivy_description">Stworzona przez Kivy Organization, Kivy to otwarta biblioteka Pythona do tworzenia oprogramowania z interfejsem wielodotykowym. Opiera się na OpenGL ES 2 do renderowania grafiki, zapewniając szybką, przyspieszaną sprzętowo przez GPU wydajność interfejsu na systemach Android, iOS i komputerach stacjonarnych. Ponieważ jednak dołącza interpreter Pythona, czas uruchamiania aplikacji może być długi, a rozmiary plików binarnych są stosunkowo duże i mniej efektywne pamięciowo.</string>
+
+    <string name="tech_stack_beeware_name">BeeWare</string>
+    <string name="tech_stack_beeware_description">Rozwijany przez społeczność BeeWare, ten pakiet narzędzi pozwala programistom pisać natywne aplikacje mobilne przy użyciu Pythona. W przeciwieństwie do frameworków korzystających z WebView lub niestandardowego płótna (canvas), BeeWare kompiluje kod Pythona, aby działał bezpośrednio na prawdziwych natywnych widżetach systemu operacyjnego, dążąc do uzyskania prawdziwie natywnego wyglądu i działania. Choć prędkość wykonywania jest ograniczona przez interpreter Pythona na urządzeniach mobilnych, oferuje doskonałą efektywność programowania dla deweloperów Pythona.</string>
+
+    <string name="tech_stack_rubymotion_name">RubyMotion</string>
+    <string name="tech_stack_rubymotion_description">Stworzony przez HipByte, RubyMotion umożliwia programistom pisanie natywnych aplikacji na systemy iOS i Android przy użyciu języka Ruby. Kompiluje kod Ruby bezpośrednio do natywnych plików binarnych maszynowych za pomocą kompilatora opartego na LLVM, zapewniając prawdziwie natywną prędkość wykonywania i pełen dostęp do systemowych API bez mostka wydajnościowego. Jest to jednak produkt komercyjny z niszową społecznością, co wpływa na jego współczesną efektywność rozwoju.</string>
+
+    <string name="tech_stack_native_name">Natywny (XML Java/Kotlin)</string>
+    <string name="tech_stack_native_description">Zakorzenione w oficjalnych standardach rozwoju systemu Android od Google, to podejście wykorzystuje język Java lub Kotlin wraz z plikami XML do projektowania układów. Oferuje absolutnie najwyższą możliwą wydajność, szybkość wykonywania i efektywność bateryjną, ponieważ działa bezpośrednio w środowisku uruchomieniowym Androida bez warstw tłumaczeniowych. Choć brakuje mu współdzielenia kodu między platformami, zapewnia bezopóźnieniowy dostęp do sprzętu urządzenia i najmniejszy możliwy narzut na pliki binarne.</string>
+
+    <string name="tech_stack_unknown_name">Nieznany</string>
+    <string name="tech_stack_unknown_description">Ten obiekt zastępczy reprezentuje niezidentyfikowany lub nieobsługiwany stos technologiczny w bazie kodu Analizatora. Nie posiada określonego pochodzenia, frameworku językowego ani metryk wydajności, dopóki bazowy kod nie zostanie poprawnie rozpoznany. Jest używany wyłącznie do obsługi błędów i kategoryzacji awaryjnej.</string>
+</resources>

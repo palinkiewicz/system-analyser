@@ -27,6 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import pl.dakil.appanalyser.domain.AppDetails
@@ -34,6 +35,7 @@ import pl.dakil.appanalyser.domain.DetectedFramework
 import pl.dakil.appanalyser.viewmodel.AppAnalyzerViewModel
 import pl.dakil.appanalyser.ui.theme.*
 import kotlinx.coroutines.launch
+import pl.dakil.appanalyser.R
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -58,7 +60,7 @@ fun AppDetailsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("App Details") },
+                title = { Text(stringResource(R.string.app_details_title)) },
                 navigationIcon = {
                     IconButton(onClick = {
                         viewModel.clearSelectedApp()
@@ -146,7 +148,7 @@ fun AppDetailsContent(
         }
 
         Text(
-            text = "Frameworks detected",
+            text = stringResource(R.string.app_details_frameworks_detected),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(top = 8.dp)
@@ -157,7 +159,7 @@ fun AppDetailsContent(
         }
 
         Text(
-            text = "App information",
+            text = stringResource(R.string.app_details_app_information),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(top = 8.dp)
@@ -174,12 +176,12 @@ fun AppDetailsContent(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                DetailRow("Size", Formatter.formatFileSize(context, details.sizeBytes))
-                DetailRow("Version", "${details.versionName} (${details.versionCode})")
-                DetailRow("Target SDK", details.targetSdk.toString())
-                DetailRow("Min SDK", details.minSdk.toString())
-                DetailRow("First Install", dateFormat.format(Date(details.firstInstallTime)))
-                DetailRow("Last Update", dateFormat.format(Date(details.lastUpdateTime)))
+                DetailRow(stringResource(R.string.app_details_size), Formatter.formatFileSize(context, details.sizeBytes))
+                DetailRow(stringResource(R.string.app_details_version), "${details.versionName} (${details.versionCode})")
+                DetailRow(stringResource(R.string.app_details_target_sdk), details.targetSdk.toString())
+                DetailRow(stringResource(R.string.app_details_min_sdk), details.minSdk.toString())
+                DetailRow(stringResource(R.string.app_details_first_install), dateFormat.format(Date(details.firstInstallTime)))
+                DetailRow(stringResource(R.string.app_details_last_update), dateFormat.format(Date(details.lastUpdateTime)))
             }
         }
 
@@ -228,7 +230,7 @@ fun FrameworkCard(framework: DetectedFramework, onClick: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = framework.techStack.displayName,
+                    text = stringResource(framework.techStack.displayNameRes),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -280,7 +282,10 @@ fun FrameworkCard(framework: DetectedFramework, onClick: () -> Unit) {
                         ) {
                             Spacer(modifier = Modifier.width(22.dp))
                             Text(
-                                text = "+ $remaining more files",
+                                text = stringResource(
+                                    R.string.app_details_framework_more_files,
+                                    remaining
+                                ),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.Medium
@@ -303,16 +308,14 @@ fun FrameworkDetailSheet(framework: DetectedFramework) {
             .padding(bottom = 48.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Framework name
         Text(
-            text = framework.techStack.displayName,
+            text = stringResource(framework.techStack.displayNameRes),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
         )
 
-        // Description section
         Text(
-            text = "Description",
+            text = stringResource(R.string.app_details_description),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.SemiBold
@@ -326,17 +329,16 @@ fun FrameworkDetailSheet(framework: DetectedFramework) {
             shape = MaterialTheme.shapes.medium
         ) {
             Text(
-                text = framework.techStack.description,
+                text = stringResource(framework.techStack.descriptionRes),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(16.dp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
-        // Files found section
         if (framework.matchedFiles.isNotEmpty()) {
             Text(
-                text = "Files found",
+                text = stringResource(R.string.app_details_framework_files_found),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.SemiBold

@@ -10,8 +10,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import pl.dakil.appanalyser.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -22,8 +24,8 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             LargeTopAppBar(
-                title = { Text("App Analyser") },
-                colors = TopAppBarDefaults.largeTopAppBarColors(
+                title = { Text(stringResource(R.string.app_name)) },
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
                 )
             )
@@ -37,14 +39,14 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             HomeCard(
-                title = "Analyse an app",
-                subtitle = "View tech stack and metadata of installed apps",
+                title = stringResource(R.string.home_analyse_an_app),
+                subtitle = stringResource(R.string.home_analyse_an_app_description),
                 icon = Icons.Default.Search,
                 onClick = onNavigateToAppList
             )
             HomeCard(
-                title = "About this app",
-                subtitle = "Learn how the inspection works and platform limits",
+                title = stringResource(R.string.home_about_this_app),
+                subtitle = stringResource(R.string.home_about_this_app_description),
                 icon = Icons.Default.Info,
                 onClick = onNavigateToAbout
             )
