@@ -14,12 +14,15 @@ import android.os.Build
 import android.os.Environment
 import android.os.StatFs
 import android.view.WindowManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.util.concurrent.ConcurrentHashMap
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.domain.BatteryInfo
 import pl.dakil.appanalyser.domain.CpuCore
@@ -137,7 +140,7 @@ class DeviceInfoRepository(private val context: Context) {
             ticker.cancel()
             runCatching { context.unregisterReceiver(receiver) }
         }
-    }
+    }.flowOn(Dispatchers.IO)
 
     private fun buildBatteryInfo(
         intent: Intent?,
@@ -281,34 +284,40 @@ class DeviceInfoRepository(private val context: Context) {
             .distinctBy { it.type }
             .sortedBy { it.name }
 
-        val latest = HashMap<Int, FloatArray>()
-
-        fun emitList() {
-            trySend(sensors.map { sensor ->
-                SensorInfo(
-                    name = sensor.name,
-                    vendor = sensor.vendor,
-                    type = sensor.type,
-                    typeName = sensorTypeLabel(sensor.type),
-                    values = latest[sensor.type]?.let { formatSensorValues(it) } ?: "—"
-                )
-            })
-        }
+        // The listener only stores the most recent value; emission is throttled to a fixed cadence
+        // by the ticker below, so high-rate sensors can't flood the UI with recompositions.
+        val latest = ConcurrentHashMap<Int, FloatArray>()
 
         val listener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
                 latest[event.sensor.type] = event.values.copyOf()
-                emitList()
             }
 
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
         }
 
-        sensors.forEach { sm.registerListener(listener, it, SensorManager.SENSOR_DELAY_UI) }
-        emitList()
+        sensors.forEach { sm.registerListener(listener, it, SensorManager.SENSOR_DELAY_NORMAL) }
 
-        awaitClose { sm.unregisterListener(listener) }
-    }
+        val ticker = launch {
+            while (isActive) {
+                trySend(sensors.map { sensor ->
+                    SensorInfo(
+                        name = sensor.name,
+                        vendor = sensor.vendor,
+                        type = sensor.type,
+                        typeName = sensorTypeLabel(sensor.type),
+                        values = latest[sensor.type]?.let { formatSensorValues(it) } ?: "—"
+                    )
+                })
+                delay(refreshIntervalMs)
+            }
+        }
+
+        awaitClose {
+            ticker.cancel()
+            sm.unregisterListener(listener)
+        }
+    }.flowOn(Dispatchers.IO)
 
     private fun formatSensorValues(values: FloatArray): String =
         values.take(3).joinToString("   ") { String.format("%.2f", it) }
@@ -369,7 +378,7 @@ class DeviceInfoRepository(private val context: Context) {
         }
 
         awaitClose { ticker.cancel() }
-    }
+    }.flowOn(Dispatchers.IO)
 
     private data class CpuUsage(val percent: Int?, val total: Long, val idle: Long)
 
@@ -465,7 +474,7 @@ class DeviceInfoRepository(private val context: Context) {
         }
 
         awaitClose { ticker.cancel() }
-    }
+    }.flowOn(Dispatchers.IO)
 
     private fun readMemory(am: ActivityManager): MemoryInfo {
         val mi = ActivityManager.MemoryInfo()
