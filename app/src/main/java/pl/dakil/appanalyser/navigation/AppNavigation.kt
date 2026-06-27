@@ -1,6 +1,14 @@
 package pl.dakil.appanalyser.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -20,9 +28,39 @@ sealed class Screen(val route: String) {
     object DeviceInfo : Screen("device_info")
 }
 
+private const val TRANSITION_DURATION_MS = 500
+
 @Composable
 fun AppNavigation(viewModel: AppAnalyzerViewModel, navController: NavHostController = rememberNavController()) {
-    NavHost(navController = navController, startDestination = Screen.Home.route) {
+    val animationSpec = tween<Float>(TRANSITION_DURATION_MS)
+
+    NavHost(
+        navController = navController,
+        startDestination = Screen.Home.route,
+        // Paint the container with the screen background so no white window flashes through the
+        // cross-fade while both screens are partially transparent.
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+        // Material 3 shared-axis X: the outgoing screen slides toward the start while the incoming
+        // one enters from the end; back navigation plays the same motion in reverse.
+        enterTransition = {
+            slideIntoContainer(SlideDirection.Start, tween(TRANSITION_DURATION_MS)) +
+                fadeIn(animationSpec)
+        },
+        exitTransition = {
+            slideOutOfContainer(SlideDirection.Start, tween(TRANSITION_DURATION_MS)) +
+                fadeOut(animationSpec)
+        },
+        popEnterTransition = {
+            slideIntoContainer(SlideDirection.End, tween(TRANSITION_DURATION_MS)) +
+                fadeIn(animationSpec)
+        },
+        popExitTransition = {
+            slideOutOfContainer(SlideDirection.End, tween(TRANSITION_DURATION_MS)) +
+                fadeOut(animationSpec)
+        }
+    ) {
         composable(Screen.Home.route) {
             HomeScreen(
                 onNavigateToAppList = { navController.navigate(Screen.AppList.route) },
