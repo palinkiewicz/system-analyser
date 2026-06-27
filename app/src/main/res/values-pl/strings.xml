@@ -7,6 +7,8 @@
     <string name="home_analyse_an_app_description">Poznaj technologię oraz sprawdź metadane zainstalowanych aplikacji</string>
     <string name="home_about_this_app">O aplikacji</string>
     <string name="home_about_this_app_description">Dowiedz się o autorach i działaniu aplikacji</string>
+    <string name="home_device_info">Informacje o urządzeniu</string>
+    <string name="home_device_info_description">Procesor, bateria, czujniki i więcej w czasie rzeczywistym</string>
 
     <!--  ABOUT SCREEN  -->
     <string name="about_title">O Analizatorze</string>
@@ -95,4 +97,87 @@
 
     <string name="tech_stack_unknown_name">Nieznany</string>
     <string name="tech_stack_unknown_description">Ten obiekt zastępczy reprezentuje niezidentyfikowany lub nieobsługiwany stos technologiczny w bazie kodu Analizatora. Nie posiada określonego pochodzenia, frameworku językowego ani metryk wydajności, dopóki bazowy kod nie zostanie poprawnie rozpoznany. Jest używany wyłącznie do obsługi błędów i kategoryzacji awaryjnej.</string>
+
+    <!--  DEVICE INFO SCREEN  -->
+    <string name="device_info_title">Informacje o urządzeniu</string>
+    <string name="device_unknown">Nieznane</string>
+    <string name="device_value_unavailable">Brak</string>
+
+    <string name="device_tab_system">System</string>
+    <string name="device_tab_cpu">Procesor</string>
+    <string name="device_tab_battery">Bateria</string>
+    <string name="device_tab_sensors">Czujniki</string>
+    <string name="device_tab_memory">Pamięć</string>
+    <string name="device_tab_display">Ekran</string>
+
+    <!--  System tab  -->
+    <string name="device_system_manufacturer">Producent</string>
+    <string name="device_system_brand">Marka</string>
+    <string name="device_system_model">Model</string>
+    <string name="device_system_device">Urządzenie</string>
+    <string name="device_system_board">Płyta</string>
+    <string name="device_system_hardware">Sprzęt</string>
+    <string name="device_system_android_version">Wersja Androida</string>
+    <string name="device_system_security_patch">Poprawka zabezpieczeń</string>
+    <string name="device_system_build">Kompilacja</string>
+    <string name="device_system_kernel">Jądro</string>
+
+    <!--  CPU tab  -->
+    <string name="device_cpu_soc">SoC</string>
+    <string name="device_cpu_abis">Obsługiwane ABI</string>
+    <string name="device_cpu_cores">Rdzenie</string>
+    <string name="device_cpu_usage">Użycie procesora</string>
+    <string name="device_cpu_clock_speeds">Taktowanie</string>
+    <string name="device_cpu_core_x">Rdzeń %1$d</string>
+    <string name="device_cpu_temperatures">Temperatury</string>
+
+    <!--  Battery tab  -->
+    <string name="device_battery_ampere_title">Pobór prądu</string>
+    <string name="device_battery_charging_now">Ładowanie</string>
+    <string name="device_battery_discharging_now">Rozładowywanie</string>
+    <string name="device_battery_current_unavailable">Niedostępne na tym urządzeniu</string>
+    <string name="device_battery_level">Poziom</string>
+    <string name="device_battery_status">Stan</string>
+    <string name="device_battery_health">Kondycja</string>
+    <string name="device_battery_technology">Technologia</string>
+    <string name="device_battery_power_source">Źródło zasilania</string>
+    <string name="device_battery_voltage">Napięcie</string>
+    <string name="device_battery_temperature">Temperatura</string>
+    <string name="device_battery_power">Moc</string>
+    <string name="device_battery_capacity">Pojemność</string>
+    <string name="device_battery_cycle_count">Liczba cykli</string>
+    <string name="device_battery_session_min">Min. sesji</string>
+    <string name="device_battery_session_max">Maks. sesji</string>
+
+    <string name="device_battery_status_charging">Ładowanie</string>
+    <string name="device_battery_status_discharging">Rozładowywanie</string>
+    <string name="device_battery_status_full">Naładowana</string>
+    <string name="device_battery_status_not_charging">Nie ładuje się</string>
+    <string name="device_battery_health_good">Dobra</string>
+    <string name="device_battery_health_overheat">Przegrzanie</string>
+    <string name="device_battery_health_dead">Zużyta</string>
+    <string name="device_battery_health_over_voltage">Przepięcie</string>
+    <string name="device_battery_health_cold">Zimna</string>
+    <string name="device_battery_plugged_ac">Ładowarka AC</string>
+    <string name="device_battery_plugged_usb">USB</string>
+    <string name="device_battery_plugged_wireless">Bezprzewodowo</string>
+    <string name="device_battery_plugged_unplugged">Odłączona</string>
+
+    <!--  Sensors tab  -->
+    <string name="device_sensor_vendor">Dostawca</string>
+    <string name="device_sensor_value">Wartość</string>
+    <string name="device_sensor_other">Czujnik</string>
+
+    <!--  Memory tab  -->
+    <string name="device_memory_ram">RAM</string>
+    <string name="device_memory_storage">Pamięć masowa</string>
+    <string name="device_memory_total">Łącznie</string>
+    <string name="device_memory_used">Użyte</string>
+    <string name="device_memory_available">Dostępne</string>
+
+    <!--  Display tab  -->
+    <string name="device_display_resolution">Rozdzielczość</string>
+    <string name="device_display_density">Gęstość</string>
+    <string name="device_display_refresh_rate">Częstotliwość odświeżania</string>
+    <string name="device_display_size">Rozmiar ekranu</string>
 </resources>

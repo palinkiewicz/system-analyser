@@ -7,6 +7,8 @@
     <string name="home_analyse_an_app_description">View tech stack and metadata of installed apps</string>
     <string name="home_about_this_app">About this app</string>
     <string name="home_about_this_app_description">Learn about the authors and how everything works</string>
+    <string name="home_device_info">Device info</string>
+    <string name="home_device_info_description">Live CPU, battery, sensors and more about your device</string>
 
     <!--  ABOUT SCREEN  -->
     <string name="about_title">About Analyser</string>
@@ -95,4 +97,87 @@
 
     <string name="tech_stack_unknown_name">Unknown</string>
     <string name="tech_stack_unknown_description">This placeholder represents an unidentified or unsupported technology stack within the analyzer\'s codebase. It possesses no specific origin, language framework, or performance metrics until the underlying code can be properly resolved. It is utilized purely for error handling and fallback categorization.</string>
+
+    <!--  DEVICE INFO SCREEN  -->
+    <string name="device_info_title">Device info</string>
+    <string name="device_unknown">Unknown</string>
+    <string name="device_value_unavailable">N/A</string>
+
+    <string name="device_tab_system">System</string>
+    <string name="device_tab_cpu">CPU</string>
+    <string name="device_tab_battery">Battery</string>
+    <string name="device_tab_sensors">Sensors</string>
+    <string name="device_tab_memory">Memory</string>
+    <string name="device_tab_display">Display</string>
+
+    <!--  System tab  -->
+    <string name="device_system_manufacturer">Manufacturer</string>
+    <string name="device_system_brand">Brand</string>
+    <string name="device_system_model">Model</string>
+    <string name="device_system_device">Device</string>
+    <string name="device_system_board">Board</string>
+    <string name="device_system_hardware">Hardware</string>
+    <string name="device_system_android_version">Android version</string>
+    <string name="device_system_security_patch">Security patch</string>
+    <string name="device_system_build">Build</string>
+    <string name="device_system_kernel">Kernel</string>
+
+    <!--  CPU tab  -->
+    <string name="device_cpu_soc">SoC</string>
+    <string name="device_cpu_abis">Supported ABIs</string>
+    <string name="device_cpu_cores">Cores</string>
+    <string name="device_cpu_usage">CPU usage</string>
+    <string name="device_cpu_clock_speeds">Clock speeds</string>
+    <string name="device_cpu_core_x">Core %1$d</string>
+    <string name="device_cpu_temperatures">Temperatures</string>
+
+    <!--  Battery tab  -->
+    <string name="device_battery_ampere_title">Current draw</string>
+    <string name="device_battery_charging_now">Charging</string>
+    <string name="device_battery_discharging_now">Discharging</string>
+    <string name="device_battery_current_unavailable">Not reported by this device</string>
+    <string name="device_battery_level">Level</string>
+    <string name="device_battery_status">Status</string>
+    <string name="device_battery_health">Health</string>
+    <string name="device_battery_technology">Technology</string>
+    <string name="device_battery_power_source">Power source</string>
+    <string name="device_battery_voltage">Voltage</string>
+    <string name="device_battery_temperature">Temperature</string>
+    <string name="device_battery_power">Power</string>
+    <string name="device_battery_capacity">Capacity</string>
+    <string name="device_battery_cycle_count">Cycle count</string>
+    <string name="device_battery_session_min">Session min</string>
+    <string name="device_battery_session_max">Session max</string>
+
+    <string name="device_battery_status_charging">Charging</string>
+    <string name="device_battery_status_discharging">Discharging</string>
+    <string name="device_battery_status_full">Full</string>
+    <string name="device_battery_status_not_charging">Not charging</string>
+    <string name="device_battery_health_good">Good</string>
+    <string name="device_battery_health_overheat">Overheating</string>
+    <string name="device_battery_health_dead">Dead</string>
+    <string name="device_battery_health_over_voltage">Over voltage</string>
+    <string name="device_battery_health_cold">Cold</string>
+    <string name="device_battery_plugged_ac">AC charger</string>
+    <string name="device_battery_plugged_usb">USB</string>
+    <string name="device_battery_plugged_wireless">Wireless</string>
+    <string name="device_battery_plugged_unplugged">Unplugged</string>
+
+    <!--  Sensors tab  -->
+    <string name="device_sensor_vendor">Vendor</string>
+    <string name="device_sensor_value">Value</string>
+    <string name="device_sensor_other">Sensor</string>
+
+    <!--  Memory tab  -->
+    <string name="device_memory_ram">RAM</string>
+    <string name="device_memory_storage">Storage</string>
+    <string name="device_memory_total">Total</string>
+    <string name="device_memory_used">Used</string>
+    <string name="device_memory_available">Available</string>
+
+    <!--  Display tab  -->
+    <string name="device_display_resolution">Resolution</string>
+    <string name="device_display_density">Density</string>
+    <string name="device_display_refresh_rate">Refresh rate</string>
+    <string name="device_display_size">Screen size</string>
 </resources>

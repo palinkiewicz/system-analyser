@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -19,7 +20,8 @@ import pl.dakil.appanalyser.R
 @Composable
 fun HomeScreen(
     onNavigateToAppList: () -> Unit,
-    onNavigateToAbout: () -> Unit
+    onNavigateToAbout: () -> Unit,
+    onNavigateToDeviceInfo: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -43,6 +45,12 @@ fun HomeScreen(
                 subtitle = stringResource(R.string.home_analyse_an_app_description),
                 icon = Icons.Default.Search,
                 onClick = onNavigateToAppList
+            )
+            HomeCard(
+                title = stringResource(R.string.home_device_info),
+                subtitle = stringResource(R.string.home_device_info_description),
+                icon = Icons.Default.PhoneAndroid,
+                onClick = onNavigateToDeviceInfo
             )
             HomeCard(
                 title = stringResource(R.string.home_about_this_app),

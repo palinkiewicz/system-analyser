@@ -8,6 +8,7 @@ import androidx.navigation.compose.rememberNavController
 import pl.dakil.appanalyser.ui.screens.AboutScreen
 import pl.dakil.appanalyser.ui.screens.AppDetailsScreen
 import pl.dakil.appanalyser.ui.screens.AppListScreen
+import pl.dakil.appanalyser.ui.screens.DeviceInfoScreen
 import pl.dakil.appanalyser.ui.screens.HomeScreen
 import pl.dakil.appanalyser.viewmodel.AppAnalyzerViewModel
 
@@ -18,6 +19,7 @@ sealed class Screen(val route: String) {
         fun createRoute(packageName: String) = "app_details/$packageName"
     }
     object About : Screen("about")
+    object DeviceInfo : Screen("device_info")
 }
 
 @Composable
@@ -26,7 +28,8 @@ fun AppNavigation(viewModel: AppAnalyzerViewModel, navController: NavHostControl
         composable(Screen.Home.route) {
             HomeScreen(
                 onNavigateToAppList = { navController.navigate(Screen.AppList.route) },
-                onNavigateToAbout = { navController.navigate(Screen.About.route) }
+                onNavigateToAbout = { navController.navigate(Screen.About.route) },
+                onNavigateToDeviceInfo = { navController.navigate(Screen.DeviceInfo.route) }
             )
         }
         composable(Screen.AppList.route) {
@@ -48,6 +51,11 @@ fun AppNavigation(viewModel: AppAnalyzerViewModel, navController: NavHostControl
         }
         composable(Screen.About.route) {
             AboutScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        composable(Screen.DeviceInfo.route) {
+            DeviceInfoScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
