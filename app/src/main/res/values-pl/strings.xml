@@ -7,8 +7,21 @@
     <string name="home_analyse_an_app_description">Sprawdź technologię i metadane aplikacji</string>
     <string name="home_device_info">Informacje o urządzeniu</string>
     <string name="home_device_info_description">Procesor, bateria, czujniki i więcej na żywo</string>
+    <string name="home_settings">Ustawienia</string>
+    <string name="home_settings_description">Dostosuj zachowanie aplikacji</string>
     <string name="home_about_this_app">O aplikacji</string>
     <string name="home_about_this_app_description">Dowiedz się o autorach i działaniu aplikacji</string>
+
+    <!--  SETTINGS SCREEN  -->
+    <string name="settings_title">Ustawienia</string>
+    <string name="settings_cancel">Anuluj</string>
+    <string name="settings_category_device_info">Informacje o urządzeniu</string>
+    <string name="settings_temperature_unit">Jednostka temperatury</string>
+    <string name="settings_simple_sensor_view">Uproszczony widok czujników</string>
+    <string name="settings_simple_sensor_view_description">Pokazuj tylko nazwę czujnika i jego wartość</string>
+    <string name="temperature_unit_celsius">Celsjusz (°C)</string>
+    <string name="temperature_unit_fahrenheit">Fahrenheit (°F)</string>
+    <string name="temperature_unit_kelvin">Kelwin (K)</string>
 
     <!--  ABOUT DIALOG  -->
     <string name="about_title">O Analizatorze</string>

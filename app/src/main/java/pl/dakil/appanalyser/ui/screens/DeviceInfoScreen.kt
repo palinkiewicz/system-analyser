@@ -28,6 +28,7 @@ import pl.dakil.appanalyser.domain.DisplayInfo
 import pl.dakil.appanalyser.domain.MemoryInfo
 import pl.dakil.appanalyser.domain.SensorInfo
 import pl.dakil.appanalyser.domain.SystemInfo
+import pl.dakil.appanalyser.domain.TemperatureUnit
 import pl.dakil.appanalyser.viewmodel.DeviceInfoViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -73,6 +74,9 @@ fun DeviceInfoScreen(
                 }
             }
 
+            val temperatureUnit by viewModel.temperatureUnit.collectAsState()
+            val simpleSensorView by viewModel.simpleSensorView.collectAsState()
+
             // The pager composes only the visible page (beyondViewportPageCount = 0), so each tab
             // collects its flow only while on screen — off-screen tabs stop refreshing.
             HorizontalPager(
@@ -81,9 +85,9 @@ fun DeviceInfoScreen(
             ) { page ->
                 when (page) {
                     0 -> SystemTab(viewModel.systemInfo)
-                    1 -> CpuTab(viewModel.cpu.collectAsState().value)
-                    2 -> BatteryTab(viewModel.battery.collectAsState().value)
-                    3 -> SensorsTab(viewModel.sensors.collectAsState().value)
+                    1 -> CpuTab(viewModel.cpu.collectAsState().value, temperatureUnit)
+                    2 -> BatteryTab(viewModel.battery.collectAsState().value, temperatureUnit)
+                    3 -> SensorsTab(viewModel.sensors.collectAsState().value, simpleSensorView)
                     4 -> MemoryTab(viewModel.memory.collectAsState().value)
                     5 -> DisplayTab(viewModel.displayInfo)
                 }
@@ -173,7 +177,7 @@ private fun SystemTab(info: SystemInfo) {
 // ---------------------------------------------------------------------
 
 @Composable
-private fun CpuTab(info: CpuInfo?) {
+private fun CpuTab(info: CpuInfo?, temperatureUnit: TemperatureUnit) {
     if (info == null) {
         Loading()
         return
@@ -213,7 +217,7 @@ private fun CpuTab(info: CpuInfo?) {
             SectionLabel(stringResource(R.string.device_cpu_temperatures))
             InfoCard {
                 info.temperatures.forEach { temp ->
-                    DetailRow(temp.name, String.format("%.1f °C", temp.celsius))
+                    DetailRow(temp.name, formatTemperature(temp.celsius, temperatureUnit))
                 }
             }
         }
@@ -225,7 +229,7 @@ private fun CpuTab(info: CpuInfo?) {
 // ---------------------------------------------------------------------
 
 @Composable
-private fun BatteryTab(info: BatteryInfo?) {
+private fun BatteryTab(info: BatteryInfo?, temperatureUnit: TemperatureUnit) {
     if (info == null) {
         Loading()
         return
@@ -249,7 +253,7 @@ private fun BatteryTab(info: BatteryInfo?) {
             )
             DetailRow(
                 stringResource(R.string.device_battery_temperature),
-                String.format("%.1f °C", info.temperatureCelsius)
+                formatTemperature(info.temperatureCelsius, temperatureUnit)
             )
             DetailRow(
                 stringResource(R.string.device_battery_cycle_count),
@@ -347,6 +351,9 @@ private fun AmpereCard(info: BatteryInfo) {
 private fun signedMilliamps(value: Int): String =
     "${if (value >= 0) "+" else ""}$value mA"
 
+private fun formatTemperature(celsius: Float, unit: TemperatureUnit): String =
+    String.format("%.1f %s", unit.fromCelsius(celsius), unit.symbol)
+
 @Composable
 private fun AmpereStat(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -368,7 +375,7 @@ private fun AmpereStat(label: String, value: String) {
 // ---------------------------------------------------------------------
 
 @Composable
-private fun SensorsTab(sensors: List<SensorInfo>) {
+private fun SensorsTab(sensors: List<SensorInfo>, simple: Boolean) {
     if (sensors.isEmpty()) {
         Loading()
         return
@@ -381,12 +388,14 @@ private fun SensorsTab(sensors: List<SensorInfo>) {
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold
                 )
-                Text(
-                    text = sensor.typeName,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                DetailRow(stringResource(R.string.device_sensor_vendor), sensor.vendor)
+                if (!simple) {
+                    Text(
+                        text = sensor.typeName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    DetailRow(stringResource(R.string.device_sensor_vendor), sensor.vendor)
+                }
                 DetailRow(stringResource(R.string.device_sensor_value), sensor.values)
             }
         }

@@ -17,6 +17,7 @@ import pl.dakil.appanalyser.ui.screens.AppDetailsScreen
 import pl.dakil.appanalyser.ui.screens.AppListScreen
 import pl.dakil.appanalyser.ui.screens.DeviceInfoScreen
 import pl.dakil.appanalyser.ui.screens.HomeScreen
+import pl.dakil.appanalyser.ui.screens.SettingsScreen
 import pl.dakil.appanalyser.viewmodel.AppAnalyzerViewModel
 
 sealed class Screen(val route: String) {
@@ -26,6 +27,7 @@ sealed class Screen(val route: String) {
         fun createRoute(packageName: String) = "app_details/$packageName"
     }
     object DeviceInfo : Screen("device_info")
+    object Settings : Screen("settings")
 }
 
 private const val TRANSITION_DURATION_MS = 500
@@ -64,7 +66,8 @@ fun AppNavigation(viewModel: AppAnalyzerViewModel, navController: NavHostControl
         composable(Screen.Home.route) {
             HomeScreen(
                 onNavigateToAppList = { navController.navigate(Screen.AppList.route) },
-                onNavigateToDeviceInfo = { navController.navigate(Screen.DeviceInfo.route) }
+                onNavigateToDeviceInfo = { navController.navigate(Screen.DeviceInfo.route) },
+                onNavigateToSettings = { navController.navigate(Screen.Settings.route) }
             )
         }
         composable(Screen.AppList.route) {
@@ -86,6 +89,11 @@ fun AppNavigation(viewModel: AppAnalyzerViewModel, navController: NavHostControl
         }
         composable(Screen.DeviceInfo.route) {
             DeviceInfoScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        composable(Screen.Settings.route) {
+            SettingsScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

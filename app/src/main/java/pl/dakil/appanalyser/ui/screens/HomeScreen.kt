@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,7 +22,8 @@ import pl.dakil.appanalyser.R
 @Composable
 fun HomeScreen(
     onNavigateToAppList: () -> Unit,
-    onNavigateToDeviceInfo: () -> Unit
+    onNavigateToDeviceInfo: () -> Unit,
+    onNavigateToSettings: () -> Unit
 ) {
     var showAboutDialog by remember { mutableStateOf(false) }
 
@@ -55,6 +57,12 @@ fun HomeScreen(
                 subtitle = stringResource(R.string.home_device_info_description),
                 icon = Icons.Default.PhoneAndroid,
                 onClick = onNavigateToDeviceInfo
+            )
+            HomeListItem(
+                title = stringResource(R.string.home_settings),
+                subtitle = stringResource(R.string.home_settings_description),
+                icon = Icons.Default.Settings,
+                onClick = onNavigateToSettings
             )
             HomeListItem(
                 title = stringResource(R.string.home_about_this_app),

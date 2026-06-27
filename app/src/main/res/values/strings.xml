@@ -7,8 +7,21 @@
     <string name="home_analyse_an_app_description">View tech stack and metadata of an app</string>
     <string name="home_device_info">Device info</string>
     <string name="home_device_info_description">Live CPU, battery, sensors and more</string>
+    <string name="home_settings">Settings</string>
+    <string name="home_settings_description">Customize how this app behaves</string>
     <string name="home_about_this_app">About this app</string>
     <string name="home_about_this_app_description">Learn about the authors and how this works</string>
+
+    <!--  SETTINGS SCREEN  -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_cancel">Cancel</string>
+    <string name="settings_category_device_info">Device info</string>
+    <string name="settings_temperature_unit">Temperature unit</string>
+    <string name="settings_simple_sensor_view">Use simple sensor view</string>
+    <string name="settings_simple_sensor_view_description">Show only the sensor name and its value</string>
+    <string name="temperature_unit_celsius">Celsius (°C)</string>
+    <string name="temperature_unit_fahrenheit">Fahrenheit (°F)</string>
+    <string name="temperature_unit_kelvin">Kelvin (K)</string>
 
     <!--  ABOUT DIALOG  -->
     <string name="about_title">About Analyser</string>
