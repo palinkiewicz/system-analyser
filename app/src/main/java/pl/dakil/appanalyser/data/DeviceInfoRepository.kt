@@ -346,17 +346,21 @@ class DeviceInfoRepository(private val context: Context) {
 
         val ticker = launch {
             while (isActive) {
+                val cores = readCpuCores(coreCount)
                 val usage = readCpuUsage(prevTotal, prevIdle).also {
                     prevTotal = it.total
                     prevIdle = it.idle
                 }
+                // /proc/stat is SELinux-blocked for apps on Android 8+; fall back to a
+                // frequency-based load estimate derived from each core's current clock.
+                val usagePercent = usage.percent ?: estimateUsageFromFrequencies(cores)
                 trySend(
                     CpuInfo(
                         soc = soc,
                         supportedAbis = abis,
                         coreCount = coreCount,
-                        cores = readCpuCores(coreCount),
-                        usagePercent = usage.percent,
+                        cores = cores,
+                        usagePercent = usagePercent,
                         temperatures = readTemperatures()
                     )
                 )
@@ -367,7 +371,7 @@ class DeviceInfoRepository(private val context: Context) {
         awaitClose { ticker.cancel() }
     }
 
-    private data class CpuUsage(val percent: Int, val total: Long, val idle: Long)
+    private data class CpuUsage(val percent: Int?, val total: Long, val idle: Long)
 
     private fun readCpuUsage(prevTotal: Long, prevIdle: Long): CpuUsage {
         return try {
@@ -386,8 +390,26 @@ class DeviceInfoRepository(private val context: Context) {
             } else 0
             CpuUsage(percent, total, idle)
         } catch (e: Exception) {
-            CpuUsage(0, prevTotal, prevIdle)
+            CpuUsage(null, prevTotal, prevIdle)
         }
+    }
+
+    /**
+     * Approximates overall CPU load from the per-core clock speeds, used when `/proc/stat` is not
+     * readable. Each online core contributes `(current - min) / (max - min)`; cores that are offline
+     * or report no frequency count as idle (0%). This is an estimate, not a true scheduler-time
+     * measurement, but it tracks load well enough for a live readout on modern Android.
+     */
+    private fun estimateUsageFromFrequencies(cores: List<CpuCore>): Int {
+        if (cores.isEmpty()) return 0
+        var sum = 0f
+        for (core in cores) {
+            val range = core.maxFreqKhz - core.minFreqKhz
+            sum += if (range > 0 && core.currentFreqKhz > 0) {
+                ((core.currentFreqKhz - core.minFreqKhz).toFloat() / range).coerceIn(0f, 1f)
+            } else 0f
+        }
+        return ((sum / cores.size) * 100).roundToInt().coerceIn(0, 100)
     }
 
     private fun readCpuCores(coreCount: Int): List<CpuCore> = (0 until coreCount).map { i ->

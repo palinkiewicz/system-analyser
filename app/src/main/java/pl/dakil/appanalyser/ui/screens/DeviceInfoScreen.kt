@@ -2,6 +2,8 @@ package pl.dakil.appanalyser.ui.screens
 
 import android.text.format.Formatter
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -10,9 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -20,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.domain.BatteryInfo
 import pl.dakil.appanalyser.domain.CpuInfo
@@ -43,7 +44,8 @@ fun DeviceInfoScreen(
         stringResource(R.string.device_tab_memory),
         stringResource(R.string.device_tab_display),
     )
-    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    val pagerState = rememberPagerState(pageCount = { tabs.size })
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -59,25 +61,32 @@ fun DeviceInfoScreen(
     ) { paddingValues ->
         Column(modifier = Modifier.padding(paddingValues)) {
             ScrollableTabRow(
-                selectedTabIndex = selectedTab,
+                selectedTabIndex = pagerState.currentPage,
                 edgePadding = 8.dp
             ) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
+                        selected = pagerState.currentPage == index,
+                        onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
                         text = { Text(title) }
                     )
                 }
             }
 
-            when (selectedTab) {
-                0 -> SystemTab(viewModel.systemInfo)
-                1 -> CpuTab(viewModel.cpu.collectAsState().value)
-                2 -> BatteryTab(viewModel.battery.collectAsState().value)
-                3 -> SensorsTab(viewModel.sensors.collectAsState().value)
-                4 -> MemoryTab(viewModel.memory.collectAsState().value)
-                5 -> DisplayTab(viewModel.displayInfo)
+            // The pager composes only the visible page (beyondViewportPageCount = 0), so each tab
+            // collects its flow only while on screen — off-screen tabs stop refreshing.
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize()
+            ) { page ->
+                when (page) {
+                    0 -> SystemTab(viewModel.systemInfo)
+                    1 -> CpuTab(viewModel.cpu.collectAsState().value)
+                    2 -> BatteryTab(viewModel.battery.collectAsState().value)
+                    3 -> SensorsTab(viewModel.sensors.collectAsState().value)
+                    4 -> MemoryTab(viewModel.memory.collectAsState().value)
+                    5 -> DisplayTab(viewModel.displayInfo)
+                }
             }
         }
     }
