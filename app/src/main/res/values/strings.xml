@@ -4,16 +4,19 @@
 
     <!--  HOME SCREEN  -->
     <string name="home_analyse_an_app">Analyse an app</string>
-    <string name="home_analyse_an_app_description">View tech stack and metadata of installed apps</string>
-    <string name="home_about_this_app">About this app</string>
-    <string name="home_about_this_app_description">Learn about the authors and how everything works</string>
+    <string name="home_analyse_an_app_description">View tech stack and metadata of an app</string>
     <string name="home_device_info">Device info</string>
-    <string name="home_device_info_description">Live CPU, battery, sensors and more about your device</string>
+    <string name="home_device_info_description">Live CPU, battery, sensors and more</string>
+    <string name="home_about_this_app">About this app</string>
+    <string name="home_about_this_app_description">Learn about the authors and how this works</string>
 
-    <!--  ABOUT SCREEN  -->
+    <!--  ABOUT DIALOG  -->
     <string name="about_title">About Analyser</string>
     <string name="about_how_it_works">How it works</string>
     <string name="about_how_it_works_description">App Analyser detects the core tech stack of your installed applications by reading their APK signatures dynamically without fully extracting them. It maps file names to determine the underlying framework.</string>
+    <string name="about_repository">Repository</string>
+    <string name="about_author">Author</string>
+    <string name="about_close">Close</string>
 
     <!--  APP LIST SCREEN  -->
     <string name="app_list_system_apps_title">System apps</string>

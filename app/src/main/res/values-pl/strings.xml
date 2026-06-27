@@ -4,16 +4,19 @@
 
     <!--  HOME SCREEN  -->
     <string name="home_analyse_an_app">Analizuj aplikację</string>
-    <string name="home_analyse_an_app_description">Poznaj technologię oraz sprawdź metadane zainstalowanych aplikacji</string>
+    <string name="home_analyse_an_app_description">Sprawdź technologię i metadane aplikacji</string>
+    <string name="home_device_info">Informacje o urządzeniu</string>
+    <string name="home_device_info_description">Procesor, bateria, czujniki i więcej na żywo</string>
     <string name="home_about_this_app">O aplikacji</string>
     <string name="home_about_this_app_description">Dowiedz się o autorach i działaniu aplikacji</string>
-    <string name="home_device_info">Informacje o urządzeniu</string>
-    <string name="home_device_info_description">Procesor, bateria, czujniki i więcej w czasie rzeczywistym</string>
 
-    <!--  ABOUT SCREEN  -->
+    <!--  ABOUT DIALOG  -->
     <string name="about_title">O Analizatorze</string>
     <string name="about_how_it_works">Jak to działa</string>
     <string name="about_how_it_works_description">Analizator wykrywa technologie, w których została napisana dana aplikacja na podstawie dynamicznego odczytu z sygnatur plików APK bez pełnego rozpakowywania. Mapuje on nazwy plików znajdujących się w tym archiwum, aby zdeterminować w jakim framework\'u została ona utworzona.</string>
+    <string name="about_repository">Repozytorium</string>
+    <string name="about_author">Autor</string>
+    <string name="about_close">Zamknij</string>
 
     <!--  APP LIST SCREEN  -->
     <string name="app_list_system_apps_title">Aplikacje systemowe</string>
