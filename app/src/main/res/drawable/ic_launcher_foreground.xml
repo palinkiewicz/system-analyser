@@ -3,51 +3,56 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-  <group android:scaleX="0.9"
-      android:scaleY="0.9"
-      android:translateX="5.4"
-      android:translateY="5.4">
+  <group android:scaleX="0.97"
+      android:scaleY="0.97"
+      android:translateX="1.62"
+      android:translateY="1.62">
+    <group android:scaleX="0.9"
+        android:scaleY="0.9"
+        android:translateX="5.4"
+        android:translateY="5.4">
 
-      <!-- Top Pins -->
-      <path
-          android:fillColor="#0097A7"
-          android:pathData="M42,26h4v8h-4z M52,26h4v8h-4z M62,26h4v8h-4z" />
-      <!-- Bottom Pins -->
-      <path
-          android:fillColor="#0097A7"
-          android:pathData="M42,74h4v8h-4z M52,74h4v8h-4z M62,74h4v8h-4z" />
-      <!-- Left Pins -->
-      <path
-          android:fillColor="#0097A7"
-          android:pathData="M26,42h8v4h-8z M26,52h8v4h-8z M26,62h8v4h-8z" />
-      <!-- Right Pins -->
-      <path
-          android:fillColor="#0097A7"
-          android:pathData="M74,42h8v4h-8z M74,52h8v4h-8z M74,62h8v4h-8z" />
+        <!-- Pins -->
+        <path
+            android:fillColor="#B2EBF2"
+            android:pathData="M42,27 a2,2 0 0 1 4,0 v4 a2,2 0 0 1 -4,0 z M52,27 a2,2 0 0 1 4,0 v4 a2,2 0 0 1 -4,0 z M62,27 a2,2 0 0 1 4,0 v4 a2,2 0 0 1 -4,0 z" />
 
-      <!-- CPU Main Plate -->
-      <path
-          android:fillColor="#00BCD4"
-          android:pathData="M38,34h32a4,4 0 0 1 4,4v32a4,4 0 0 1 -4,4h-32a4,4 0 0 1 -4,-4v-32a4,4 0 0 1 4,-4z" />
+        <path
+            android:fillColor="#B2EBF2"
+            android:pathData="M42,77 a2,2 0 0 1 4,0 v4 a2,2 0 0 1 -4,0 z M52,77 a2,2 0 0 1 4,0 v4 a2,2 0 0 1 -4,0 z M62,77 a2,2 0 0 1 4,0 v4 a2,2 0 0 1 -4,0 z" />
 
-      <!-- CPU Center Core Die -->
-      <path
-          android:fillColor="#B2EBF2"
-          android:pathData="M48,46h12a2,2 0 0 1 2,2v12a2,2 0 0 1 -2,2h-12a2,2 0 0 1 -2,-2v-12a2,2 0 0 1 2,-2z" />
+        <path
+            android:fillColor="#B2EBF2"
+            android:pathData="M27,42 h4 a2,2 0 0 1 0,4 h-4 a2,2 0 0 1 0,-4 z M27,52 h4 a2,2 0 0 1 0,4 h-4 a2,2 0 0 1 0,-4 z M27,62 h4 a2,2 0 0 1 0,4 h-4 a2,2 0 0 1 0,-4 z" />
 
-      <!-- Bold Lens Ring -->
-      <path
-          android:strokeColor="#212121"
-          android:strokeWidth="6"
-          android:fillColor="#00000000"
-          android:pathData="M 46, 46 m -14, 0 a 14,14 0 1,1 28,0 a 14,14 0 1,1 -28,0" />
+        <path
+            android:fillColor="#B2EBF2"
+            android:pathData="M77,42 h4 a2,2 0 0 1 0,4 h-4 a2,2 0 0 1 0,-4 z M77,52 h4 a2,2 0 0 1 0,4 h-4 a2,2 0 0 1 0,-4 z M77,62 h4 a2,2 0 0 1 0,4 h-4 a2,2 0 0 1 0,-4 z" />
 
-      <!-- Bold Handle -->
-      <path
-          android:strokeColor="#212121"
-          android:strokeWidth="6"
-          android:strokeLineCap="round"
-          android:pathData="M 56, 56 L 74, 74" />
+        <!-- CPU Main Plate -->
+        <path
+            android:fillColor="#4DD0E1"
+            android:pathData="M38,34h32a4,4 0 0 1 4,4v32a4,4 0 0 1 -4,4h-32a4,4 0 0 1 -4,-4v-32a4,4 0 0 1 4,-4z" />
 
+        <!-- CPU Center Core Die -->
+        <path
+            android:fillColor="#E0F7FA"
+            android:pathData="M48,46h12a2,2 0 0 1 2,2v12a2,2 0 0 1 -2,2h-12a2,2 0 0 1 -2,-2v-12a2,2 0 0 1 2,-2z" />
+
+        <!-- Bold Lens Ring -->
+        <path
+            android:strokeColor="#212121"
+            android:strokeWidth="6"
+            android:fillColor="#00000000"
+            android:pathData="M 49, 49 m -14, 0 a 14,14 0 1,1 28,0 a 14,14 0 1,1 -28,0" />
+
+        <!-- Bold Handle -->
+        <path
+            android:strokeColor="#212121"
+            android:strokeWidth="5"
+            android:strokeLineCap="round"
+            android:pathData="M 59, 59 L 74, 74" />
+
+    </group>
   </group>
 </vector>
