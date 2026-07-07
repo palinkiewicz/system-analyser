@@ -29,6 +29,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     val temperatureUnit: StateFlow<TemperatureUnit> = settings.temperatureUnit
     val simpleSensorView: StateFlow<Boolean> = settings.simpleSensorView
+    val showSensorUnits: StateFlow<Boolean> = settings.showSensorUnits
     val homeColumns: StateFlow<Int> = settings.homeColumns
 
     val widgets: StateFlow<List<HomeWidget>> = layout.widgets

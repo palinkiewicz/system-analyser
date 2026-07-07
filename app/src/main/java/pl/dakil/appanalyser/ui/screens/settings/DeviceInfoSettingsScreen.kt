@@ -33,6 +33,7 @@ fun DeviceInfoSettingsScreen(
 ) {
     val temperatureUnit by viewModel.temperatureUnit.collectAsState()
     val simpleSensorView by viewModel.simpleSensorView.collectAsState()
+    val showSensorUnits by viewModel.showSensorUnits.collectAsState()
 
     Scaffold(
         topBar = {
@@ -69,6 +70,13 @@ fun DeviceInfoSettingsScreen(
                 summary = stringResource(R.string.settings_simple_sensor_view_description),
                 checked = simpleSensorView,
                 onCheckedChange = { viewModel.setSimpleSensorView(it) }
+            )
+
+            SwitchRow(
+                title = stringResource(R.string.settings_sensor_units),
+                summary = stringResource(R.string.settings_sensor_units_description),
+                checked = showSensorUnits,
+                onCheckedChange = { viewModel.setShowSensorUnits(it) }
             )
         }
     }

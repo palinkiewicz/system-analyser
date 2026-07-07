@@ -26,6 +26,9 @@ class SettingsRepository private constructor(context: Context) {
     private val _simpleSensorView = MutableStateFlow(prefs.getBoolean(KEY_SIMPLE_SENSOR_VIEW, false))
     val simpleSensorView: StateFlow<Boolean> = _simpleSensorView.asStateFlow()
 
+    private val _showSensorUnits = MutableStateFlow(prefs.getBoolean(KEY_SHOW_SENSOR_UNITS, true))
+    val showSensorUnits: StateFlow<Boolean> = _showSensorUnits.asStateFlow()
+
     private val _colorTheme = MutableStateFlow(
         runCatching { AppColorTheme.valueOf(prefs.getString(KEY_COLOR_THEME, null)!!) }
             .getOrDefault(AppColorTheme.DAKILS_ANALYSER)
@@ -56,6 +59,11 @@ class SettingsRepository private constructor(context: Context) {
         _simpleSensorView.value = enabled
     }
 
+    fun setShowSensorUnits(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_SHOW_SENSOR_UNITS, enabled).apply()
+        _showSensorUnits.value = enabled
+    }
+
     fun setColorTheme(theme: AppColorTheme) {
         prefs.edit().putString(KEY_COLOR_THEME, theme.name).apply()
         _colorTheme.value = theme
@@ -81,6 +89,7 @@ class SettingsRepository private constructor(context: Context) {
         private const val PREFS_NAME = "settings"
         private const val KEY_TEMPERATURE_UNIT = "temperature_unit"
         private const val KEY_SIMPLE_SENSOR_VIEW = "simple_sensor_view"
+        private const val KEY_SHOW_SENSOR_UNITS = "show_sensor_units"
         private const val KEY_COLOR_THEME = "color_theme"
         private const val KEY_DARK_THEME_OPTION = "dark_theme_option"
         private const val KEY_PURE_BLACK = "pure_black"

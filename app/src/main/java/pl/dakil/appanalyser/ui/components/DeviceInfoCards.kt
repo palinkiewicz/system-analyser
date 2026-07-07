@@ -1,5 +1,6 @@
 package pl.dakil.appanalyser.ui.components
 
+import android.hardware.Sensor
 import android.text.format.Formatter
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -391,12 +392,28 @@ fun BatteryDetailsCard(
 // Sensor card
 // ---------------------------------------------------------------------
 
+/** Measurement unit symbol for a sensor type, or null when it has no meaningful unit. */
+private fun sensorUnit(type: Int): String? = when (type) {
+    Sensor.TYPE_ACCELEROMETER,
+    Sensor.TYPE_GRAVITY,
+    Sensor.TYPE_LINEAR_ACCELERATION -> "m/s²"
+    Sensor.TYPE_GYROSCOPE -> "rad/s"
+    Sensor.TYPE_MAGNETIC_FIELD -> "µT"
+    Sensor.TYPE_LIGHT -> "lx"
+    Sensor.TYPE_PROXIMITY -> "cm"
+    Sensor.TYPE_PRESSURE -> "hPa"
+    Sensor.TYPE_AMBIENT_TEMPERATURE -> "°C"
+    Sensor.TYPE_RELATIVE_HUMIDITY -> "%"
+    else -> null
+}
+
 @Composable
 fun SensorCard(
     sensor: SensorInfo?,
     simple: Boolean,
     modifier: Modifier = Modifier,
-    fallbackName: String? = null
+    fallbackName: String? = null,
+    showUnit: Boolean = true
 ) {
     InfoCard(modifier) {
         Text(
@@ -420,7 +437,11 @@ fun SensorCard(
             )
             DetailRow(stringResource(R.string.device_sensor_vendor), sensor.vendor)
         }
-        DetailRow(stringResource(R.string.device_sensor_value), sensor.values)
+        val unit = if (showUnit && sensor.values != "—") sensorUnit(sensor.type) else null
+        DetailRow(
+            stringResource(R.string.device_sensor_value),
+            if (unit != null) "${sensor.values} $unit" else sensor.values
+        )
     }
 }
 

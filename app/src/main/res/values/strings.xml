@@ -36,6 +36,8 @@
     <string name="settings_temperature_unit">Temperature unit</string>
     <string name="settings_simple_sensor_view">Use simple sensor view</string>
     <string name="settings_simple_sensor_view_description">Show only the sensor name and its value</string>
+    <string name="settings_sensor_units">Show sensor units</string>
+    <string name="settings_sensor_units_description">Display the measurement unit after sensor values</string>
     <string name="temperature_unit_celsius">Celsius (°C)</string>
     <string name="temperature_unit_fahrenheit">Fahrenheit (°F)</string>
     <string name="temperature_unit_kelvin">Kelvin (K)</string>

@@ -26,6 +26,7 @@ class DeviceInfoViewModel(application: Application) : AndroidViewModel(applicati
 
     val temperatureUnit: StateFlow<TemperatureUnit> = settings.temperatureUnit
     val simpleSensorView: StateFlow<Boolean> = settings.simpleSensorView
+    val showSensorUnits: StateFlow<Boolean> = settings.showSensorUnits
 
     val battery: StateFlow<BatteryInfo?> = repository.batteryFlow()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)

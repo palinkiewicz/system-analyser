@@ -14,6 +14,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     val temperatureUnit: StateFlow<TemperatureUnit> = settings.temperatureUnit
     val simpleSensorView: StateFlow<Boolean> = settings.simpleSensorView
+    val showSensorUnits: StateFlow<Boolean> = settings.showSensorUnits
     val colorTheme: StateFlow<AppColorTheme> = settings.colorTheme
     val darkThemeOption: StateFlow<DarkThemeOption> = settings.darkThemeOption
     val pureBlack: StateFlow<Boolean> = settings.pureBlack
@@ -21,6 +22,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun setTemperatureUnit(unit: TemperatureUnit) = settings.setTemperatureUnit(unit)
     fun setSimpleSensorView(enabled: Boolean) = settings.setSimpleSensorView(enabled)
+    fun setShowSensorUnits(enabled: Boolean) = settings.setShowSensorUnits(enabled)
     fun setColorTheme(theme: AppColorTheme) = settings.setColorTheme(theme)
     fun setDarkThemeOption(option: DarkThemeOption) = settings.setDarkThemeOption(option)
     fun setPureBlack(enabled: Boolean) = settings.setPureBlack(enabled)

@@ -102,6 +102,7 @@ fun DeviceInfoScreen(
 
             val temperatureUnit by viewModel.temperatureUnit.collectAsState()
             val simpleSensorView by viewModel.simpleSensorView.collectAsState()
+            val showSensorUnits by viewModel.showSensorUnits.collectAsState()
 
             // The pager composes only the visible page (beyondViewportPageCount = 0), so each tab
             // collects its flow only while on screen — off-screen tabs stop refreshing.
@@ -113,7 +114,12 @@ fun DeviceInfoScreen(
                     0 -> SystemTab(viewModel.systemInfo, onAddToHome)
                     1 -> CpuTab(viewModel.cpu.collectAsState().value, temperatureUnit, onAddToHome)
                     2 -> BatteryTab(viewModel.battery.collectAsState().value, temperatureUnit, onAddToHome)
-                    3 -> SensorsTab(viewModel.sensors.collectAsState().value, simpleSensorView, onAddToHome)
+                    3 -> SensorsTab(
+                        viewModel.sensors.collectAsState().value,
+                        simpleSensorView,
+                        showSensorUnits,
+                        onAddToHome
+                    )
                     4 -> MemoryTab(viewModel.memory.collectAsState().value, onAddToHome)
                     5 -> DisplayTab(viewModel.displayInfo, onAddToHome)
                 }
@@ -264,6 +270,7 @@ private fun BatteryTab(
 private fun SensorsTab(
     sensors: List<SensorInfo>,
     simple: Boolean,
+    showUnits: Boolean,
     onAddToHome: (HomeWidgetType, SensorInfo?) -> Unit
 ) {
     if (sensors.isEmpty()) {
@@ -273,7 +280,7 @@ private fun SensorsTab(
     TabScaffold {
         sensors.forEach { sensor ->
             AddToHomeMenuHost(onAdd = { onAddToHome(HomeWidgetType.SENSOR, sensor) }) {
-                SensorCard(sensor = sensor, simple = simple, modifier = it)
+                SensorCard(sensor = sensor, simple = simple, modifier = it, showUnit = showUnits)
             }
         }
     }

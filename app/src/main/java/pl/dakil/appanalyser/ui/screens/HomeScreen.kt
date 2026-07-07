@@ -218,12 +218,14 @@ private fun HomeWidgetContent(
         HomeWidgetType.SENSOR -> {
             val sensors by viewModel.sensors.collectAsState()
             val simple by viewModel.simpleSensorView.collectAsState()
+            val showUnits by viewModel.showSensorUnits.collectAsState()
             val sensor = sensors.firstOrNull { it.name == widget.sensorName }
                 ?: sensors.firstOrNull { it.type == widget.sensorType }
             SensorCard(
                 sensor = sensor,
                 simple = simple,
-                fallbackName = widget.sensorName
+                fallbackName = widget.sensorName,
+                showUnit = showUnits
             )
         }
     }
