@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -17,73 +17,55 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import pl.dakil.appanalyser.domain.AppInfo
+import pl.dakil.appanalyser.ui.screens.settings.SwitchRow
 import pl.dakil.appanalyser.viewmodel.AppAnalyzerViewModel
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import pl.dakil.appanalyser.R
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppListScreen(
     viewModel: AppAnalyzerViewModel,
-    onNavigateToDetails: (String) -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateToDetails: (String) -> Unit
 ) {
     val apps by viewModel.appsList.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val showSystemApps by viewModel.showSystemApps.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(
-                    if (showSystemApps) stringResource(R.string.app_list_system_apps_title)
-                    else stringResource(R.string.app_list_user_apps_title)
-                ) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    TextButton(onClick = { viewModel.toggleSystemApps(!showSystemApps) }) {
-                        Text(
-                            if (showSystemApps) stringResource(R.string.app_list_show_user_apps)
-                            else stringResource(R.string.app_list_show_system_apps)
-                        )
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
-        Column(
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+    ) {
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { viewModel.updateSearchQuery(it) },
             modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { viewModel.updateSearchQuery(it) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text(stringResource(R.string.app_list_search_apps)) },
-                singleLine = true,
-                shape = MaterialTheme.shapes.extraLarge
-            )
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            placeholder = { Text(stringResource(R.string.app_list_search_apps)) },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            singleLine = true,
+            shape = MaterialTheme.shapes.extraLarge
+        )
 
-            if (isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(vertical = 8.dp)
-                ) {
-                    items(apps, key = { it.packageName }) { app ->
-                        AppListItem(app = app, onClick = { onNavigateToDetails(app.packageName) })
-                    }
+        SwitchRow(
+            title = stringResource(R.string.app_list_show_system_apps),
+            checked = showSystemApps,
+            onCheckedChange = { viewModel.toggleSystemApps(it) }
+        )
+
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(vertical = 8.dp)
+            ) {
+                items(apps, key = { it.packageName }) { app ->
+                    AppListItem(app = app, onClick = { onNavigateToDetails(app.packageName) })
                 }
             }
         }

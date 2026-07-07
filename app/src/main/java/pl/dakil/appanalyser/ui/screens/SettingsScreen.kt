@@ -1,141 +1,85 @@
 package pl.dakil.appanalyser.ui.screens
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.*
+import androidx.compose.material.icons.rounded.Brush
+import androidx.compose.material.icons.rounded.GridView
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.PhoneAndroid
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import pl.dakil.appanalyser.R
-import pl.dakil.appanalyser.domain.TemperatureUnit
-import pl.dakil.appanalyser.viewmodel.SettingsViewModel
+import pl.dakil.appanalyser.ui.components.flatTopAppBarColors
+import pl.dakil.appanalyser.ui.screens.settings.NavigationRow
+import pl.dakil.appanalyser.ui.screens.settings.SettingRow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onNavigateBack: () -> Unit,
-    viewModel: SettingsViewModel = viewModel()
+    onNavigateToAppearance: () -> Unit,
+    onNavigateToDeviceInfoSettings: () -> Unit,
+    onNavigateToHomeSettings: () -> Unit
 ) {
-    val temperatureUnit by viewModel.temperatureUnit.collectAsState()
-    val simpleSensorView by viewModel.simpleSensorView.collectAsState()
-    var showUnitDialog by remember { mutableStateOf(false) }
+    var showAboutDialog by remember { mutableStateOf(false) }
+
+    if (showAboutDialog) {
+        AboutDialog(onDismiss = { showAboutDialog = false })
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.settings_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
+                colors = flatTopAppBarColors()
             )
-        }
-    ) { paddingValues ->
-        Column(modifier = Modifier.padding(paddingValues)) {
-            PreferenceCategoryHeader(stringResource(R.string.settings_category_device_info))
-
-            ListItem(
-                modifier = Modifier.clickable { showUnitDialog = true },
-                headlineContent = { Text(stringResource(R.string.settings_temperature_unit)) },
-                supportingContent = { Text(stringResource(temperatureUnit.labelRes())) }
-            )
-
-            ListItem(
-                modifier = Modifier.clickable {
-                    viewModel.setSimpleSensorView(!simpleSensorView)
-                },
-                headlineContent = { Text(stringResource(R.string.settings_simple_sensor_view)) },
-                supportingContent = {
-                    Text(stringResource(R.string.settings_simple_sensor_view_description))
-                },
-                trailingContent = {
-                    Switch(
-                        checked = simpleSensorView,
-                        onCheckedChange = { viewModel.setSimpleSensorView(it) }
-                    )
-                }
-            )
-        }
-    }
-
-    if (showUnitDialog) {
-        TemperatureUnitDialog(
-            selected = temperatureUnit,
-            onSelect = {
-                viewModel.setTemperatureUnit(it)
-                showUnitDialog = false
-            },
-            onDismiss = { showUnitDialog = false }
-        )
-    }
-}
-
-@Composable
-private fun PreferenceCategoryHeader(title: String) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.primary,
-        fontWeight = FontWeight.SemiBold,
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
-    )
-}
-
-@Composable
-private fun TemperatureUnitDialog(
-    selected: TemperatureUnit,
-    onSelect: (TemperatureUnit) -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.settings_cancel))
-            }
         },
-        title = { Text(stringResource(R.string.settings_temperature_unit)) },
-        text = {
-            Column {
-                TemperatureUnit.entries.forEach { unit ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .selectable(
-                                selected = unit == selected,
-                                onClick = { onSelect(unit) }
-                            )
-                            .padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = unit == selected,
-                            onClick = { onSelect(unit) }
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(unit.labelRes()))
-                    }
-                }
-            }
+        containerColor = MaterialTheme.colorScheme.background
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+        ) {
+            NavigationRow(
+                title = stringResource(R.string.settings_appearance),
+                summary = stringResource(R.string.settings_appearance_summary),
+                icon = Icons.Rounded.Brush,
+                onClick = onNavigateToAppearance
+            )
+            NavigationRow(
+                title = stringResource(R.string.settings_device_info),
+                summary = stringResource(R.string.settings_device_info_summary),
+                icon = Icons.Rounded.PhoneAndroid,
+                onClick = onNavigateToDeviceInfoSettings
+            )
+            NavigationRow(
+                title = stringResource(R.string.settings_home),
+                summary = stringResource(R.string.settings_home_summary),
+                icon = Icons.Rounded.GridView,
+                onClick = onNavigateToHomeSettings
+            )
+            SettingRow(
+                title = stringResource(R.string.settings_about),
+                summary = stringResource(R.string.settings_about_summary),
+                leading = { Icon(Icons.Rounded.Info, contentDescription = null) },
+                onClick = { showAboutDialog = true }
+            )
         }
-    )
-}
-
-private fun TemperatureUnit.labelRes(): Int = when (this) {
-    TemperatureUnit.CELSIUS -> R.string.temperature_unit_celsius
-    TemperatureUnit.FAHRENHEIT -> R.string.temperature_unit_fahrenheit
-    TemperatureUnit.KELVIN -> R.string.temperature_unit_kelvin
+    }
 }

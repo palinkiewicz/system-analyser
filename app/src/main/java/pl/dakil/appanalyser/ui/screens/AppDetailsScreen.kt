@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import pl.dakil.appanalyser.domain.AppDetails
 import pl.dakil.appanalyser.domain.DetectedFramework
+import pl.dakil.appanalyser.ui.components.DetailRow
 import pl.dakil.appanalyser.viewmodel.AppAnalyzerViewModel
 import pl.dakil.appanalyser.ui.theme.*
 import kotlinx.coroutines.launch
@@ -378,25 +379,5 @@ fun FrameworkDetailSheet(framework: DetectedFramework) {
                 }
             }
         }
-    }
-}
-
-@Composable
-fun DetailRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
-            textAlign = TextAlign.End
-        )
     }
 }

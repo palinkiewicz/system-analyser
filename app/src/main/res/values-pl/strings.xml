@@ -1,27 +1,51 @@
 <resources>
     <string name="app_name">Analizator</string>
     <string name="version_x">Wersja %1$s</string>
+    <string name="common_back">Wstecz</string>
+
+    <!--  BOTTOM NAVIGATION  -->
+    <string name="nav_home">Główna</string>
+    <string name="nav_device">Urządzenie</string>
+    <string name="nav_apps">Aplikacje</string>
+    <string name="nav_settings">Ustawienia</string>
 
     <!--  HOME SCREEN  -->
-    <string name="home_analyse_an_app">Analizuj aplikację</string>
-    <string name="home_analyse_an_app_description">Sprawdź technologię i metadane aplikacji</string>
-    <string name="home_device_info">Informacje o urządzeniu</string>
-    <string name="home_device_info_description">Procesor, bateria, czujniki i więcej na żywo</string>
-    <string name="home_settings">Ustawienia</string>
-    <string name="home_settings_description">Dostosuj zachowanie aplikacji</string>
-    <string name="home_about_this_app">O aplikacji</string>
-    <string name="home_about_this_app_description">Dowiedz się o autorach i działaniu aplikacji</string>
+    <string name="home_empty_hint">Przytrzymaj kartę na ekranie Urządzenie, aby dodać ją tutaj</string>
+    <string name="home_remove_widget">Usuń kartę</string>
+    <string name="home_sensor_unavailable">Czujnik niedostępny na tym urządzeniu</string>
 
     <!--  SETTINGS SCREEN  -->
     <string name="settings_title">Ustawienia</string>
-    <string name="settings_cancel">Anuluj</string>
-    <string name="settings_category_device_info">Informacje o urządzeniu</string>
+    <string name="settings_appearance">Wygląd</string>
+    <string name="settings_appearance_summary">Motyw i kolory aplikacji</string>
+    <string name="settings_device_info">Informacje o urządzeniu</string>
+    <string name="settings_device_info_summary">Jednostka temperatury, widok czujników</string>
+    <string name="settings_home">Ekran główny</string>
+    <string name="settings_home_summary">Układ siatki kart</string>
+    <string name="settings_about">O aplikacji</string>
+    <string name="settings_about_summary">Wersja, autor, repozytorium</string>
+    <string name="settings_theme_colors">Kolory motywu</string>
+    <string name="settings_dark_mode">Tryb ciemny</string>
+    <string name="settings_dark_follow_system">Systemowy</string>
+    <string name="settings_dark_light">Jasny</string>
+    <string name="settings_dark_dark">Ciemny</string>
+    <string name="settings_pure_black">Czysta czerń</string>
+    <string name="settings_pure_black_description">Całkowicie czarne tło w trybie ciemnym, oszczędza baterię na ekranach OLED</string>
+    <string name="settings_home_columns">Kolumny</string>
+    <string name="settings_home_columns_description">Liczba kolumn siatki na ekranie głównym</string>
     <string name="settings_temperature_unit">Jednostka temperatury</string>
     <string name="settings_simple_sensor_view">Uproszczony widok czujników</string>
     <string name="settings_simple_sensor_view_description">Pokazuj tylko nazwę czujnika i jego wartość</string>
     <string name="temperature_unit_celsius">Celsjusz (°C)</string>
     <string name="temperature_unit_fahrenheit">Fahrenheit (°F)</string>
     <string name="temperature_unit_kelvin">Kelwin (K)</string>
+    <string name="theme_dakils_analyser">Dakil\'s Analyser</string>
+    <string name="theme_dynamic">Kolory systemu</string>
+    <string name="theme_ocean">Ocean</string>
+    <string name="theme_lavender">Lawenda</string>
+    <string name="theme_sunset">Zachód słońca</string>
+    <string name="theme_rose">Róża</string>
+    <string name="theme_teal">Morski</string>
 
     <!--  ABOUT DIALOG  -->
     <string name="about_title">O Analizatorze</string>
@@ -32,10 +56,7 @@
     <string name="about_close">Zamknij</string>
 
     <!--  APP LIST SCREEN  -->
-    <string name="app_list_system_apps_title">Aplikacje systemowe</string>
-    <string name="app_list_user_apps_title">Aplikacje użytkownika</string>
-    <string name="app_list_show_user_apps">Pokaż użytkownika</string>
-    <string name="app_list_show_system_apps">Pokaż systemowe</string>
+    <string name="app_list_show_system_apps">Pokaż aplikacje systemowe</string>
     <string name="app_list_search_apps">Wyszukaj aplikację...</string>
     <string name="app_list_system_app_label">Systemowa</string>
 
@@ -118,6 +139,8 @@
     <string name="device_info_title">Informacje o urządzeniu</string>
     <string name="device_unknown">Nieznane</string>
     <string name="device_value_unavailable">Brak</string>
+    <string name="device_add_to_home">Dodaj do ekranu głównego</string>
+    <string name="device_added_to_home">Dodano do ekranu głównego</string>
 
     <string name="device_tab_system">System</string>
     <string name="device_tab_cpu">Procesor</string>

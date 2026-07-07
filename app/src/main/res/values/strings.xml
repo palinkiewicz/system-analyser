@@ -1,27 +1,51 @@
 <resources>
     <string name="app_name">Analyser</string>
     <string name="version_x">Version %1$s</string>
+    <string name="common_back">Back</string>
+
+    <!--  BOTTOM NAVIGATION  -->
+    <string name="nav_home">Home</string>
+    <string name="nav_device">Device</string>
+    <string name="nav_apps">Apps</string>
+    <string name="nav_settings">Settings</string>
 
     <!--  HOME SCREEN  -->
-    <string name="home_analyse_an_app">Analyse an app</string>
-    <string name="home_analyse_an_app_description">View tech stack and metadata of an app</string>
-    <string name="home_device_info">Device info</string>
-    <string name="home_device_info_description">Live CPU, battery, sensors and more</string>
-    <string name="home_settings">Settings</string>
-    <string name="home_settings_description">Customize how this app behaves</string>
-    <string name="home_about_this_app">About this app</string>
-    <string name="home_about_this_app_description">Learn about the authors and how this works</string>
+    <string name="home_empty_hint">Long-press a card on the Device screen to add it here</string>
+    <string name="home_remove_widget">Remove card</string>
+    <string name="home_sensor_unavailable">Sensor unavailable on this device</string>
 
     <!--  SETTINGS SCREEN  -->
     <string name="settings_title">Settings</string>
-    <string name="settings_cancel">Cancel</string>
-    <string name="settings_category_device_info">Device info</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_appearance_summary">Theme and app colors</string>
+    <string name="settings_device_info">Device info</string>
+    <string name="settings_device_info_summary">Temperature unit, sensor view</string>
+    <string name="settings_home">Home screen</string>
+    <string name="settings_home_summary">Card grid layout</string>
+    <string name="settings_about">About app</string>
+    <string name="settings_about_summary">Version, author, repository</string>
+    <string name="settings_theme_colors">Theme colors</string>
+    <string name="settings_dark_mode">Dark mode</string>
+    <string name="settings_dark_follow_system">System</string>
+    <string name="settings_dark_light">Light</string>
+    <string name="settings_dark_dark">Dark</string>
+    <string name="settings_pure_black">Pure black</string>
+    <string name="settings_pure_black_description">Fully black background in dark mode, saves battery on OLED screens</string>
+    <string name="settings_home_columns">Columns</string>
+    <string name="settings_home_columns_description">Number of columns on the home screen grid</string>
     <string name="settings_temperature_unit">Temperature unit</string>
     <string name="settings_simple_sensor_view">Use simple sensor view</string>
     <string name="settings_simple_sensor_view_description">Show only the sensor name and its value</string>
     <string name="temperature_unit_celsius">Celsius (°C)</string>
     <string name="temperature_unit_fahrenheit">Fahrenheit (°F)</string>
     <string name="temperature_unit_kelvin">Kelvin (K)</string>
+    <string name="theme_dakils_analyser">Dakil\'s Analyser</string>
+    <string name="theme_dynamic">System colors</string>
+    <string name="theme_ocean">Ocean</string>
+    <string name="theme_lavender">Lavender</string>
+    <string name="theme_sunset">Sunset</string>
+    <string name="theme_rose">Rose</string>
+    <string name="theme_teal">Teal</string>
 
     <!--  ABOUT DIALOG  -->
     <string name="about_title">About Analyser</string>
@@ -32,9 +56,6 @@
     <string name="about_close">Close</string>
 
     <!--  APP LIST SCREEN  -->
-    <string name="app_list_system_apps_title">System apps</string>
-    <string name="app_list_user_apps_title">User apps</string>
-    <string name="app_list_show_user_apps">Show user apps</string>
     <string name="app_list_show_system_apps">Show system apps</string>
     <string name="app_list_search_apps">Search apps...</string>
     <string name="app_list_system_app_label">System app</string>
@@ -118,6 +139,8 @@
     <string name="device_info_title">Device info</string>
     <string name="device_unknown">Unknown</string>
     <string name="device_value_unavailable">N/A</string>
+    <string name="device_add_to_home">Add to Home screen</string>
+    <string name="device_added_to_home">Added to Home screen</string>
 
     <string name="device_tab_system">System</string>
     <string name="device_tab_cpu">CPU</string>
