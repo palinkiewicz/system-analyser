@@ -44,10 +44,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import kotlinx.coroutines.launch
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.HomeLayoutRepository
@@ -66,7 +68,10 @@ import java.util.UUID
 
 sealed class Screen(val route: String) {
     object Home : Screen("home")
-    object DeviceInfo : Screen("device")
+    object DeviceInfo : Screen("device?tab={tab}") {
+        /** Without a tab the screen keeps (or restores) its current page. */
+        fun createRoute(tab: Int = -1) = if (tab >= 0) "device?tab=$tab" else "device"
+    }
     object AppList : Screen("apps")
     object Settings : Screen("settings")
     object AppDetails : Screen("app_details/{packageName}") {
@@ -132,7 +137,11 @@ fun AppNavigation(viewModel: AppAnalyzerViewModel, navController: NavHostControl
                         NavigationBarItem(
                             selected = selected,
                             onClick = {
-                                navController.navigate(item.screen.route) {
+                                val target = when (item.screen) {
+                                    Screen.DeviceInfo -> Screen.DeviceInfo.createRoute()
+                                    else -> item.screen.route
+                                }
+                                navController.navigate(target) {
                                     popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
                                     }
@@ -189,12 +198,29 @@ fun AppNavigation(viewModel: AppAnalyzerViewModel, navController: NavHostControl
             }
         ) {
             composable(Screen.Home.route) {
-                HomeScreen()
+                HomeScreen(
+                    onOpenDeviceTab = { tab ->
+                        navController.navigate(Screen.DeviceInfo.createRoute(tab)) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                )
             }
-            composable(Screen.DeviceInfo.route) {
+            composable(
+                route = Screen.DeviceInfo.route,
+                arguments = listOf(navArgument("tab") {
+                    type = NavType.IntType
+                    defaultValue = -1
+                })
+            ) { backStackEntry ->
                 val context = LocalContext.current
                 val addedMessage = stringResource(R.string.device_added_to_home)
                 DeviceInfoScreen(
+                    initialTab = backStackEntry.arguments?.getInt("tab") ?: -1,
                     onAddToHome = { type, sensor ->
                         HomeLayoutRepository.get(context).addWidget(
                             HomeWidget(

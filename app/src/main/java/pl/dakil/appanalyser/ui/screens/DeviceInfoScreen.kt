@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AddHome
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,6 +56,7 @@ import pl.dakil.appanalyser.viewmodel.DeviceInfoViewModel
 @Composable
 fun DeviceInfoScreen(
     onAddToHome: (HomeWidgetType, SensorInfo?) -> Unit = { _, _ -> },
+    initialTab: Int = -1,
     viewModel: DeviceInfoViewModel = viewModel()
 ) {
     val tabs = listOf(
@@ -67,6 +69,13 @@ fun DeviceInfoScreen(
     )
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val scope = rememberCoroutineScope()
+
+    // A Home card was tapped: open its tab, overriding any restored pager position.
+    LaunchedEffect(initialTab) {
+        if (initialTab in tabs.indices) {
+            pagerState.scrollToPage(initialTab)
+        }
+    }
 
     Scaffold(
         topBar = {

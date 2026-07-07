@@ -10,6 +10,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,6 +39,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
@@ -68,7 +70,10 @@ import pl.dakil.appanalyser.viewmodel.HomeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(viewModel: HomeViewModel = viewModel()) {
+fun HomeScreen(
+    onOpenDeviceTab: (Int) -> Unit = {},
+    viewModel: HomeViewModel = viewModel()
+) {
     val widgets by viewModel.widgets.collectAsState()
     val columns by viewModel.homeColumns.collectAsState()
     val gridState = rememberWidgetGridState()
@@ -128,7 +133,24 @@ fun HomeScreen(viewModel: HomeViewModel = viewModel()) {
                         onRemove = { viewModel.removeWidget(it) },
                         modifier = Modifier.fillMaxWidth()
                     ) { widget ->
-                        HomeWidgetContent(widget, columns, viewModel)
+                        val shape = if (widget.type == HomeWidgetType.BATTERY_POWER) {
+                            MaterialTheme.shapes.extraLarge
+                        } else {
+                            MaterialTheme.shapes.large
+                        }
+                        Box(
+                            modifier = Modifier
+                                .clip(shape)
+                                .clickable {
+                                    if (gridState.mode == GridMode.Idle) {
+                                        onOpenDeviceTab(widget.type.deviceTab())
+                                    } else {
+                                        gridState.exitEditMode()
+                                    }
+                                }
+                        ) {
+                            HomeWidgetContent(widget, columns, viewModel)
+                        }
                     }
                     Spacer(modifier = Modifier.height(96.dp))
                 }
@@ -205,6 +227,21 @@ private fun HomeWidgetContent(
             )
         }
     }
+}
+
+/** The Device Info pager page showing this widget's card. */
+private fun HomeWidgetType.deviceTab(): Int = when (this) {
+    HomeWidgetType.SYSTEM_IDENTITY,
+    HomeWidgetType.SYSTEM_SOFTWARE -> 0
+    HomeWidgetType.CPU_USAGE,
+    HomeWidgetType.CPU_CLOCKS,
+    HomeWidgetType.CPU_TEMPERATURES -> 1
+    HomeWidgetType.BATTERY_POWER,
+    HomeWidgetType.BATTERY_INFO -> 2
+    HomeWidgetType.SENSOR -> 3
+    HomeWidgetType.RAM,
+    HomeWidgetType.STORAGE -> 4
+    HomeWidgetType.DISPLAY -> 5
 }
 
 @Composable
