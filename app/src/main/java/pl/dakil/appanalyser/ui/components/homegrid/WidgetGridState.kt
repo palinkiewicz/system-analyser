@@ -30,7 +30,14 @@ data class GridGeometry(
     val positions: Map<String, Offset>,
     val sizes: Map<String, Size>,
     val totalHeight: Float,
-)
+) {
+    /** The (col, row) cell containing a point in grid coordinates. */
+    fun cellAt(position: Offset): Pair<Int, Int> {
+        val col = (position.x / (cellWidth + gap)).toInt().coerceIn(0, columns - 1)
+        val row = rowTops.indexOfLast { it <= position.y }.coerceAtLeast(0)
+        return col to row
+    }
+}
 
 /** Which edge of the selected card a resize gesture started on. */
 enum class ResizeEdge { LEFT, RIGHT, TOP, BOTTOM }
@@ -106,6 +113,16 @@ class WidgetGridState(val scope: CoroutineScope) {
 
     /** Latest repository list, refreshed by the grid on every composition so gestures never see a stale one. */
     var latestWidgets: List<HomeWidget> = emptyList()
+
+    /**
+     * Reorder gating: a move is applied at most once per finger cell, and never before the
+     * layout pass has published the geometry of the previous move. Without this, a move whose
+     * packing doesn't land the dragged card exactly under the finger re-triggers on the next
+     * pointer event, making the list flip-flop every frame (and vibrate on each flip).
+     */
+    var reorderPending = false
+    var lastMoveCell: Pair<Int, Int>? = null
+    var lastTickUptimeMillis = 0L
 
     var geometry by mutableStateOf<GridGeometry?>(null)
 

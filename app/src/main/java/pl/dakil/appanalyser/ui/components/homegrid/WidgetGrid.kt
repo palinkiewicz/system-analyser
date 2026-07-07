@@ -161,6 +161,8 @@ fun WidgetGrid(
             if (state.geometry != newGeometry) {
                 state.geometry = newGeometry
             }
+            // Fresh geometry reflects the last reorder; drag events may decide again.
+            state.reorderPending = false
 
             layout(constraints.maxWidth, totalHeight.roundToInt()) {
                 val draggingId = state.draggingId()
@@ -236,6 +238,8 @@ private fun GridItem(
                         view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
                         state.workingWidgets = state.workingWidgets ?: state.latestWidgets
                         state.overTrash = false
+                        state.reorderPending = false
+                        state.lastMoveCell = null
                         state.mode = GridMode.Dragging(id)
                         state.scope.launch { state.dragOffset.snapTo(Offset.Zero) }
                     },
@@ -297,6 +301,12 @@ private fun handleDragPositionChange(state: WidgetGridState, id: String, view: V
     val fromIndex = working.indexOfFirst { it.id == id }
     if (fromIndex < 0) return
 
+    // Wait until the layout pass has applied the previous move, and re-decide at most once
+    // per finger cell — otherwise an "unstable" move re-triggers on every pointer event.
+    if (state.reorderPending) return
+    val fingerCell = geo.cellAt(center)
+    if (fingerCell == state.lastMoveCell) return
+
     // Which widget is under the dragged card's center?
     val hit = geo.positions.entries.firstOrNull { (otherId, pos) ->
         otherId != id && androidx.compose.ui.geometry.Rect(
@@ -315,8 +325,17 @@ private fun handleDragPositionChange(state: WidgetGridState, id: String, view: V
         val moved = removeAt(fromIndex)
         add(toIndex, moved)
     }
-    view.performTickHaptic()
+    state.reorderPending = true
+    state.lastMoveCell = fingerCell
+
+    val now = android.os.SystemClock.uptimeMillis()
+    if (now - state.lastTickUptimeMillis >= TICK_HAPTIC_MIN_INTERVAL_MS) {
+        state.lastTickUptimeMillis = now
+        view.performTickHaptic()
+    }
 }
+
+private const val TICK_HAPTIC_MIN_INTERVAL_MS = 80L
 
 private fun finishDrag(
     state: WidgetGridState,
@@ -347,6 +366,7 @@ private fun finishDrag(
     if (working != null) onCommit(working)
     state.workingWidgets = null
     state.overTrash = false
+    state.lastMoveCell = null
     state.mode = GridMode.Editing(id)
     state.scope.launch {
         launch {
