@@ -147,7 +147,10 @@ fun HomeScreen(
                                     } else {
                                         gridState.exitEditMode()
                                     }
-                                }
+                                },
+                            // Keep passing the grid's fixed cell size down so the card
+                            // surface fills every row it spans.
+                            propagateMinConstraints = true
                         ) {
                             HomeWidgetContent(widget, columns, viewModel)
                         }
