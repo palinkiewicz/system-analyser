@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,11 +71,14 @@ fun DeviceInfoScreen(
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val scope = rememberCoroutineScope()
 
-    // A Home card was tapped: open its tab, overriding any restored pager position.
+    // A Home card was tapped: open its tab. Handled once per navigation — when this entry is
+    // later restored from the bottom bar, the pager keeps the page the user last viewed.
+    var handledInitialTab by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(initialTab) {
-        if (initialTab in tabs.indices) {
+        if (!handledInitialTab && initialTab in tabs.indices) {
             pagerState.scrollToPage(initialTab)
         }
+        handledInitialTab = true
     }
 
     Scaffold(

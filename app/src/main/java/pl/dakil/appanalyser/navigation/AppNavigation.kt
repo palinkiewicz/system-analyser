@@ -205,7 +205,8 @@ fun AppNavigation(viewModel: AppAnalyzerViewModel, navController: NavHostControl
                                 saveState = true
                             }
                             launchSingleTop = true
-                            restoreState = true
+                            // No restoreState: restoring would revive the entry with its old
+                            // arguments and discard the requested tab.
                         }
                     }
                 )
