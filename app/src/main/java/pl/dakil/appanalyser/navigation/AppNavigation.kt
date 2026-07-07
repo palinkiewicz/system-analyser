@@ -12,6 +12,8 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -113,6 +115,10 @@ fun AppNavigation(viewModel: AppAnalyzerViewModel, navController: NavHostControl
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        // Each screen owns its top app bar and insets; the outer scaffold only
+        // contributes the bottom bar, so zero its content insets to avoid
+        // double status-bar/navigation-bar padding.
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             AnimatedVisibility(
@@ -155,6 +161,9 @@ fun AppNavigation(viewModel: AppAnalyzerViewModel, navController: NavHostControl
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                // The bottom bar already covers the navigation-bar area; consume its padding
+                // so screens don't add their own bottom inset on top of it.
+                .consumeWindowInsets(innerPadding)
                 .background(MaterialTheme.colorScheme.background),
             // Switching between bottom-bar tabs plays Material fade-through (no direction);
             // pushed destinations keep the Material 3 shared-axis X used before.
