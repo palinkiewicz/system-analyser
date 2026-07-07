@@ -128,7 +128,7 @@ fun HomeScreen(viewModel: HomeViewModel = viewModel()) {
                         onRemove = { viewModel.removeWidget(it) },
                         modifier = Modifier.fillMaxWidth()
                     ) { widget ->
-                        HomeWidgetContent(widget, viewModel)
+                        HomeWidgetContent(widget, columns, viewModel)
                     }
                     Spacer(modifier = Modifier.height(96.dp))
                 }
@@ -153,6 +153,7 @@ fun HomeScreen(viewModel: HomeViewModel = viewModel()) {
 @Composable
 private fun HomeWidgetContent(
     widget: HomeWidget,
+    columns: Int,
     viewModel: HomeViewModel
 ) {
     val temperatureUnit by viewModel.temperatureUnit.collectAsState()
@@ -177,7 +178,10 @@ private fun HomeWidgetContent(
         HomeWidgetType.BATTERY_INFO -> {
             val battery by viewModel.battery.collectAsState()
             if (widget.type == HomeWidgetType.BATTERY_POWER) {
-                AmpereCard(battery)
+                AmpereCard(
+                    info = battery,
+                    compact = widget.columnSpan.coerceAtMost(columns) == 1
+                )
             } else {
                 BatteryDetailsCard(battery, temperatureUnit)
             }

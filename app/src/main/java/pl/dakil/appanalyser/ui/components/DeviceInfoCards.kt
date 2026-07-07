@@ -219,8 +219,12 @@ fun CpuTemperaturesCard(
 // Battery cards
 // ---------------------------------------------------------------------
 
+/**
+ * @param compact single-column layout: smaller readout, stats stacked as label/value rows
+ *   instead of the three-across row that overflows narrow cells.
+ */
 @Composable
-fun AmpereCard(info: BatteryInfo?, modifier: Modifier = Modifier) {
+fun AmpereCard(info: BatteryInfo?, modifier: Modifier = Modifier, compact: Boolean = false) {
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -231,7 +235,7 @@ fun AmpereCard(info: BatteryInfo?, modifier: Modifier = Modifier) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp),
+                .padding(if (compact) 16.dp else 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -259,7 +263,11 @@ fun AmpereCard(info: BatteryInfo?, modifier: Modifier = Modifier) {
             } else {
                 Text(
                     text = signedMilliamps(info.currentNowMilliamps),
-                    style = MaterialTheme.typography.displaySmall,
+                    style = if (compact) {
+                        MaterialTheme.typography.headlineMedium
+                    } else {
+                        MaterialTheme.typography.displaySmall
+                    },
                     fontWeight = FontWeight.Bold,
                     color = accent
                 )
@@ -273,34 +281,55 @@ fun AmpereCard(info: BatteryInfo?, modifier: Modifier = Modifier) {
                 )
 
                 if (info.sessionMinCurrentMilliamps != null && info.sessionMaxCurrentMilliamps != null) {
-                    Text(
-                        text = stringResource(R.string.device_battery_session_min) +
-                            " ${signedMilliamps(info.sessionMinCurrentMilliamps)}   ·   " +
-                            stringResource(R.string.device_battery_session_max) +
-                            " ${signedMilliamps(info.sessionMaxCurrentMilliamps)}",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    if (compact) {
+                        DetailRow(
+                            stringResource(R.string.device_battery_session_min),
+                            signedMilliamps(info.sessionMinCurrentMilliamps)
+                        )
+                        DetailRow(
+                            stringResource(R.string.device_battery_session_max),
+                            signedMilliamps(info.sessionMaxCurrentMilliamps)
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(R.string.device_battery_session_min) +
+                                " ${signedMilliamps(info.sessionMinCurrentMilliamps)}   ·   " +
+                                stringResource(R.string.device_battery_session_max) +
+                                " ${signedMilliamps(info.sessionMaxCurrentMilliamps)}",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
             Spacer(Modifier.height(4.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                AmpereStat(
-                    label = stringResource(R.string.device_battery_power),
-                    value = info.powerWatts?.let { String.format("%.2f W", it) } ?: "—"
-                )
-                AmpereStat(
-                    label = stringResource(R.string.device_battery_capacity),
-                    value = info.chargeCounterMilliampHours?.let { "$it mAh" } ?: "—"
-                )
-                AmpereStat(
-                    label = stringResource(R.string.device_battery_voltage),
-                    value = if (info.voltageMillivolts > 0) "${info.voltageMillivolts / 1000f} V" else "—"
-                )
+            val powerValue = info.powerWatts?.let { String.format("%.2f W", it) } ?: "—"
+            val capacityValue = info.chargeCounterMilliampHours?.let { "$it mAh" } ?: "—"
+            val voltageValue =
+                if (info.voltageMillivolts > 0) "${info.voltageMillivolts / 1000f} V" else "—"
+            if (compact) {
+                DetailRow(stringResource(R.string.device_battery_power), powerValue)
+                DetailRow(stringResource(R.string.device_battery_capacity), capacityValue)
+                DetailRow(stringResource(R.string.device_battery_voltage), voltageValue)
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    AmpereStat(
+                        label = stringResource(R.string.device_battery_power),
+                        value = powerValue
+                    )
+                    AmpereStat(
+                        label = stringResource(R.string.device_battery_capacity),
+                        value = capacityValue
+                    )
+                    AmpereStat(
+                        label = stringResource(R.string.device_battery_voltage),
+                        value = voltageValue
+                    )
+                }
             }
         }
     }
