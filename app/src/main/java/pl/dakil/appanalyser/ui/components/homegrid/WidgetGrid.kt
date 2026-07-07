@@ -258,7 +258,10 @@ private fun GridItem(
                 scaleX = liftScale
                 scaleY = liftScale
                 shadowElevation = shadow.dp.toPx()
-            }
+            },
+        // The grid measures this wrapper at the exact cell size; pass those constraints
+        // down so the card surface visually fills every row it spans.
+        propagateMinConstraints = true
     ) {
         content()
     }
