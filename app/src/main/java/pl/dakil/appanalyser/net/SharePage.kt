@@ -27,9 +27,11 @@ h1{margin:0 0 2px;font-size:19px;font-weight:600}
 p.sub{margin:0 0 20px;color:var(--dim);font-size:13px}
 a{color:inherit;text-decoration:none}
 ul{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
-li{border-bottom:1px solid var(--line)}
-li a{display:flex;align-items:center;gap:12px;padding:11px 8px}
-li a:hover{background:var(--line)}
+li{display:flex;align-items:center;border-bottom:1px solid var(--line)}
+.r{flex:1;min-width:0;display:flex;align-items:center;gap:12px;padding:11px 8px}
+.r:hover,.dl:hover{background:var(--line)}
+.dl{display:flex;padding:11px 10px;border-radius:8px}
+.dl svg{width:18px;height:18px;fill:var(--accent)}
 svg{width:20px;height:20px;flex:none;fill:var(--dim)}
 .dir svg{fill:var(--accent)}
 .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -47,6 +49,7 @@ border:0;border-radius:8px;cursor:pointer}
     private const val ICONS = """<svg style="display:none"><defs>
 <g id="d"><path d="M2 5a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/></g>
 <g id="f"><path d="M6 2h8l4 4v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm7 1.5V7h3.5z"/></g>
+<g id="dl"><path d="M11 3h2v7h3.5L12 15.5 7.5 10H11z"/><path d="M5 18h14v2H5z"/></g>
 </defs></svg>"""
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
@@ -62,7 +65,7 @@ border:0;border-radius:8px;cursor:pointer}
             body.append("<ul>")
             if (relative.isNotEmpty()) {
                 val parent = relative.substringBeforeLast('/', "")
-                body.append("<li class=\"dir\"><a href=\"").append(href(basePath, parent))
+                body.append("<li class=\"dir\"><a class=\"r\" href=\"").append(href(basePath, parent))
                     .append("\"><svg><use href=\"#d\"/></svg><span class=\"n\">..</span></a></li>")
             }
             // Folders first, then case-insensitive by name — the same order as the in-app browser.
@@ -71,16 +74,24 @@ border:0;border-radius:8px;cursor:pointer}
                     .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
             ).forEach { entry ->
                 val child = if (relative.isEmpty()) entry.name else "$relative/${entry.name}"
+                val link = href(basePath, child)
                 body.append("<li")
                 if (entry.isDirectory) body.append(" class=\"dir\"")
-                body.append("><a href=\"").append(href(basePath, child)).append("\">")
+                body.append("><a class=\"r\" href=\"").append(link).append("\">")
                 body.append("<svg><use href=\"#").append(if (entry.isDirectory) "d" else "f")
                     .append("\"/></svg>")
                 body.append("<span class=\"n\">").append(escape(entry.name)).append("</span>")
                 body.append("<span class=\"m\">")
                 if (!entry.isDirectory) body.append(humanSize(entry.length())).append(" &middot; ")
                 body.append(dateFormat.format(Date(entry.lastModified())))
-                body.append("</span></a></li>")
+                body.append("</span></a>")
+                if (!entry.isDirectory) {
+                    // `?dl=1` makes the server answer with Content-Disposition: attachment, so
+                    // images and audio save to disk instead of opening inline in the browser.
+                    body.append("<a class=\"dl\" download title=\"Download\" href=\"")
+                        .append(link).append("?dl=1\"><svg><use href=\"#dl\"/></svg></a>")
+                }
+                body.append("</li>")
             }
             body.append("</ul>")
         }

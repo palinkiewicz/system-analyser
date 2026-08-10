@@ -119,6 +119,37 @@ class HttpFileServerTest {
     }
 
     @Test
+    fun `listing offers a download link per file but not per folder`() {
+        val instance = start()
+        val html = String(get(instance.basePath).second, Charsets.UTF_8)
+
+        assertTrue(html.contains("href=\"${instance.basePath}notes.txt?dl=1\""))
+        assertTrue(html.contains("href=\"${instance.basePath}big.bin?dl=1\""))
+        // A folder cannot be downloaded as one file, so it gets no button.
+        assertFalse(html.contains("nested?dl=1"))
+        // notes.txt and big.bin get a button; the `nested` folder does not.
+        assertEquals(2, Regex("class=\"dl\"").findAll(html).count())
+    }
+
+    @Test
+    fun `download link forces an attachment instead of inline display`() {
+        val instance = start()
+        val (headers, body) = get("${instance.basePath}notes.txt?dl=1")
+
+        assertEquals(200, status(headers))
+        assertTrue(headers.contains("Content-Disposition: attachment; filename=\"notes.txt\""))
+        assertEquals("hello from the share server", String(body, Charsets.UTF_8))
+    }
+
+    @Test
+    fun `plain link stays inline so media can preview`() {
+        val instance = start()
+        val (headers, _) = get("${instance.basePath}notes.txt")
+
+        assertFalse(headers.contains("Content-Disposition"))
+    }
+
+    @Test
     fun `serves a nested file`() {
         val instance = start()
         val (headers, body) = get("${instance.basePath}nested/data.json")
@@ -226,13 +257,39 @@ class HttpFileServerTest {
     }
 
     @Test
+    fun `the slashless share path resolves`() {
+        val instance = start()
+        val (headers, _) = get(instance.basePath.trimEnd('/'))
+
+        assertEquals(302, status(headers))
+        assertTrue(headers.contains("Location: ${instance.basePath}"))
+    }
+
+    @Test
     fun `token mode hides the bare share path`() {
         val instance = start(ShareAccessMode.TOKEN)
 
         assertTrue(instance.basePath.startsWith("/dakil_share/"))
         assertTrue(instance.basePath.length > "/dakil_share/".length)
         assertEquals(404, status(get("/dakil_share/").first))
+        assertEquals(404, status(get("/dakil_share").first))
         assertEquals(200, status(get(instance.basePath).first))
+        // The slashless form of the real link still works for whoever has it.
+        assertEquals(302, status(get(instance.basePath.trimEnd('/')).first))
+    }
+
+    @Test
+    fun `token mode never leaks the token through a redirect`() {
+        val instance = start(ShareAccessMode.TOKEN)
+
+        for (probe in listOf("/", "/dakil_share", "/dakil_share/", "/dakil_share/wrong/")) {
+            val (headers, body) = get(probe)
+            assertEquals("probe $probe should be a dead end", 404, status(headers))
+            assertFalse(
+                "token leaked via $probe",
+                headers.contains(instance.token) || String(body, Charsets.UTF_8).contains(instance.token),
+            )
+        }
     }
 
     @Test

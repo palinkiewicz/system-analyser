@@ -29,7 +29,11 @@ data class ShareEndpoint(
     /** Always starts and ends with a slash, e.g. `/dakil_share/` or `/dakil_share/a7f3c9d1/`. */
     val basePath: String,
 ) {
-    val url: String get() = "http://$ipAddress:$port$basePath"
+    /**
+     * What the user is shown and asked to type. The trailing slash is dropped for readability; the
+     * server redirects the slashless form to [basePath], so both resolve.
+     */
+    val url: String get() = "http://$ipAddress:$port${basePath.trimEnd('/')}"
 }
 
 sealed interface ShareState {

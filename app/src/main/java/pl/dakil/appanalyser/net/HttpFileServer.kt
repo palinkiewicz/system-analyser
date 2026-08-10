@@ -184,11 +184,12 @@ class HttpFileServer(
         // Anything outside the share prefix is a 404 — including a wrong token, which must be
         // indistinguishable from a path that was never there.
         if (!request.path.startsWith(basePath)) {
-            if (request.path == "/" || request.path == SHARE_PATH.trimEnd('/')) {
-                respondRedirect(output, basePath)
-            } else {
-                respondNotFound(output)
-            }
+            // Redirect only to a location the caller already proved they knew. Sending the token to
+            // anyone who merely asked for "/" would defeat the random-link mode entirely, so the
+            // site root is only forwarded when there is no secret in the path.
+            val knowsBase = request.path == basePath.trimEnd('/')
+            val openRoot = token.isEmpty() && request.path == "/"
+            if (knowsBase || openRoot) respondRedirect(output, basePath) else respondNotFound(output)
             return
         }
 
