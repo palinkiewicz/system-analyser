@@ -42,6 +42,16 @@
     <string name="settings_editor_word_wrap_description">Łam długie wiersze zamiast przewijać w bok</string>
     <string name="settings_editor_highlighting">Podświetlanie składni</string>
     <string name="settings_editor_highlighting_description">Koloruj kod i znaczniki w obsługiwanych typach plików</string>
+    <string name="settings_share_section">Udostępnianie przez Wi-Fi</string>
+    <string name="settings_share_access">Dostęp</string>
+    <string name="settings_share_access_description">Jak link jest chroniony przed innymi w sieci</string>
+    <string name="settings_share_access_open">Otwarty link</string>
+    <string name="settings_share_access_token">Losowy link</string>
+    <string name="settings_share_access_pin">Kod PIN</string>
+    <string name="settings_share_idle">Zatrzymaj przy bezczynności</string>
+    <string name="settings_share_idle_description">Wyłącz serwer po okresie bez pobierania</string>
+    <string name="settings_share_idle_never">Nigdy</string>
+    <string name="settings_share_idle_minutes_x">%1$d min</string>
     <string name="settings_about">O aplikacji</string>
     <string name="settings_about_summary">Wersja, autor, repozytorium</string>
     <string name="settings_theme_colors">Kolory motywu</string>
@@ -374,4 +384,30 @@
     <string name="editor_too_large">Ten plik ma %1$s, co może spowolnić edytor.</string>
     <string name="editor_open_anyway">Otwórz mimo to</string>
     <string name="editor_highlighting_disabled">Podświetlanie składni jest wyłączone dla tego pliku ze względu na jego rozmiar</string>
+
+    <!--  UDOSTĘPNIANIE PRZEZ WI-FI  -->
+    <string name="share_method_app">Wyślij do innej aplikacji</string>
+    <string name="share_method_app_summary">Użyj systemowego okna udostępniania</string>
+    <string name="share_method_wifi">Udostępnij przez Wi-Fi</string>
+    <string name="share_method_wifi_summary">Otwórz w przeglądarce na innym urządzeniu</string>
+    <string name="share_no_network_title">Brak Wi-Fi i hotspotu</string>
+    <string name="share_no_network_message">Inne urządzenia mogą połączyć się z tym telefonem tylko przez Wi-Fi lub jego hotspot. Połącz się z siecią Wi-Fi albo włącz hotspot i spróbuj ponownie.</string>
+    <string name="share_open_hotspot_settings">Otwórz ustawienia hotspotu</string>
+    <string name="share_running_title">Udostępnianie: %1$s</string>
+    <string name="share_running_hint">Otwórz ten adres w przeglądarce na urządzeniu podłączonym do tej samej sieci.</string>
+    <string name="share_running_network">Sieć: %1$s</string>
+    <string name="share_running_pin">Kod: %1$s</string>
+    <string name="share_show_network_name">Pokaż nazwę sieci</string>
+    <string name="share_copy_link">Kopiuj link</string>
+    <string name="share_stop">Zatrzymaj udostępnianie</string>
+    <string name="share_network_wifi">Wi-Fi</string>
+    <string name="share_network_hotspot">Hotspot</string>
+    <string name="share_network_other">Sieć lokalna</string>
+    <string name="share_notification_channel">Udostępnianie przez Wi-Fi</string>
+    <string name="share_notification_channel_description">Widoczne, gdy plik jest udostępniany w sieci lokalnej</string>
+    <string name="share_notification_title">Udostępnianie: %1$s</string>
+    <string name="share_notification_starting">Uruchamianie…</string>
+    <string name="share_notification_network">Sieć: %1$s</string>
+    <string name="share_notification_pin">Kod: %1$s</string>
+    <string name="share_notification_permission_required">Udostępnianie wymaga zgody na powiadomienia, aby można było zobaczyć i zatrzymać serwer</string>
 </resources>

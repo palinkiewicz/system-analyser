@@ -30,8 +30,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import pl.dakil.appanalyser.R
+import pl.dakil.appanalyser.data.SettingsRepository
+import pl.dakil.appanalyser.domain.ShareAccessMode
 import pl.dakil.appanalyser.ui.components.flatTopAppBarColors
 import pl.dakil.appanalyser.viewmodel.SettingsViewModel
+
+/** "Never" for 0, otherwise a minutes label. */
+@Composable
+private fun idleTimeoutLabel(minutes: Int): String = if (minutes <= 0) {
+    stringResource(R.string.settings_share_idle_never)
+} else {
+    stringResource(R.string.settings_share_idle_minutes_x, minutes)
+}
 
 /**
  * Home of the experimental File system feature: the master switch that puts its tab in the
@@ -49,6 +59,8 @@ fun FileSystemSettingsScreen(
     val monospace by viewModel.editorMonospace.collectAsState()
     val wordWrap by viewModel.editorWordWrap.collectAsState()
     val highlighting by viewModel.editorSyntaxHighlighting.collectAsState()
+    val shareAccessMode by viewModel.shareAccessMode.collectAsState()
+    val shareIdleTimeout by viewModel.shareIdleTimeoutMinutes.collectAsState()
 
     Scaffold(
         topBar = {
@@ -143,6 +155,26 @@ fun FileSystemSettingsScreen(
                 summary = stringResource(R.string.settings_editor_highlighting_description),
                 checked = highlighting,
                 onCheckedChange = { viewModel.setEditorSyntaxHighlighting(it) },
+                enabled = enabled
+            )
+
+            SectionHeader(stringResource(R.string.settings_share_section))
+            SelectRow(
+                title = stringResource(R.string.settings_share_access),
+                summary = stringResource(R.string.settings_share_access_description),
+                selectedLabel = shareAccessMode.label(),
+                options = ShareAccessMode.entries.map { it to it.label() },
+                onSelect = { viewModel.setShareAccessMode(it) },
+                enabled = enabled
+            )
+            SelectRow(
+                title = stringResource(R.string.settings_share_idle),
+                summary = stringResource(R.string.settings_share_idle_description),
+                selectedLabel = idleTimeoutLabel(shareIdleTimeout),
+                options = SettingsRepository.SHARE_IDLE_TIMEOUT_OPTIONS.map {
+                    it to idleTimeoutLabel(it)
+                },
+                onSelect = { viewModel.setShareIdleTimeoutMinutes(it) },
                 enabled = enabled
             )
         }

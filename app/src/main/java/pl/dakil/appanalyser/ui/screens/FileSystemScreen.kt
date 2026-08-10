@@ -1,5 +1,6 @@
 package pl.dakil.appanalyser.ui.screens
 
+import android.Manifest
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
@@ -86,14 +87,24 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import pl.dakil.appanalyser.R
+import pl.dakil.appanalyser.data.NetworkInfoProvider
+import pl.dakil.appanalyser.data.ShareServerRepository
 import pl.dakil.appanalyser.domain.ClipboardOperation
 import pl.dakil.appanalyser.domain.FileEntry
 import pl.dakil.appanalyser.domain.FileSortOrder
+import pl.dakil.appanalyser.domain.ShareNetwork
+import pl.dakil.appanalyser.domain.ShareState
+import pl.dakil.appanalyser.service.ShareServerManager
 import pl.dakil.appanalyser.ui.components.filesystem.DeleteConfirmDialog
 import pl.dakil.appanalyser.ui.components.filesystem.EDITABLE_EXTENSIONS
 import pl.dakil.appanalyser.ui.components.filesystem.FileRow
 import pl.dakil.appanalyser.ui.components.filesystem.NameInputDialog
+import pl.dakil.appanalyser.ui.components.filesystem.NoNetworkDialog
 import pl.dakil.appanalyser.ui.components.filesystem.PropertiesDialog
+import pl.dakil.appanalyser.ui.components.filesystem.ShareMethodSheet
+import pl.dakil.appanalyser.ui.components.filesystem.ShareRunningDialog
+import pl.dakil.appanalyser.ui.components.filesystem.openHotspotSettings
+import pl.dakil.appanalyser.ui.components.canPostNotifications
 import pl.dakil.appanalyser.ui.components.flatTopAppBarColors
 import pl.dakil.appanalyser.viewmodel.FileSystemViewModel
 import java.io.File
@@ -152,6 +163,45 @@ fun FileSystemScreen(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var propertiesTarget by remember { mutableStateOf<FileEntry?>(null) }
 
+    // Wi-Fi sharing state. The path is captured when the sheet opens, because starting the server
+    // clears the selection.
+    var shareTarget by remember { mutableStateOf<String?>(null) }
+    var showNoNetwork by remember { mutableStateOf(false) }
+    val shareState by ShareServerRepository.state.collectAsState()
+    val networkInfo = remember(context) { NetworkInfoProvider(context) }
+    var networkNameRevealed by remember { mutableStateOf(false) }
+    // The running dialog is driven by service state, so dismissing it has to be remembered against
+    // the session it belongs to — otherwise Close would immediately re-show it.
+    var dismissedShareUrl by remember { mutableStateOf<String?>(null) }
+    val notificationsBlockedMessage = stringResource(R.string.share_notification_permission_required)
+
+    fun startWifiShare(path: String) {
+        if (networkInfo.resolve() == null) {
+            showNoNetwork = true
+        } else {
+            ShareServerManager.start(context, path)
+        }
+    }
+
+    // The notification permission is only relevant to the share server, so it is requested here —
+    // the moment before starting it — rather than anywhere earlier in the app.
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        val target = shareTarget
+        // Starting without it would leave a server running that the user can neither see nor stop.
+        if (granted && target != null) {
+            startWifiShare(target)
+        } else {
+            shareTarget = null
+            scope.launch { snackbarHostState.showSnackbar(notificationsBlockedMessage) }
+        }
+    }
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { networkNameRevealed = true }
+
     BackHandler(enabled = selection.isNotEmpty() || currentPath != null) {
         if (selection.isNotEmpty()) viewModel.clearSelection() else viewModel.navigateUp()
     }
@@ -175,7 +225,7 @@ fun FileSystemScreen(
                     onDelete = {
                         if (confirmDeletion) showDeleteConfirm = true else viewModel.deleteSelection()
                     },
-                    onShare = { shareFiles(context, viewModel, selection.toList()) },
+                    onShare = { shareTarget = selection.firstOrNull() },
                 )
             } else {
                 BrowserTopBar(
@@ -361,6 +411,69 @@ fun FileSystemScreen(
                 viewModel.deleteSelection()
             },
             onDismiss = { showDeleteConfirm = false },
+        )
+    }
+
+    // Only shown while nothing is being hosted yet; once the server is up the running dialog wins.
+    if (shareTarget != null && shareState !is ShareState.Running && !showNoNetwork) {
+        val target = shareTarget!!
+        ShareMethodSheet(
+            onSendToApp = {
+                shareFiles(context, viewModel, listOf(target))
+                shareTarget = null
+                viewModel.clearSelection()
+            },
+            onShareOverWifi = {
+                viewModel.clearSelection()
+                if (context.canPostNotifications()) {
+                    startWifiShare(target)
+                } else {
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            },
+            onDismiss = { shareTarget = null },
+        )
+    }
+
+    if (showNoNetwork) {
+        NoNetworkDialog(
+            onOpenHotspotSettings = {
+                showNoNetwork = false
+                openHotspotSettings(context)
+            },
+            onDismiss = {
+                showNoNetwork = false
+                shareTarget = null
+            },
+        )
+    }
+
+    (shareState as? ShareState.Running)
+        ?.takeIf { dismissedShareUrl != it.endpoint.url }
+        ?.let { running ->
+        // Recomputed when the reveal completes so a freshly granted permission fills the name in.
+        val label = remember(running, networkNameRevealed) {
+            running.network.name ?: networkInfo.ssid() ?: networkInfo.label(running.network)
+        }
+        val canReveal = running.network.kind == ShareNetwork.Kind.WIFI &&
+            running.network.name == null &&
+            !networkInfo.hasLocationPermission()
+        ShareRunningDialog(
+            running = running,
+            networkLabel = label,
+            onRevealNetworkName = if (canReveal) {
+                { locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) }
+            } else {
+                null
+            },
+            onStop = {
+                ShareServerManager.stop(context)
+                shareTarget = null
+            },
+            onDismiss = {
+                dismissedShareUrl = running.endpoint.url
+                shareTarget = null
+            },
         )
     }
 

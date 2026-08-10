@@ -20,16 +20,16 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.Redo
+import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.TextFields
 import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.Redo
 import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material.icons.rounded.Undo
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -156,13 +156,13 @@ fun FileEditorScreen(
                         }
                         IconButton(onClick = { viewModel.undo() }, enabled = canUndo) {
                             Icon(
-                                Icons.Rounded.Undo,
+                                Icons.AutoMirrored.Rounded.Undo,
                                 contentDescription = stringResource(R.string.editor_undo),
                             )
                         }
                         IconButton(onClick = { viewModel.redo() }, enabled = canRedo) {
                             Icon(
-                                Icons.Rounded.Redo,
+                                Icons.AutoMirrored.Rounded.Redo,
                                 contentDescription = stringResource(R.string.editor_redo),
                             )
                         }

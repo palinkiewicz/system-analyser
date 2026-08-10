@@ -43,6 +43,11 @@ android {
         compose = true
         buildConfig = true
     }
+    testOptions {
+        // Lets the share server's JVM tests run without a device: the platform stubs it touches
+        // return defaults instead of throwing "not mocked".
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {

@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import pl.dakil.appanalyser.domain.FileSortOrder
+import pl.dakil.appanalyser.domain.ShareAccessMode
 import pl.dakil.appanalyser.domain.TemperatureUnit
 
 enum class AppColorTheme { DAKILS_ANALYSER, DYNAMIC, OCEAN, LAVENDER, SUNSET, ROSE, TEAL }
@@ -85,6 +86,18 @@ class SettingsRepository private constructor(context: Context) {
     private val _editorSyntaxHighlighting =
         MutableStateFlow(prefs.getBoolean(KEY_EDITOR_SYNTAX_HIGHLIGHTING, true))
     val editorSyntaxHighlighting: StateFlow<Boolean> = _editorSyntaxHighlighting.asStateFlow()
+
+    private val _shareAccessMode = MutableStateFlow(
+        runCatching { ShareAccessMode.valueOf(prefs.getString(KEY_SHARE_ACCESS_MODE, null)!!) }
+            .getOrDefault(ShareAccessMode.OPEN)
+    )
+    val shareAccessMode: StateFlow<ShareAccessMode> = _shareAccessMode.asStateFlow()
+
+    /** Minutes without a request before a share session shuts itself down; 0 means never. */
+    private val _shareIdleTimeoutMinutes = MutableStateFlow(
+        prefs.getInt(KEY_SHARE_IDLE_TIMEOUT, DEFAULT_SHARE_IDLE_TIMEOUT)
+    )
+    val shareIdleTimeoutMinutes: StateFlow<Int> = _shareIdleTimeoutMinutes.asStateFlow()
 
     fun setTemperatureUnit(unit: TemperatureUnit) {
         prefs.edit().putString(KEY_TEMPERATURE_UNIT, unit.name).apply()
@@ -168,6 +181,16 @@ class SettingsRepository private constructor(context: Context) {
         _editorSyntaxHighlighting.value = enabled
     }
 
+    fun setShareAccessMode(mode: ShareAccessMode) {
+        prefs.edit().putString(KEY_SHARE_ACCESS_MODE, mode.name).apply()
+        _shareAccessMode.value = mode
+    }
+
+    fun setShareIdleTimeoutMinutes(minutes: Int) {
+        prefs.edit().putInt(KEY_SHARE_IDLE_TIMEOUT, minutes).apply()
+        _shareIdleTimeoutMinutes.value = minutes
+    }
+
     companion object {
         private const val PREFS_NAME = "settings"
         private const val KEY_TEMPERATURE_UNIT = "temperature_unit"
@@ -186,6 +209,12 @@ class SettingsRepository private constructor(context: Context) {
         private const val KEY_EDITOR_MONOSPACE = "editor_monospace"
         private const val KEY_EDITOR_WORD_WRAP = "editor_word_wrap"
         private const val KEY_EDITOR_SYNTAX_HIGHLIGHTING = "editor_syntax_highlighting"
+        private const val KEY_SHARE_ACCESS_MODE = "share_access_mode"
+        private const val KEY_SHARE_IDLE_TIMEOUT = "share_idle_timeout_minutes"
+
+        /** Options offered for the share idle timeout, in minutes; 0 is "never". */
+        val SHARE_IDLE_TIMEOUT_OPTIONS = listOf(0, 15, 30, 60)
+        const val DEFAULT_SHARE_IDLE_TIMEOUT = 30
 
         const val MIN_HOME_COLUMNS = 1
         const val MAX_HOME_COLUMNS = 5

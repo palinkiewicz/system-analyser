@@ -33,6 +33,7 @@ import kotlin.math.roundToInt
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.AppColorTheme
 import pl.dakil.appanalyser.data.DarkThemeOption
+import pl.dakil.appanalyser.domain.ShareAccessMode
 import pl.dakil.appanalyser.domain.TemperatureUnit
 
 private const val DISABLED_ALPHA = 0.38f
@@ -215,6 +216,15 @@ fun DarkThemeOption.label(): String = stringResource(
         DarkThemeOption.FOLLOW_SYSTEM -> R.string.settings_dark_follow_system
         DarkThemeOption.LIGHT -> R.string.settings_dark_light
         DarkThemeOption.DARK -> R.string.settings_dark_dark
+    }
+)
+
+@Composable
+fun ShareAccessMode.label(): String = stringResource(
+    when (this) {
+        ShareAccessMode.OPEN -> R.string.settings_share_access_open
+        ShareAccessMode.TOKEN -> R.string.settings_share_access_token
+        ShareAccessMode.PIN -> R.string.settings_share_access_pin
     }
 )
 

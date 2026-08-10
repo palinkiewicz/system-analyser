@@ -25,6 +25,16 @@
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="29" />
 
+    <!--
+        Wi-Fi sharing: a LAN socket for the local HTTP server, address/SSID lookup to tell the
+        user where it is, and a Wi-Fi lock so the radio does not power-save mid-transfer.
+        All four are install-time permissions and never prompt the user.
+    -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -62,8 +72,26 @@
                 android:value="Keeps user-pinned device telemetry (battery current, CPU, sensors) live in the notification shade until the user removes it." />
         </service>
 
+        <!--
+            stopWithTask=true, unlike the pinned-notifications service: a share session exposes
+            files on the network, so it must never outlive the app being swiped from Recents.
+        -->
+        <service
+            android:name=".service.ShareServerService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse"
+            android:stopWithTask="true">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Hosts a user-initiated local HTTP server so other devices on the same Wi-Fi can download a file the user explicitly chose to share." />
+        </service>
+
         <receiver
             android:name=".service.PinnedNotificationActionReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".service.ShareServerActionReceiver"
             android:exported="false" />
 
         <receiver

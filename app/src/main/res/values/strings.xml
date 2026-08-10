@@ -42,6 +42,16 @@
     <string name="settings_editor_word_wrap_description">Break long lines instead of scrolling sideways</string>
     <string name="settings_editor_highlighting">Syntax highlighting</string>
     <string name="settings_editor_highlighting_description">Color code and markup in supported file types</string>
+    <string name="settings_share_section">Wi-Fi sharing</string>
+    <string name="settings_share_access">Access</string>
+    <string name="settings_share_access_description">How the share link is protected from others on the network</string>
+    <string name="settings_share_access_open">Open link</string>
+    <string name="settings_share_access_token">Random link</string>
+    <string name="settings_share_access_pin">PIN code</string>
+    <string name="settings_share_idle">Stop when idle</string>
+    <string name="settings_share_idle_description">Shut the server down after a period with no downloads</string>
+    <string name="settings_share_idle_never">Never</string>
+    <string name="settings_share_idle_minutes_x">%1$d min</string>
     <string name="settings_about">About app</string>
     <string name="settings_about_summary">Version, author, repository</string>
     <string name="settings_theme_colors">Theme colors</string>
@@ -366,4 +376,30 @@
     <string name="editor_too_large">This file is %1$s, which is large enough to slow the editor down.</string>
     <string name="editor_open_anyway">Open anyway</string>
     <string name="editor_highlighting_disabled">Syntax highlighting is off for this file because of its size</string>
+
+    <!--  WI-FI SHARING  -->
+    <string name="share_method_app">Send to another app</string>
+    <string name="share_method_app_summary">Use the system share sheet</string>
+    <string name="share_method_wifi">Share over Wi-Fi</string>
+    <string name="share_method_wifi_summary">Open it in a browser on another device</string>
+    <string name="share_no_network_title">No Wi-Fi or hotspot</string>
+    <string name="share_no_network_message">Other devices can only reach this phone over Wi-Fi or its hotspot. Connect to a Wi-Fi network, or turn on the hotspot and try again.</string>
+    <string name="share_open_hotspot_settings">Open hotspot settings</string>
+    <string name="share_running_title">Sharing %1$s</string>
+    <string name="share_running_hint">Open this address in a browser on a device connected to the same network.</string>
+    <string name="share_running_network">Network: %1$s</string>
+    <string name="share_running_pin">Code: %1$s</string>
+    <string name="share_show_network_name">Show network name</string>
+    <string name="share_copy_link">Copy link</string>
+    <string name="share_stop">Stop sharing</string>
+    <string name="share_network_wifi">Wi-Fi</string>
+    <string name="share_network_hotspot">Hotspot</string>
+    <string name="share_network_other">Local network</string>
+    <string name="share_notification_channel">Wi-Fi sharing</string>
+    <string name="share_notification_channel_description">Shown while a file is being served to your local network</string>
+    <string name="share_notification_title">Sharing %1$s</string>
+    <string name="share_notification_starting">Starting…</string>
+    <string name="share_notification_network">Network: %1$s</string>
+    <string name="share_notification_pin">Code: %1$s</string>
+    <string name="share_notification_permission_required">Sharing needs notification permission so you can see and stop the server</string>
 </resources>

@@ -75,6 +75,7 @@ import pl.dakil.appanalyser.domain.HomeWidget
 import pl.dakil.appanalyser.domain.HomeWidgetType
 import pl.dakil.appanalyser.domain.SensorInfo
 import pl.dakil.appanalyser.service.PinnedNotificationsManager
+import pl.dakil.appanalyser.ui.components.canPostNotifications
 import pl.dakil.appanalyser.ui.screens.AppDetailsScreen
 import pl.dakil.appanalyser.ui.screens.AppListScreen
 import pl.dakil.appanalyser.ui.screens.DeviceInfoScreen
@@ -403,12 +404,6 @@ fun AppNavigation(viewModel: AppAnalyzerViewModel, navController: NavHostControl
         }
     }
 }
-
-/** POST_NOTIFICATIONS is a runtime permission from Android 13; before that it is implicit. */
-private fun Context.canPostNotifications(): Boolean =
-    Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-        checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
-        PackageManager.PERMISSION_GRANTED
 
 private fun Context.openNotificationSettings() {
     runCatching {

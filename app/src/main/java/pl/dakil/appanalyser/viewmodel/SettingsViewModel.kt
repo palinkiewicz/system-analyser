@@ -8,6 +8,7 @@ import pl.dakil.appanalyser.data.DarkThemeOption
 import pl.dakil.appanalyser.data.PinnedNotificationsRepository
 import pl.dakil.appanalyser.data.SettingsRepository
 import pl.dakil.appanalyser.domain.PinnedCard
+import pl.dakil.appanalyser.domain.ShareAccessMode
 import pl.dakil.appanalyser.domain.TemperatureUnit
 import pl.dakil.appanalyser.service.PinnedNotificationsManager
 
@@ -31,6 +32,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     val editorMonospace: StateFlow<Boolean> = settings.editorMonospace
     val editorWordWrap: StateFlow<Boolean> = settings.editorWordWrap
     val editorSyntaxHighlighting: StateFlow<Boolean> = settings.editorSyntaxHighlighting
+    val shareAccessMode: StateFlow<ShareAccessMode> = settings.shareAccessMode
+    val shareIdleTimeoutMinutes: StateFlow<Int> = settings.shareIdleTimeoutMinutes
 
     fun setTemperatureUnit(unit: TemperatureUnit) = settings.setTemperatureUnit(unit)
     fun setSimpleSensorView(enabled: Boolean) = settings.setSimpleSensorView(enabled)
@@ -48,6 +51,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setEditorMonospace(enabled: Boolean) = settings.setEditorMonospace(enabled)
     fun setEditorWordWrap(enabled: Boolean) = settings.setEditorWordWrap(enabled)
     fun setEditorSyntaxHighlighting(enabled: Boolean) = settings.setEditorSyntaxHighlighting(enabled)
+
+    fun setShareAccessMode(mode: ShareAccessMode) = settings.setShareAccessMode(mode)
+    fun setShareIdleTimeoutMinutes(minutes: Int) = settings.setShareIdleTimeoutMinutes(minutes)
 
     fun unpinCard(id: String) = PinnedNotificationsManager.unpin(getApplication(), id)
 }
