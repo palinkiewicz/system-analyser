@@ -4,6 +4,7 @@ package pl.dakil.appanalyser.domain
 enum class HomeWidgetType {
     SYSTEM_IDENTITY,
     SYSTEM_SOFTWARE,
+    SYSTEM_UPTIME,
     CPU_USAGE,
     CPU_CLOCKS,
     CPU_TEMPERATURES,

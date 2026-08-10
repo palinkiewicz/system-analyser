@@ -34,6 +34,7 @@ import pl.dakil.appanalyser.domain.HomeWidgetType
 import kotlin.math.roundToInt
 import pl.dakil.appanalyser.domain.BatteryInfo
 import pl.dakil.appanalyser.domain.CpuInfo
+import pl.dakil.appanalyser.domain.UptimeInfo
 import pl.dakil.appanalyser.domain.DisplayInfo
 import pl.dakil.appanalyser.domain.MemoryInfo
 import pl.dakil.appanalyser.domain.SensorInfo
@@ -49,6 +50,7 @@ import pl.dakil.appanalyser.ui.components.RamCard
 import pl.dakil.appanalyser.ui.components.SensorCard
 import pl.dakil.appanalyser.ui.components.StorageCard
 import pl.dakil.appanalyser.ui.components.SystemIdentityCard
+import pl.dakil.appanalyser.ui.components.SystemUptimeCard
 import pl.dakil.appanalyser.ui.components.SystemSoftwareCard
 import pl.dakil.appanalyser.ui.components.flatTopAppBarColors
 import pl.dakil.appanalyser.viewmodel.DeviceInfoViewModel
@@ -115,7 +117,11 @@ fun DeviceInfoScreen(
                 modifier = Modifier.fillMaxSize()
             ) { page ->
                 when (page) {
-                    0 -> SystemTab(viewModel.systemInfo, onAddToHome)
+                    0 -> SystemTab(
+                        viewModel.systemInfo,
+                        viewModel.uptime.collectAsState().value,
+                        onAddToHome
+                    )
                     1 -> CpuTab(viewModel.cpu.collectAsState().value, temperatureUnit, onAddToHome)
                     2 -> BatteryTab(viewModel.battery.collectAsState().value, temperatureUnit, onAddToHome)
                     3 -> SensorsTab(
@@ -214,13 +220,20 @@ private fun AddToHomeMenuHost(
 // ---------------------------------------------------------------------
 
 @Composable
-private fun SystemTab(info: SystemInfo, onAddToHome: (HomeWidgetType, SensorInfo?) -> Unit) {
+private fun SystemTab(
+    info: SystemInfo,
+    uptime: UptimeInfo?,
+    onAddToHome: (HomeWidgetType, SensorInfo?) -> Unit
+) {
     TabScaffold {
         AddToHomeMenuHost(onAdd = { onAddToHome(HomeWidgetType.SYSTEM_IDENTITY, null) }) {
             SystemIdentityCard(info, it)
         }
         AddToHomeMenuHost(onAdd = { onAddToHome(HomeWidgetType.SYSTEM_SOFTWARE, null) }) {
             SystemSoftwareCard(info, it)
+        }
+        AddToHomeMenuHost(onAdd = { onAddToHome(HomeWidgetType.SYSTEM_UPTIME, null) }) {
+            SystemUptimeCard(uptime, it)
         }
     }
 }

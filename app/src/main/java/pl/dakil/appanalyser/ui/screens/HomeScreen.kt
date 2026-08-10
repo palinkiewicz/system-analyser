@@ -63,6 +63,7 @@ import pl.dakil.appanalyser.ui.components.SensorCard
 import pl.dakil.appanalyser.ui.components.StorageCard
 import pl.dakil.appanalyser.ui.components.SystemIdentityCard
 import pl.dakil.appanalyser.ui.components.SystemSoftwareCard
+import pl.dakil.appanalyser.ui.components.SystemUptimeCard
 import pl.dakil.appanalyser.ui.components.homegrid.GridMode
 import pl.dakil.appanalyser.ui.components.homegrid.WidgetGrid
 import pl.dakil.appanalyser.ui.components.homegrid.rememberWidgetGridState
@@ -188,6 +189,11 @@ private fun HomeWidgetContent(
         HomeWidgetType.SYSTEM_SOFTWARE -> SystemSoftwareCard(viewModel.systemInfo)
         HomeWidgetType.DISPLAY -> DisplayCard(viewModel.displayInfo)
 
+        HomeWidgetType.SYSTEM_UPTIME -> {
+            val uptime by viewModel.uptime.collectAsState()
+            SystemUptimeCard(uptime)
+        }
+
         HomeWidgetType.CPU_USAGE,
         HomeWidgetType.CPU_CLOCKS,
         HomeWidgetType.CPU_TEMPERATURES -> {
@@ -237,7 +243,8 @@ private fun HomeWidgetContent(
 /** The Device Info pager page showing this widget's card. */
 private fun HomeWidgetType.deviceTab(): Int = when (this) {
     HomeWidgetType.SYSTEM_IDENTITY,
-    HomeWidgetType.SYSTEM_SOFTWARE -> 0
+    HomeWidgetType.SYSTEM_SOFTWARE,
+    HomeWidgetType.SYSTEM_UPTIME -> 0
     HomeWidgetType.CPU_USAGE,
     HomeWidgetType.CPU_CLOCKS,
     HomeWidgetType.CPU_TEMPERATURES -> 1

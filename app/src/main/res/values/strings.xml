@@ -162,6 +162,10 @@
     <string name="device_system_security_patch">Security patch</string>
     <string name="device_system_build">Build</string>
     <string name="device_system_kernel">Kernel</string>
+    <string name="device_system_uptime_title">Uptime</string>
+    <string name="device_system_uptime">Since boot</string>
+    <string name="device_system_awake">Awake time</string>
+    <string name="device_system_deep_sleep">Deep sleep</string>
 
     <!--  CPU tab  -->
     <string name="device_cpu_soc">SoC</string>

@@ -15,6 +15,7 @@ import pl.dakil.appanalyser.domain.MemoryInfo
 import pl.dakil.appanalyser.domain.SensorInfo
 import pl.dakil.appanalyser.domain.SystemInfo
 import pl.dakil.appanalyser.domain.TemperatureUnit
+import pl.dakil.appanalyser.domain.UptimeInfo
 
 class DeviceInfoViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -29,6 +30,9 @@ class DeviceInfoViewModel(application: Application) : AndroidViewModel(applicati
     val showSensorUnits: StateFlow<Boolean> = settings.showSensorUnits
 
     val battery: StateFlow<BatteryInfo?> = repository.batteryFlow()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val uptime: StateFlow<UptimeInfo?> = repository.uptimeFlow()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val cpu: StateFlow<CpuInfo?> = repository.cpuFlow()

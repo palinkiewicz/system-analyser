@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.domain.BatteryInfo
 import pl.dakil.appanalyser.domain.CpuInfo
+import pl.dakil.appanalyser.domain.UptimeInfo
 import pl.dakil.appanalyser.domain.DisplayInfo
 import pl.dakil.appanalyser.domain.MemoryInfo
 import pl.dakil.appanalyser.domain.SensorInfo
@@ -114,6 +115,17 @@ fun DetailRow(label: String, value: String) {
 fun signedMilliamps(value: Int): String =
     "${if (value >= 0) "+" else ""}$value mA"
 
+/** Formats a millisecond duration as `1d 02:03:04` (day part omitted below 24h). */
+fun formatDuration(millis: Long): String {
+    val totalSeconds = (millis / 1000).coerceAtLeast(0)
+    val days = totalSeconds / 86_400
+    val hours = (totalSeconds % 86_400) / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    val seconds = totalSeconds % 60
+    val clock = String.format("%02d:%02d:%02d", hours, minutes, seconds)
+    return if (days > 0) "${days}d $clock" else clock
+}
+
 fun formatTemperature(celsius: Float, unit: TemperatureUnit): String =
     String.format("%.1f %s", unit.fromCelsius(celsius), unit.symbol)
 
@@ -143,6 +155,29 @@ fun SystemSoftwareCard(info: SystemInfo, modifier: Modifier = Modifier) {
         DetailRow(stringResource(R.string.device_system_security_patch), info.securityPatch)
         DetailRow(stringResource(R.string.device_system_build), info.buildId)
         DetailRow(stringResource(R.string.device_system_kernel), info.kernelVersion)
+    }
+}
+
+@Composable
+fun SystemUptimeCard(info: UptimeInfo?, modifier: Modifier = Modifier) {
+    InfoCard(modifier) {
+        CardTitle(stringResource(R.string.device_system_uptime_title))
+        if (info == null) {
+            CardLoading()
+            return@InfoCard
+        }
+        DetailRow(
+            stringResource(R.string.device_system_uptime),
+            formatDuration(info.uptimeMillis)
+        )
+        DetailRow(
+            stringResource(R.string.device_system_awake),
+            formatDuration(info.awakeMillis)
+        )
+        DetailRow(
+            stringResource(R.string.device_system_deep_sleep),
+            formatDuration(info.deepSleepMillis)
+        )
     }
 }
 

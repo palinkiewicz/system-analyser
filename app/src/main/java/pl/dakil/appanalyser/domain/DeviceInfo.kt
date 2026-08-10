@@ -35,6 +35,15 @@ data class CpuInfo(
     val temperatures: List<ThermalReading>
 )
 
+data class UptimeInfo(
+    /** Time since boot, including deep sleep. */
+    val uptimeMillis: Long,
+    /** Time since boot spent awake (deep sleep excluded). */
+    val awakeMillis: Long
+) {
+    val deepSleepMillis: Long get() = (uptimeMillis - awakeMillis).coerceAtLeast(0)
+}
+
 data class BatteryInfo(
     val levelPercent: Int,
     val status: String,

@@ -13,12 +13,14 @@ import android.os.BatteryManager
 import android.os.Build
 import android.os.Environment
 import android.os.StatFs
+import android.os.SystemClock
 import android.view.WindowManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -32,6 +34,7 @@ import pl.dakil.appanalyser.domain.MemoryInfo
 import pl.dakil.appanalyser.domain.SensorInfo
 import pl.dakil.appanalyser.domain.SystemInfo
 import pl.dakil.appanalyser.domain.ThermalReading
+import pl.dakil.appanalyser.domain.UptimeInfo
 import java.io.File
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -338,6 +341,23 @@ class DeviceInfoRepository(private val context: Context) {
         Sensor.TYPE_STEP_DETECTOR -> "Step detector"
         else -> context.getString(R.string.device_sensor_other)
     }
+
+    // ---------------------------------------------------------------------
+    // Uptime (live)
+    // ---------------------------------------------------------------------
+
+    /** Ticks once a second so the System tab's uptime readout counts up while it is visible. */
+    fun uptimeFlow(): Flow<UptimeInfo> = flow {
+        while (true) {
+            emit(
+                UptimeInfo(
+                    uptimeMillis = SystemClock.elapsedRealtime(),
+                    awakeMillis = SystemClock.uptimeMillis()
+                )
+            )
+            delay(refreshIntervalMs)
+        }
+    }.flowOn(Dispatchers.IO)
 
     // ---------------------------------------------------------------------
     // CPU (live)

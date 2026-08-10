@@ -162,6 +162,10 @@
     <string name="device_system_security_patch">Poprawka zabezpieczeń</string>
     <string name="device_system_build">Kompilacja</string>
     <string name="device_system_kernel">Jądro</string>
+    <string name="device_system_uptime_title">Czas działania</string>
+    <string name="device_system_uptime">Od uruchomienia</string>
+    <string name="device_system_awake">Czas aktywności</string>
+    <string name="device_system_deep_sleep">Uśpienie</string>
 
     <!--  CPU tab  -->
     <string name="device_cpu_soc">SoC</string>
