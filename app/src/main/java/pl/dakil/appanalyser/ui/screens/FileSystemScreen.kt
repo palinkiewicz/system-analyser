@@ -94,7 +94,6 @@ import pl.dakil.appanalyser.data.ShareServerRepository
 import pl.dakil.appanalyser.domain.ClipboardOperation
 import pl.dakil.appanalyser.domain.FileEntry
 import pl.dakil.appanalyser.domain.FileSortOrder
-import pl.dakil.appanalyser.domain.ShareNetwork
 import pl.dakil.appanalyser.domain.ShareState
 import pl.dakil.appanalyser.service.ShareServerManager
 import pl.dakil.appanalyser.ui.components.filesystem.DeleteConfirmDialog
@@ -171,7 +170,6 @@ fun FileSystemScreen(
     var showNoNetwork by remember { mutableStateOf(false) }
     val shareState by ShareServerRepository.state.collectAsState()
     val networkInfo = remember(context) { NetworkInfoProvider(context) }
-    var networkNameRevealed by remember { mutableStateOf(false) }
     // The running dialog is driven by service state, so dismissing it has to be remembered against
     // the session it belongs to — otherwise Close would immediately re-show it.
     var dismissedShareUrl by remember { mutableStateOf<String?>(null) }
@@ -199,10 +197,6 @@ fun FileSystemScreen(
             scope.launch { snackbarHostState.showSnackbar(notificationsBlockedMessage) }
         }
     }
-
-    val locationPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { networkNameRevealed = true }
 
     BackHandler(enabled = selection.isNotEmpty() || currentPath != null) {
         if (selection.isNotEmpty()) viewModel.clearSelection() else viewModel.navigateUp()
@@ -461,21 +455,9 @@ fun FileSystemScreen(
     (shareState as? ShareState.Running)
         ?.takeIf { dismissedShareUrl != it.endpoint.url }
         ?.let { running ->
-        // Recomputed when the reveal completes so a freshly granted permission fills the name in.
-        val label = remember(running, networkNameRevealed) {
-            running.network.name ?: networkInfo.ssid() ?: networkInfo.label(running.network)
-        }
-        val canReveal = running.network.kind == ShareNetwork.Kind.WIFI &&
-            running.network.name == null &&
-            !networkInfo.hasLocationPermission()
         ShareRunningDialog(
             running = running,
-            networkLabel = label,
-            onRevealNetworkName = if (canReveal) {
-                { locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) }
-            } else {
-                null
-            },
+            networkLabel = networkInfo.label(running.network),
             onStop = {
                 ShareServerManager.stop(context)
                 shareTarget = null

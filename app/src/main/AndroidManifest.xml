@@ -34,6 +34,11 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!--
+        No location permission on purpose. Android gates the Wi-Fi SSID behind ACCESS_FINE_LOCATION,
+        so the share UI names the connection type only ("Wi-Fi"/"Hotspot") and tells the user to put
+        the other device on the same network, rather than asking for location to print a name.
+    -->
 
     <application
         android:allowBackup="true"

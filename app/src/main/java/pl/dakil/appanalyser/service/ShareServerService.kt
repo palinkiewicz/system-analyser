@@ -177,11 +177,7 @@ class ShareServerService : Service() {
                 if (networkInfo.resolve() == null) shutdown()
                 return@launch
             }
-            if (resolved.ipAddress == current.network.ipAddress &&
-                resolved.name == current.network.name
-            ) {
-                return@launch
-            }
+            if (resolved == current.network) return@launch
             val updated = current.copy(
                 endpoint = current.endpoint.copy(ipAddress = resolved.ipAddress),
                 network = resolved,
@@ -273,9 +269,11 @@ class ShareServerService : Service() {
                 append(getString(R.string.share_notification_pin, it))
             }
         }
+        // Keyed on everything visible, so a changed address or connection kind re-renders.
         val text = running.endpoint.url
-        if (text == lastNotificationText) return
-        lastNotificationText = text
+        val signature = "$text|$details"
+        if (signature == lastNotificationText) return
+        lastNotificationText = signature
         post(buildNotification(text, running.sharedName, details))
     }
 

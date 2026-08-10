@@ -76,15 +76,14 @@ fun NoNetworkDialog(onOpenHotspotSettings: () -> Unit, onDismiss: () -> Unit) {
 }
 
 /**
- * The live session: where to point a browser, which network it is on, and how to stop it.
- * [onRevealNetworkName] is null once the name is known — it is what asks for the location
- * permission, and only the network name needs it.
+ * The live session: where to point a browser, what kind of connection it is on, and how to stop it.
+ * The network is described by kind rather than by name, because reading an SSID would require a
+ * location permission this app does not ask for.
  */
 @Composable
 fun ShareRunningDialog(
     running: ShareState.Running,
     networkLabel: String,
-    onRevealNetworkName: (() -> Unit)?,
     onStop: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -118,12 +117,6 @@ fun ShareRunningDialog(
                         text = stringResource(R.string.share_running_pin, pin),
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                }
-                if (onRevealNetworkName != null) {
-                    TextButton(
-                        onClick = onRevealNetworkName,
-                        modifier = Modifier.padding(top = 4.dp),
-                    ) { Text(stringResource(R.string.share_show_network_name)) }
                 }
                 TextButton(
                     onClick = { copyToClipboard(context, running.endpoint.url) },

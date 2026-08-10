@@ -1,11 +1,8 @@
 package pl.dakil.appanalyser.data
 
-import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import android.net.wifi.WifiInfo
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.domain.ShareNetwork
 import java.net.Inet4Address
@@ -14,9 +11,9 @@ import java.net.NetworkInterface
 /**
  * Works out which local network the share server should advertise itself on.
  *
- * Uses only install-time permissions (`ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`). The SSID is the
- * one piece that needs a runtime location permission, so it is resolved separately and degrades to
- * null rather than to Android's `<unknown ssid>` placeholder.
+ * Uses only install-time permissions (`ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`) and asks for no
+ * runtime permission at all. The network *name* is deliberately out of reach: Android gates the SSID
+ * behind a location permission, so the UI reports the connection kind instead.
  */
 class NetworkInfoProvider(private val context: Context) {
 
@@ -39,13 +36,12 @@ class NetworkInfoProvider(private val context: Context) {
 
         val wifiNames = wifiInterfaceNames()
         candidates.firstOrNull { it.first in wifiNames }?.let { (_, address) ->
-            return ShareNetwork(ShareNetwork.Kind.WIFI, address, ssid())
+            return ShareNetwork(ShareNetwork.Kind.WIFI, address)
         }
         candidates.firstOrNull { looksLikeHotspot(it.first, it.second) }?.let { (_, address) ->
-            // The tethering SSID is not readable through any public API.
-            return ShareNetwork(ShareNetwork.Kind.HOTSPOT, address, null)
+            return ShareNetwork(ShareNetwork.Kind.HOTSPOT, address)
         }
-        return candidates.first().let { ShareNetwork(ShareNetwork.Kind.OTHER, it.second, null) }
+        return candidates.first().let { ShareNetwork(ShareNetwork.Kind.OTHER, it.second) }
     }
 
     /** Interfaces the platform reports as carrying a Wi-Fi client connection. */
@@ -102,27 +98,8 @@ class NetworkInfoProvider(private val context: Context) {
         }
     }
 
-    /**
-     * The connected network's SSID, or null when it cannot be read — which is the normal case
-     * until the user grants a location permission, and also when location services are off.
-     */
-    fun ssid(): String? {
-        if (!hasLocationPermission()) return null
-        val manager = connectivityManager ?: return null
-        val network = manager.activeNetwork ?: return null
-        val capabilities = manager.getNetworkCapabilities(network) ?: return null
-        val info = capabilities.transportInfo as? WifiInfo ?: return null
-        val raw = info.ssid ?: return null
-        val cleaned = raw.trim('"')
-        return cleaned.takeUnless { it.isBlank() || it == UNKNOWN_SSID }
-    }
-
-    fun hasLocationPermission(): Boolean =
-        context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) ==
-            PackageManager.PERMISSION_GRANTED
-
-    /** Display label for a network, falling back to a generic name when the SSID is unavailable. */
-    fun label(network: ShareNetwork): String = network.name ?: context.getString(
+    /** How to describe the connection in the UI — a kind, never a network name. */
+    fun label(network: ShareNetwork): String = context.getString(
         when (network.kind) {
             ShareNetwork.Kind.WIFI -> R.string.share_network_wifi
             ShareNetwork.Kind.HOTSPOT -> R.string.share_network_hotspot
@@ -131,8 +108,6 @@ class NetworkInfoProvider(private val context: Context) {
     )
 
     private companion object {
-        const val UNKNOWN_SSID = "<unknown ssid>"
-
         /** Cellular and virtual interfaces: never reachable from another device on the LAN. */
         val EXCLUDED_PREFIXES = listOf(
             "rmnet", "ccmni", "pdp", "clat", "v4-", "dummy", "sit", "tun", "ppp", "rndis",

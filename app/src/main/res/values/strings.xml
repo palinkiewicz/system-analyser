@@ -386,10 +386,9 @@
     <string name="share_no_network_message">Other devices can only reach this phone over Wi-Fi or its hotspot. Connect to a Wi-Fi network, or turn on the hotspot and try again.</string>
     <string name="share_open_hotspot_settings">Open hotspot settings</string>
     <string name="share_running_title">Sharing %1$s</string>
-    <string name="share_running_hint">Open this address in a browser on a device connected to the same network.</string>
-    <string name="share_running_network">Network: %1$s</string>
+    <string name="share_running_hint">Open this address in a browser on another device. That device must be on the same Wi-Fi network, or connected to this phone\'s hotspot.</string>
+    <string name="share_running_network">Connection: %1$s</string>
     <string name="share_running_pin">Code: %1$s</string>
-    <string name="share_show_network_name">Show network name</string>
     <string name="share_copy_link">Copy link</string>
     <string name="share_stop">Stop sharing</string>
     <string name="share_network_wifi">Wi-Fi</string>
@@ -399,7 +398,7 @@
     <string name="share_notification_channel_description">Shown while a file is being served to your local network</string>
     <string name="share_notification_title">Sharing %1$s</string>
     <string name="share_notification_starting">Starting…</string>
-    <string name="share_notification_network">Network: %1$s</string>
+    <string name="share_notification_network">Connection: %1$s</string>
     <string name="share_notification_pin">Code: %1$s</string>
     <string name="share_notification_permission_required">Sharing needs notification permission so you can see and stop the server</string>
 </resources>

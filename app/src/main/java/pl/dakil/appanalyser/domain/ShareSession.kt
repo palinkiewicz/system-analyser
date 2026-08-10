@@ -12,12 +12,13 @@ enum class ShareAccessMode {
     PIN,
 }
 
-/** Which interface the server is reachable on, and what to call it in the UI. */
+/**
+ * Which interface the server is reachable on. Only the *kind* is recorded, never the network name:
+ * reading an SSID would cost a location permission this app deliberately does not ask for.
+ */
 data class ShareNetwork(
     val kind: Kind,
     val ipAddress: String,
-    /** SSID, or null when it needs a location permission the user has not granted. */
-    val name: String?,
 ) {
     enum class Kind { WIFI, HOTSPOT, OTHER }
 }
