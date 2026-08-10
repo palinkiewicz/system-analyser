@@ -8,6 +8,8 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -243,6 +245,45 @@ fun FileSystemScreen(
                 )
             }
         },
+        // The paste bar lives in the bottomBar slot rather than in the content, so the Scaffold
+        // lifts the FAB above it instead of letting the FAB cover Paste and Cancel.
+        bottomBar = {
+            AnimatedVisibility(
+                visible = clipboard != null && currentPath != null,
+                enter = slideInVertically(initialOffsetY = { it }),
+                exit = slideOutVertically(targetOffsetY = { it }),
+            ) {
+                val clip = clipboard
+                Surface(tonalElevation = 3.dp) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = pluralStringResource(
+                                if (clip?.operation == ClipboardOperation.MOVE) {
+                                    R.plurals.files_clipboard_move_x
+                                } else {
+                                    R.plurals.files_clipboard_copy_x
+                                },
+                                clip?.paths?.size ?: 0,
+                                clip?.paths?.size ?: 0,
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextButton(onClick = { viewModel.clearClipboard() }) {
+                            Text(stringResource(R.string.files_cancel))
+                        }
+                        TextButton(onClick = { viewModel.paste() }) {
+                            Text(stringResource(R.string.files_paste))
+                        }
+                    }
+                }
+            }
+        },
         floatingActionButton = {
             if (currentPath != null && selection.isEmpty()) {
                 FloatingActionButton(onClick = { showCreateSheet = true }) {
@@ -307,37 +348,6 @@ fun FileSystemScreen(
                 }
             }
 
-            AnimatedVisibility(visible = clipboard != null && currentPath != null) {
-                val clip = clipboard
-                Surface(tonalElevation = 3.dp) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = pluralStringResource(
-                                if (clip?.operation == ClipboardOperation.MOVE) {
-                                    R.plurals.files_clipboard_move_x
-                                } else {
-                                    R.plurals.files_clipboard_copy_x
-                                },
-                                clip?.paths?.size ?: 0,
-                                clip?.paths?.size ?: 0,
-                            ),
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.weight(1f),
-                        )
-                        TextButton(onClick = { viewModel.clearClipboard() }) {
-                            Text(stringResource(R.string.files_cancel))
-                        }
-                        TextButton(onClick = { viewModel.paste() }) {
-                            Text(stringResource(R.string.files_paste))
-                        }
-                    }
-                }
-            }
         }
     }
 
