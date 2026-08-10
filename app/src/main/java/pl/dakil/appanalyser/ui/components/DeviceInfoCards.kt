@@ -428,7 +428,7 @@ fun BatteryDetailsCard(
 // ---------------------------------------------------------------------
 
 /** Measurement unit symbol for a sensor type, or null when it has no meaningful unit. */
-private fun sensorUnit(type: Int): String? = when (type) {
+internal fun sensorUnit(type: Int): String? = when (type) {
     Sensor.TYPE_ACCELEROMETER,
     Sensor.TYPE_GRAVITY,
     Sensor.TYPE_LINEAR_ACCELERATION -> "m/s²"

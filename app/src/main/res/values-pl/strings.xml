@@ -22,6 +22,8 @@
     <string name="settings_device_info_summary">Jednostka temperatury, widok czujników</string>
     <string name="settings_home">Ekran główny</string>
     <string name="settings_home_summary">Układ siatki kart</string>
+    <string name="settings_notifications">Powiadomienia</string>
+    <string name="settings_notifications_summary">Częstotliwość odświeżania, przypięte karty</string>
     <string name="settings_about">O aplikacji</string>
     <string name="settings_about_summary">Wersja, autor, repozytorium</string>
     <string name="settings_theme_colors">Kolory motywu</string>
@@ -33,6 +35,12 @@
     <string name="settings_pure_black_description">Całkowicie czarne tło w trybie ciemnym, oszczędza baterię na ekranach OLED</string>
     <string name="settings_home_columns">Kolumny</string>
     <string name="settings_home_columns_description">Liczba kolumn siatki na ekranie głównym</string>
+    <string name="settings_notifications_interval">Częstotliwość odświeżania</string>
+    <string name="settings_notifications_interval_description">Jak często przypięte karty odświeżają się na pasku powiadomień</string>
+    <string name="settings_notifications_seconds_x">%1$d s</string>
+    <string name="settings_notifications_pinned">Przypięte karty</string>
+    <string name="settings_notifications_pinned_empty">Brak przypiętych kart. Przytrzymaj kartę na ekranie Urządzenie, aby ją przypiąć.</string>
+    <string name="settings_notifications_unpin">Odepnij</string>
     <string name="settings_temperature_unit">Jednostka temperatury</string>
     <string name="settings_simple_sensor_view">Uproszczony widok czujników</string>
     <string name="settings_simple_sensor_view_description">Pokazuj tylko nazwę czujnika i jego wartość</string>
@@ -148,6 +156,12 @@
     <string name="device_value_unavailable">Brak</string>
     <string name="device_add_to_home">Dodaj do ekranu głównego</string>
     <string name="device_added_to_home">Dodano do ekranu głównego</string>
+    <string name="device_pin_to_notifications">Przypnij do powiadomień</string>
+    <string name="device_unpin_from_notifications">Odepnij od powiadomień</string>
+    <string name="device_pinned_to_notifications">Przypięto do powiadomień</string>
+    <string name="device_unpinned_from_notifications">Odpięto od powiadomień</string>
+    <string name="device_notification_permission_required">Zezwól na powiadomienia, aby przypinać karty</string>
+    <string name="device_notification_permission_settings">Ustawienia</string>
 
     <string name="device_tab_system">System</string>
     <string name="device_tab_cpu">Procesor</string>
@@ -230,4 +244,12 @@
     <string name="device_display_density">Gęstość</string>
     <string name="device_display_refresh_rate">Częstotliwość odświeżania</string>
     <string name="device_display_size">Rozmiar ekranu</string>
+
+    <!--  PRZYPIĘTE POWIADOMIENIA  -->
+    <string name="notification_channel_pinned">Przypięte karty</string>
+    <string name="notification_channel_pinned_description">Informacje o urządzeniu na żywo, przypięte do paska powiadomień</string>
+    <string name="notification_remove">Usuń powiadomienie</string>
+    <string name="notification_loading">Wczytywanie…</string>
+    <string name="notification_card_system_identity">Urządzenie</string>
+    <string name="notification_card_system_software">Oprogramowanie</string>
 </resources>

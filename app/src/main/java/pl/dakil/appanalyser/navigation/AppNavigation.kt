@@ -1,5 +1,13 @@
 package pl.dakil.appanalyser.navigation
 
+import android.Manifest
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection
 import androidx.compose.animation.AnimatedVisibility
@@ -32,11 +40,14 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -53,8 +64,11 @@ import androidx.navigation.navArgument
 import kotlinx.coroutines.launch
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.HomeLayoutRepository
+import pl.dakil.appanalyser.data.PinnedNotificationsRepository
 import pl.dakil.appanalyser.domain.HomeWidget
 import pl.dakil.appanalyser.domain.HomeWidgetType
+import pl.dakil.appanalyser.domain.SensorInfo
+import pl.dakil.appanalyser.service.PinnedNotificationsManager
 import pl.dakil.appanalyser.ui.screens.AppDetailsScreen
 import pl.dakil.appanalyser.ui.screens.AppListScreen
 import pl.dakil.appanalyser.ui.screens.DeviceInfoScreen
@@ -63,6 +77,7 @@ import pl.dakil.appanalyser.ui.screens.SettingsScreen
 import pl.dakil.appanalyser.ui.screens.settings.AppearanceSettingsScreen
 import pl.dakil.appanalyser.ui.screens.settings.DeviceInfoSettingsScreen
 import pl.dakil.appanalyser.ui.screens.settings.HomeSettingsScreen
+import pl.dakil.appanalyser.ui.screens.settings.NotificationsSettingsScreen
 import pl.dakil.appanalyser.viewmodel.AppAnalyzerViewModel
 import java.util.UUID
 
@@ -80,6 +95,7 @@ sealed class Screen(val route: String) {
     object SettingsAppearance : Screen("settings/appearance")
     object SettingsDeviceInfo : Screen("settings/device_info")
     object SettingsHome : Screen("settings/home")
+    object SettingsNotifications : Screen("settings/notifications")
 }
 
 /** The four bottom-bar destinations; every other route is a pushed screen without the bar. */
@@ -220,6 +236,43 @@ fun AppNavigation(viewModel: AppAnalyzerViewModel, navController: NavHostControl
             ) { backStackEntry ->
                 val context = LocalContext.current
                 val addedMessage = stringResource(R.string.device_added_to_home)
+                val pinnedMessage = stringResource(R.string.device_pinned_to_notifications)
+                val unpinnedMessage = stringResource(R.string.device_unpinned_from_notifications)
+                val permissionMessage =
+                    stringResource(R.string.device_notification_permission_required)
+                val permissionAction =
+                    stringResource(R.string.device_notification_permission_settings)
+
+                fun pin(type: HomeWidgetType, sensor: SensorInfo?) {
+                    PinnedNotificationsManager.pin(context, type, sensor)
+                    scope.launch { snackbarHostState.showSnackbar(pinnedMessage) }
+                }
+
+                // The card awaiting the permission result, so a granted dialog completes the pin
+                // the user actually asked for.
+                var pendingPin by remember { mutableStateOf<Pair<HomeWidgetType, SensorInfo?>?>(null) }
+                val permissionLauncher = rememberLauncherForActivityResult(
+                    ActivityResultContracts.RequestPermission()
+                ) { granted ->
+                    val pending = pendingPin
+                    pendingPin = null
+                    if (granted && pending != null) {
+                        pin(pending.first, pending.second)
+                    } else {
+                        scope.launch {
+                            // Android shows the system dialog at most twice, after which requests
+                            // are auto-denied — offer the app's notification settings instead.
+                            val result = snackbarHostState.showSnackbar(
+                                message = permissionMessage,
+                                actionLabel = permissionAction
+                            )
+                            if (result == SnackbarResult.ActionPerformed) {
+                                context.openNotificationSettings()
+                            }
+                        }
+                    }
+                }
+
                 DeviceInfoScreen(
                     initialTab = backStackEntry.arguments?.getInt("tab") ?: -1,
                     onAddToHome = { type, sensor ->
@@ -234,6 +287,22 @@ fun AppNavigation(viewModel: AppAnalyzerViewModel, navController: NavHostControl
                             )
                         )
                         scope.launch { snackbarHostState.showSnackbar(addedMessage) }
+                    },
+                    onTogglePin = { type, sensor ->
+                        val repository = PinnedNotificationsRepository.get(context)
+                        when {
+                            repository.isPinned(type, sensor?.type) -> {
+                                PinnedNotificationsManager.unpin(context, type, sensor?.type)
+                                scope.launch { snackbarHostState.showSnackbar(unpinnedMessage) }
+                            }
+                            // Pinning without the permission would start a foreground service whose
+                            // notifications the system silently drops — ask first, pin after.
+                            context.canPostNotifications() -> pin(type, sensor)
+                            else -> {
+                                pendingPin = type to sensor
+                                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            }
+                        }
                     }
                 )
             }
@@ -249,7 +318,10 @@ fun AppNavigation(viewModel: AppAnalyzerViewModel, navController: NavHostControl
                 SettingsScreen(
                     onNavigateToAppearance = { navController.navigate(Screen.SettingsAppearance.route) },
                     onNavigateToDeviceInfoSettings = { navController.navigate(Screen.SettingsDeviceInfo.route) },
-                    onNavigateToHomeSettings = { navController.navigate(Screen.SettingsHome.route) }
+                    onNavigateToHomeSettings = { navController.navigate(Screen.SettingsHome.route) },
+                    onNavigateToNotificationsSettings = {
+                        navController.navigate(Screen.SettingsNotifications.route)
+                    }
                 )
             }
             composable(Screen.AppDetails.route) { backStackEntry ->
@@ -269,7 +341,26 @@ fun AppNavigation(viewModel: AppAnalyzerViewModel, navController: NavHostControl
             composable(Screen.SettingsHome.route) {
                 HomeSettingsScreen(onNavigateBack = { navController.popBackStack() })
             }
+            composable(Screen.SettingsNotifications.route) {
+                NotificationsSettingsScreen(onNavigateBack = { navController.popBackStack() })
+            }
         }
+    }
+}
+
+/** POST_NOTIFICATIONS is a runtime permission from Android 13; before that it is implicit. */
+private fun Context.canPostNotifications(): Boolean =
+    Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+        checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
+        PackageManager.PERMISSION_GRANTED
+
+private fun Context.openNotificationSettings() {
+    runCatching {
+        startActivity(
+            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        )
     }
 }
 

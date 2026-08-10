@@ -49,6 +49,13 @@ class SettingsRepository private constructor(context: Context) {
     )
     val homeColumns: StateFlow<Int> = _homeColumns.asStateFlow()
 
+    /** How often the pinned-card notifications re-sample and re-render, in seconds. */
+    private val _notificationIntervalSeconds = MutableStateFlow(
+        prefs.getInt(KEY_NOTIFICATION_INTERVAL, DEFAULT_NOTIFICATION_INTERVAL)
+            .coerceIn(MIN_NOTIFICATION_INTERVAL, MAX_NOTIFICATION_INTERVAL)
+    )
+    val notificationIntervalSeconds: StateFlow<Int> = _notificationIntervalSeconds.asStateFlow()
+
     fun setTemperatureUnit(unit: TemperatureUnit) {
         prefs.edit().putString(KEY_TEMPERATURE_UNIT, unit.name).apply()
         _temperatureUnit.value = unit
@@ -85,6 +92,12 @@ class SettingsRepository private constructor(context: Context) {
         _homeColumns.value = clamped
     }
 
+    fun setNotificationIntervalSeconds(seconds: Int) {
+        val clamped = seconds.coerceIn(MIN_NOTIFICATION_INTERVAL, MAX_NOTIFICATION_INTERVAL)
+        prefs.edit().putInt(KEY_NOTIFICATION_INTERVAL, clamped).apply()
+        _notificationIntervalSeconds.value = clamped
+    }
+
     companion object {
         private const val PREFS_NAME = "settings"
         private const val KEY_TEMPERATURE_UNIT = "temperature_unit"
@@ -94,10 +107,15 @@ class SettingsRepository private constructor(context: Context) {
         private const val KEY_DARK_THEME_OPTION = "dark_theme_option"
         private const val KEY_PURE_BLACK = "pure_black"
         private const val KEY_HOME_COLUMNS = "home_columns"
+        private const val KEY_NOTIFICATION_INTERVAL = "notification_interval_seconds"
 
         const val MIN_HOME_COLUMNS = 1
         const val MAX_HOME_COLUMNS = 5
         const val DEFAULT_HOME_COLUMNS = 2
+
+        const val MIN_NOTIFICATION_INTERVAL = 1
+        const val MAX_NOTIFICATION_INTERVAL = 15
+        const val DEFAULT_NOTIFICATION_INTERVAL = 3
 
         @Volatile
         private var instance: SettingsRepository? = null

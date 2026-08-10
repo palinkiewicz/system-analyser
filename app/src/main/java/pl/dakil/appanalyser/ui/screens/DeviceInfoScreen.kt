@@ -9,8 +9,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AddHome
+import androidx.compose.material.icons.rounded.NotificationsActive
+import androidx.compose.material.icons.rounded.NotificationsOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -37,6 +40,7 @@ import pl.dakil.appanalyser.domain.CpuInfo
 import pl.dakil.appanalyser.domain.UptimeInfo
 import pl.dakil.appanalyser.domain.DisplayInfo
 import pl.dakil.appanalyser.domain.MemoryInfo
+import pl.dakil.appanalyser.domain.PinnedCard
 import pl.dakil.appanalyser.domain.SensorInfo
 import pl.dakil.appanalyser.domain.SystemInfo
 import pl.dakil.appanalyser.domain.TemperatureUnit
@@ -59,6 +63,7 @@ import pl.dakil.appanalyser.viewmodel.DeviceInfoViewModel
 @Composable
 fun DeviceInfoScreen(
     onAddToHome: (HomeWidgetType, SensorInfo?) -> Unit = { _, _ -> },
+    onTogglePin: (HomeWidgetType, SensorInfo?) -> Unit = { _, _ -> },
     initialTab: Int = -1,
     viewModel: DeviceInfoViewModel = viewModel()
 ) {
@@ -109,6 +114,11 @@ fun DeviceInfoScreen(
             val temperatureUnit by viewModel.temperatureUnit.collectAsState()
             val simpleSensorView by viewModel.simpleSensorView.collectAsState()
             val showSensorUnits by viewModel.showSensorUnits.collectAsState()
+            val pinnedCards by viewModel.pinnedCards.collectAsState()
+
+            val menu = remember(onAddToHome, onTogglePin, pinnedCards) {
+                CardMenu(onAddToHome, onTogglePin, pinnedCards.map { it.dedupeKey }.toSet())
+            }
 
             // The pager composes only the visible page (beyondViewportPageCount = 0), so each tab
             // collects its flow only while on screen — off-screen tabs stop refreshing.
@@ -120,18 +130,18 @@ fun DeviceInfoScreen(
                     0 -> SystemTab(
                         viewModel.systemInfo,
                         viewModel.uptime.collectAsState().value,
-                        onAddToHome
+                        menu
                     )
-                    1 -> CpuTab(viewModel.cpu.collectAsState().value, temperatureUnit, onAddToHome)
-                    2 -> BatteryTab(viewModel.battery.collectAsState().value, temperatureUnit, onAddToHome)
+                    1 -> CpuTab(viewModel.cpu.collectAsState().value, temperatureUnit, menu)
+                    2 -> BatteryTab(viewModel.battery.collectAsState().value, temperatureUnit, menu)
                     3 -> SensorsTab(
                         viewModel.sensors.collectAsState().value,
                         simpleSensorView,
                         showSensorUnits,
-                        onAddToHome
+                        menu
                     )
-                    4 -> MemoryTab(viewModel.memory.collectAsState().value, onAddToHome)
-                    5 -> DisplayTab(viewModel.displayInfo, onAddToHome)
+                    4 -> MemoryTab(viewModel.memory.collectAsState().value, menu)
+                    5 -> DisplayTab(viewModel.displayInfo, menu)
                 }
             }
         }
@@ -162,16 +172,22 @@ private fun Loading() {
 }
 
 // ---------------------------------------------------------------------
-// Long-press "Add to Home" menu host
+// Long-press card context menu
 // ---------------------------------------------------------------------
 
 /**
  * Wraps a device-info card with a long-press gesture that opens a context menu anchored at
- * the press position, offering to pin the card to the Home screen grid.
+ * the press position, offering to pin the card to the Home screen grid or to the notification
+ * shade.
+ *
+ * The notification entry is a toggle rather than a disabled "already pinned" item: unpinning is
+ * discoverable in the same place the user pinned from.
  */
 @Composable
-private fun AddToHomeMenuHost(
-    onAdd: () -> Unit,
+private fun CardContextMenuHost(
+    onAddToHome: () -> Unit,
+    onTogglePin: () -> Unit,
+    isPinned: Boolean,
     content: @Composable (Modifier) -> Unit
 ) {
     var pressPosition by remember { mutableStateOf<Offset?>(null) }
@@ -206,7 +222,28 @@ private fun AddToHomeMenuHost(
                         },
                         onClick = {
                             pressPosition = null
-                            onAdd()
+                            onAddToHome()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                stringResource(
+                                    if (isPinned) R.string.device_unpin_from_notifications
+                                    else R.string.device_pin_to_notifications
+                                )
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                if (isPinned) Icons.Rounded.NotificationsOff
+                                else Icons.Rounded.NotificationsActive,
+                                contentDescription = null
+                            )
+                        },
+                        onClick = {
+                            pressPosition = null
+                            onTogglePin()
                         }
                     )
                 }
@@ -215,48 +252,55 @@ private fun AddToHomeMenuHost(
     }
 }
 
+/**
+ * The card actions available on every tab, bundled so adding a menu entry doesn't mean threading
+ * another parameter through all six tabs.
+ */
+@Immutable
+private class CardMenu(
+    private val onAddToHome: (HomeWidgetType, SensorInfo?) -> Unit,
+    private val onTogglePin: (HomeWidgetType, SensorInfo?) -> Unit,
+    private val pinnedKeys: Set<String>,
+) {
+    @Composable
+    fun Host(
+        type: HomeWidgetType,
+        sensor: SensorInfo? = null,
+        content: @Composable (Modifier) -> Unit
+    ) {
+        CardContextMenuHost(
+            onAddToHome = { onAddToHome(type, sensor) },
+            onTogglePin = { onTogglePin(type, sensor) },
+            isPinned = PinnedCard.dedupeKeyOf(type, sensor?.type) in pinnedKeys,
+            content = content
+        )
+    }
+}
+
 // ---------------------------------------------------------------------
 // Tabs — thin compositions of the reusable cards in ui/components
 // ---------------------------------------------------------------------
 
 @Composable
-private fun SystemTab(
-    info: SystemInfo,
-    uptime: UptimeInfo?,
-    onAddToHome: (HomeWidgetType, SensorInfo?) -> Unit
-) {
+private fun SystemTab(info: SystemInfo, uptime: UptimeInfo?, menu: CardMenu) {
     TabScaffold {
-        AddToHomeMenuHost(onAdd = { onAddToHome(HomeWidgetType.SYSTEM_IDENTITY, null) }) {
-            SystemIdentityCard(info, it)
-        }
-        AddToHomeMenuHost(onAdd = { onAddToHome(HomeWidgetType.SYSTEM_SOFTWARE, null) }) {
-            SystemSoftwareCard(info, it)
-        }
-        AddToHomeMenuHost(onAdd = { onAddToHome(HomeWidgetType.SYSTEM_UPTIME, null) }) {
-            SystemUptimeCard(uptime, it)
-        }
+        menu.Host(HomeWidgetType.SYSTEM_IDENTITY) { SystemIdentityCard(info, it) }
+        menu.Host(HomeWidgetType.SYSTEM_SOFTWARE) { SystemSoftwareCard(info, it) }
+        menu.Host(HomeWidgetType.SYSTEM_UPTIME) { SystemUptimeCard(uptime, it) }
     }
 }
 
 @Composable
-private fun CpuTab(
-    info: CpuInfo?,
-    temperatureUnit: TemperatureUnit,
-    onAddToHome: (HomeWidgetType, SensorInfo?) -> Unit
-) {
+private fun CpuTab(info: CpuInfo?, temperatureUnit: TemperatureUnit, menu: CardMenu) {
     if (info == null) {
         Loading()
         return
     }
     TabScaffold {
-        AddToHomeMenuHost(onAdd = { onAddToHome(HomeWidgetType.CPU_USAGE, null) }) {
-            CpuUsageCard(info, it)
-        }
-        AddToHomeMenuHost(onAdd = { onAddToHome(HomeWidgetType.CPU_CLOCKS, null) }) {
-            CpuClockSpeedsCard(info, it)
-        }
+        menu.Host(HomeWidgetType.CPU_USAGE) { CpuUsageCard(info, it) }
+        menu.Host(HomeWidgetType.CPU_CLOCKS) { CpuClockSpeedsCard(info, it) }
         if (info.temperatures.isNotEmpty()) {
-            AddToHomeMenuHost(onAdd = { onAddToHome(HomeWidgetType.CPU_TEMPERATURES, null) }) {
+            menu.Host(HomeWidgetType.CPU_TEMPERATURES) {
                 CpuTemperaturesCard(info, temperatureUnit, it)
             }
         }
@@ -264,22 +308,14 @@ private fun CpuTab(
 }
 
 @Composable
-private fun BatteryTab(
-    info: BatteryInfo?,
-    temperatureUnit: TemperatureUnit,
-    onAddToHome: (HomeWidgetType, SensorInfo?) -> Unit
-) {
+private fun BatteryTab(info: BatteryInfo?, temperatureUnit: TemperatureUnit, menu: CardMenu) {
     if (info == null) {
         Loading()
         return
     }
     TabScaffold {
-        AddToHomeMenuHost(onAdd = { onAddToHome(HomeWidgetType.BATTERY_POWER, null) }) {
-            AmpereCard(info, it)
-        }
-        AddToHomeMenuHost(onAdd = { onAddToHome(HomeWidgetType.BATTERY_INFO, null) }) {
-            BatteryDetailsCard(info, temperatureUnit, it)
-        }
+        menu.Host(HomeWidgetType.BATTERY_POWER) { AmpereCard(info, it) }
+        menu.Host(HomeWidgetType.BATTERY_INFO) { BatteryDetailsCard(info, temperatureUnit, it) }
     }
 }
 
@@ -288,7 +324,7 @@ private fun SensorsTab(
     sensors: List<SensorInfo>,
     simple: Boolean,
     showUnits: Boolean,
-    onAddToHome: (HomeWidgetType, SensorInfo?) -> Unit
+    menu: CardMenu
 ) {
     if (sensors.isEmpty()) {
         Loading()
@@ -296,7 +332,7 @@ private fun SensorsTab(
     }
     TabScaffold {
         sensors.forEach { sensor ->
-            AddToHomeMenuHost(onAdd = { onAddToHome(HomeWidgetType.SENSOR, sensor) }) {
+            menu.Host(HomeWidgetType.SENSOR, sensor) {
                 SensorCard(sensor = sensor, simple = simple, modifier = it, showUnit = showUnits)
             }
         }
@@ -304,26 +340,20 @@ private fun SensorsTab(
 }
 
 @Composable
-private fun MemoryTab(info: MemoryInfo?, onAddToHome: (HomeWidgetType, SensorInfo?) -> Unit) {
+private fun MemoryTab(info: MemoryInfo?, menu: CardMenu) {
     if (info == null) {
         Loading()
         return
     }
     TabScaffold {
-        AddToHomeMenuHost(onAdd = { onAddToHome(HomeWidgetType.RAM, null) }) {
-            RamCard(info, it)
-        }
-        AddToHomeMenuHost(onAdd = { onAddToHome(HomeWidgetType.STORAGE, null) }) {
-            StorageCard(info, it)
-        }
+        menu.Host(HomeWidgetType.RAM) { RamCard(info, it) }
+        menu.Host(HomeWidgetType.STORAGE) { StorageCard(info, it) }
     }
 }
 
 @Composable
-private fun DisplayTab(info: DisplayInfo, onAddToHome: (HomeWidgetType, SensorInfo?) -> Unit) {
+private fun DisplayTab(info: DisplayInfo, menu: CardMenu) {
     TabScaffold {
-        AddToHomeMenuHost(onAdd = { onAddToHome(HomeWidgetType.DISPLAY, null) }) {
-            DisplayCard(info, it)
-        }
+        menu.Host(HomeWidgetType.DISPLAY) { DisplayCard(info, it) }
     }
 }

@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Brush
 import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -33,7 +34,8 @@ import pl.dakil.appanalyser.ui.screens.settings.SettingRow
 fun SettingsScreen(
     onNavigateToAppearance: () -> Unit,
     onNavigateToDeviceInfoSettings: () -> Unit,
-    onNavigateToHomeSettings: () -> Unit
+    onNavigateToHomeSettings: () -> Unit,
+    onNavigateToNotificationsSettings: () -> Unit
 ) {
     var showAboutDialog by remember { mutableStateOf(false) }
 
@@ -73,6 +75,12 @@ fun SettingsScreen(
                 summary = stringResource(R.string.settings_home_summary),
                 icon = Icons.Rounded.GridView,
                 onClick = onNavigateToHomeSettings
+            )
+            NavigationRow(
+                title = stringResource(R.string.settings_notifications),
+                summary = stringResource(R.string.settings_notifications_summary),
+                icon = Icons.Rounded.Notifications,
+                onClick = onNavigateToNotificationsSettings
             )
             SettingRow(
                 title = stringResource(R.string.settings_about),

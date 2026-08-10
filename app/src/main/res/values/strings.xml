@@ -22,6 +22,8 @@
     <string name="settings_device_info_summary">Temperature unit, sensor view</string>
     <string name="settings_home">Home screen</string>
     <string name="settings_home_summary">Card grid layout</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_notifications_summary">Update interval, pinned cards</string>
     <string name="settings_about">About app</string>
     <string name="settings_about_summary">Version, author, repository</string>
     <string name="settings_theme_colors">Theme colors</string>
@@ -33,6 +35,12 @@
     <string name="settings_pure_black_description">Fully black background in dark mode, saves battery on OLED screens</string>
     <string name="settings_home_columns">Columns</string>
     <string name="settings_home_columns_description">Number of columns on the home screen grid</string>
+    <string name="settings_notifications_interval">Update interval</string>
+    <string name="settings_notifications_interval_description">How often the pinned cards refresh in the notification shade</string>
+    <string name="settings_notifications_seconds_x">%1$d s</string>
+    <string name="settings_notifications_pinned">Pinned cards</string>
+    <string name="settings_notifications_pinned_empty">No cards pinned. Long-press a card on the Device screen to pin it.</string>
+    <string name="settings_notifications_unpin">Unpin</string>
     <string name="settings_temperature_unit">Temperature unit</string>
     <string name="settings_simple_sensor_view">Use simple sensor view</string>
     <string name="settings_simple_sensor_view_description">Show only the sensor name and its value</string>
@@ -148,6 +156,12 @@
     <string name="device_value_unavailable">N/A</string>
     <string name="device_add_to_home">Add to Home screen</string>
     <string name="device_added_to_home">Added to Home screen</string>
+    <string name="device_pin_to_notifications">Pin to notifications</string>
+    <string name="device_unpin_from_notifications">Unpin from notifications</string>
+    <string name="device_pinned_to_notifications">Pinned to notifications</string>
+    <string name="device_unpinned_from_notifications">Unpinned from notifications</string>
+    <string name="device_notification_permission_required">Allow notifications to pin cards</string>
+    <string name="device_notification_permission_settings">Settings</string>
 
     <string name="device_tab_system">System</string>
     <string name="device_tab_cpu">CPU</string>
@@ -230,4 +244,12 @@
     <string name="device_display_density">Density</string>
     <string name="device_display_refresh_rate">Refresh rate</string>
     <string name="device_display_size">Screen size</string>
+
+    <!--  PINNED NOTIFICATIONS  -->
+    <string name="notification_channel_pinned">Pinned cards</string>
+    <string name="notification_channel_pinned_description">Live device info pinned to the notification shade</string>
+    <string name="notification_remove">Remove notification</string>
+    <string name="notification_loading">Loading…</string>
+    <string name="notification_card_system_identity">Device</string>
+    <string name="notification_card_system_software">Software</string>
 </resources>
