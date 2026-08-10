@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- APKs staged for sharing; see AppAnalyzerRepository.createShareableApk. -->
+    <cache-path
+        name="shared_apks"
+        path="shared_apks/" />
+</paths>

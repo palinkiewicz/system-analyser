@@ -1,6 +1,10 @@
 package pl.dakil.appanalyser.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import android.text.format.Formatter
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -8,6 +12,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -40,6 +46,27 @@ import pl.dakil.appanalyser.R
 import java.text.SimpleDateFormat
 import java.util.*
 
+private const val APK_MIME_TYPE = "application/vnd.android.package-archive"
+
+/** `com.example.app_1.2.apk`, with characters a file system may reject stripped out. */
+private fun suggestedApkFileName(details: AppDetails): String {
+    val base = "${details.appInfo.packageName}_${details.versionName}"
+        .replace(Regex("[^A-Za-z0-9._-]"), "_")
+    return "$base.apk"
+}
+
+/** Share sheet for a staged APK; the read grant is what lets the target app open the URI. */
+private fun shareApkChooser(uri: Uri, title: String): Intent {
+    val send = Intent(Intent.ACTION_SEND).apply {
+        type = APK_MIME_TYPE
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    return Intent.createChooser(send, title).apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppDetailsScreen(
@@ -50,9 +77,30 @@ fun AppDetailsScreen(
     val details by viewModel.selectedAppDetails.collectAsState()
     val isAnalyzing by viewModel.isAnalyzing.collectAsState()
 
+    val isExporting by viewModel.isExporting.collectAsState()
+
     var selectedFramework by remember { mutableStateOf<DetectedFramework?>(null) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    val context = LocalContext.current
+    val exportedMessage = stringResource(R.string.app_details_export_success)
+    val exportFailedMessage = stringResource(R.string.app_details_export_failed)
+    val shareFailedMessage = stringResource(R.string.app_details_share_failed)
+    val shareChooserTitle = stringResource(R.string.app_details_share_apk)
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument(APK_MIME_TYPE)
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        viewModel.exportApk(uri) { success ->
+            scope.launch {
+                snackbarHostState.showSnackbar(
+                    if (success) exportedMessage else exportFailedMessage
+                )
+            }
+        }
+    }
 
     LaunchedEffect(packageName) {
         viewModel.analyzeApp(packageName)
@@ -69,9 +117,53 @@ fun AppDetailsScreen(
                     }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
+                },
+                actions = {
+                    details?.let { appDetails ->
+                        if (isExporting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .padding(horizontal = 16.dp)
+                                    .size(24.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            IconButton(onClick = {
+                                viewModel.shareApk(suggestedApkFileName(appDetails)) { uri ->
+                                    if (uri == null) {
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(shareFailedMessage)
+                                        }
+                                    } else {
+                                        context.startActivity(
+                                            shareApkChooser(uri, shareChooserTitle)
+                                        )
+                                    }
+                                }
+                            }) {
+                                Icon(
+                                    Icons.Default.Share,
+                                    contentDescription = stringResource(
+                                        R.string.app_details_share_apk
+                                    )
+                                )
+                            }
+                            IconButton(onClick = {
+                                exportLauncher.launch(suggestedApkFileName(appDetails))
+                            }) {
+                                Icon(
+                                    Icons.Default.Download,
+                                    contentDescription = stringResource(
+                                        R.string.app_details_export_apk
+                                    )
+                                )
+                            }
+                        }
+                    }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         if (isAnalyzing || details == null) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

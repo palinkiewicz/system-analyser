@@ -15,6 +15,8 @@ data class AppDetails(
     val targetSdk: Int,
     val firstInstallTime: Long,
     val lastUpdateTime: Long,
-    val detectedFrameworks: List<DetectedFramework>
+    val detectedFrameworks: List<DetectedFramework>,
+    /** Absolute path of the installed base APK, used for exporting it. */
+    val apkPath: String
 )
 

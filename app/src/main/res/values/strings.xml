@@ -75,6 +75,11 @@
     <string name="app_details_framework_more_files">+ %1$d more files</string>
     <string name="app_details_description">Description</string>
     <string name="app_details_framework_files_found">Files found</string>
+    <string name="app_details_export_apk">Export APK</string>
+    <string name="app_details_share_apk">Share APK</string>
+    <string name="app_details_share_failed">Could not prepare the APK for sharing</string>
+    <string name="app_details_export_success">APK exported</string>
+    <string name="app_details_export_failed">Could not export the APK</string>
 
     <!--  TECH STACKS  -->
     <string name="tech_stack_flutter_name">Flutter</string>

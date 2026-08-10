@@ -1,6 +1,7 @@
 package pl.dakil.appanalyser.viewmodel
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -76,6 +77,45 @@ class AppAnalyzerViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
     
+    private val _isExporting = MutableStateFlow(false)
+    val isExporting: StateFlow<Boolean> = _isExporting
+
+    /**
+     * Writes the currently selected app's APK to [destination] (a document URI picked by the user)
+     * and reports success through [onResult].
+     */
+    fun exportApk(destination: Uri, onResult: (Boolean) -> Unit) {
+        val apkPath = _selectedAppDetails.value?.apkPath
+        if (apkPath == null) {
+            onResult(false)
+            return
+        }
+        viewModelScope.launch {
+            _isExporting.value = true
+            val success = repository.exportApk(apkPath, destination)
+            _isExporting.value = false
+            onResult(success)
+        }
+    }
+
+    /**
+     * Stages the selected app's APK as [fileName] in the cache and hands a shareable
+     * `content://` URI to [onReady] (null if the copy failed).
+     */
+    fun shareApk(fileName: String, onReady: (Uri?) -> Unit) {
+        val apkPath = _selectedAppDetails.value?.apkPath
+        if (apkPath == null) {
+            onReady(null)
+            return
+        }
+        viewModelScope.launch {
+            _isExporting.value = true
+            val uri = repository.createShareableApk(apkPath, fileName)
+            _isExporting.value = false
+            onReady(uri)
+        }
+    }
+
     fun clearSelectedApp() {
         _selectedAppDetails.value = null
     }

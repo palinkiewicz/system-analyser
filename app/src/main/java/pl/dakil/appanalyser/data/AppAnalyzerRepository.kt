@@ -4,7 +4,9 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
+import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import pl.dakil.appanalyser.domain.AppDetails
@@ -18,6 +20,11 @@ import kotlin.math.roundToInt
 class AppAnalyzerRepository(private val context: Context) {
 
     private val packageManager: PackageManager = context.packageManager
+
+    private companion object {
+        /** Must match the `cache-path` declared in `res/xml/file_paths.xml`. */
+        const val SHARE_DIR_NAME = "shared_apks"
+    }
 
     suspend fun getInstalledApps(showSystemApps: Boolean = false): List<AppInfo> = withContext(Dispatchers.IO) {
         val flags = PackageManager.GET_META_DATA
@@ -101,12 +108,60 @@ class AppAnalyzerRepository(private val context: Context) {
                 targetSdk = targetSdk,
                 firstInstallTime = firstInstallTime,
                 lastUpdateTime = lastUpdateTime,
-                detectedFrameworks = detectedFrameworks
+                detectedFrameworks = detectedFrameworks,
+                apkPath = sourceDir
             )
         } catch (e: PackageManager.NameNotFoundException) {
             null
         }
     }
+
+    /**
+     * Copies the installed base APK at [apkPath] into [destination], a document URI picked by the
+     * user through the storage access framework (so no storage permission is needed).
+     */
+    suspend fun exportApk(apkPath: String, destination: Uri): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val source = File(apkPath)
+            if (!source.exists() || !source.canRead()) return@withContext false
+            context.contentResolver.openOutputStream(destination)?.use { output ->
+                source.inputStream().use { input -> input.copyTo(output) }
+            } ?: return@withContext false
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Stages a copy of the installed APK at [apkPath] under `cache/shared_apks/[fileName]` and
+     * returns a `content://` URI for it, ready to hand to a share intent. Previously staged copies
+     * are dropped first so the cache holds at most the APK being shared right now.
+     */
+    suspend fun createShareableApk(apkPath: String, fileName: String): Uri? =
+        withContext(Dispatchers.IO) {
+            try {
+                val source = File(apkPath)
+                if (!source.exists() || !source.canRead()) return@withContext null
+
+                val shareDir = File(context.cacheDir, SHARE_DIR_NAME)
+                shareDir.listFiles()?.forEach { it.delete() }
+                if (!shareDir.exists() && !shareDir.mkdirs()) return@withContext null
+
+                val staged = File(shareDir, fileName)
+                source.inputStream().use { input ->
+                    staged.outputStream().use { output -> input.copyTo(output) }
+                }
+
+                FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    staged
+                )
+            } catch (e: Exception) {
+                null
+            }
+        }
 
     private fun determineTechStack(apkPath: String): List<DetectedFramework> {
         val file = File(apkPath)
