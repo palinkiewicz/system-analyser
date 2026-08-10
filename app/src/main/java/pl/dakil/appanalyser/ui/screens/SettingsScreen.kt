@@ -7,6 +7,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Brush
+import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Notifications
@@ -35,7 +36,8 @@ fun SettingsScreen(
     onNavigateToAppearance: () -> Unit,
     onNavigateToDeviceInfoSettings: () -> Unit,
     onNavigateToHomeSettings: () -> Unit,
-    onNavigateToNotificationsSettings: () -> Unit
+    onNavigateToNotificationsSettings: () -> Unit,
+    onNavigateToFileSystemSettings: () -> Unit
 ) {
     var showAboutDialog by remember { mutableStateOf(false) }
 
@@ -81,6 +83,12 @@ fun SettingsScreen(
                 summary = stringResource(R.string.settings_notifications_summary),
                 icon = Icons.Rounded.Notifications,
                 onClick = onNavigateToNotificationsSettings
+            )
+            NavigationRow(
+                title = stringResource(R.string.settings_file_system),
+                summary = stringResource(R.string.settings_file_system_summary),
+                icon = Icons.Rounded.FolderOpen,
+                onClick = onNavigateToFileSystemSettings
             )
             SettingRow(
                 title = stringResource(R.string.settings_about),

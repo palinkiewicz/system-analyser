@@ -7,6 +7,7 @@
     <string name="nav_home">Główna</string>
     <string name="nav_device">Urządzenie</string>
     <string name="nav_apps">Aplikacje</string>
+    <string name="nav_files">Pliki</string>
     <string name="nav_settings">Ustawienia</string>
 
     <!--  HOME SCREEN  -->
@@ -24,6 +25,23 @@
     <string name="settings_home_summary">Układ siatki kart</string>
     <string name="settings_notifications">Powiadomienia</string>
     <string name="settings_notifications_summary">Częstotliwość odświeżania, przypięte karty</string>
+    <string name="settings_file_system">System plików</string>
+    <string name="settings_file_system_summary">Eksperymentalna przeglądarka i edytor plików</string>
+    <string name="settings_file_system_experimental_warning">Ta funkcja jest eksperymentalna. Może odczytywać i zmieniać każdy plik na urządzeniu, więc korzystaj z niej ostrożnie — usuniętych plików nie da się odzyskać.</string>
+    <string name="settings_file_system_enabled">Karta Pliki</string>
+    <string name="settings_file_system_enabled_description">Dodaje kartę Pliki do paska nawigacji</string>
+    <string name="settings_file_system_browsing">Przeglądanie</string>
+    <string name="settings_file_system_editor">Edytor tekstu</string>
+    <string name="settings_show_hidden_files">Pokazuj ukryte pliki</string>
+    <string name="settings_show_hidden_files_description">Wyświetlaj pliki i foldery, których nazwa zaczyna się od kropki</string>
+    <string name="settings_confirm_deletion">Potwierdzaj usuwanie</string>
+    <string name="settings_confirm_deletion_description">Pytaj o potwierdzenie przed usunięciem plików</string>
+    <string name="settings_editor_monospace">Czcionka o stałej szerokości</string>
+    <string name="settings_editor_monospace_description">Używaj czcionki o stałej szerokości w edytorze</string>
+    <string name="settings_editor_word_wrap">Zawijanie wierszy</string>
+    <string name="settings_editor_word_wrap_description">Łam długie wiersze zamiast przewijać w bok</string>
+    <string name="settings_editor_highlighting">Podświetlanie składni</string>
+    <string name="settings_editor_highlighting_description">Koloruj kod i znaczniki w obsługiwanych typach plików</string>
     <string name="settings_about">O aplikacji</string>
     <string name="settings_about_summary">Wersja, autor, repozytorium</string>
     <string name="settings_theme_colors">Kolory motywu</string>
@@ -252,4 +270,108 @@
     <string name="notification_loading">Wczytywanie…</string>
     <string name="notification_card_system_identity">Urządzenie</string>
     <string name="notification_card_system_software">Oprogramowanie</string>
+
+    <!--  EKRAN SYSTEMU PLIKÓW  -->
+    <string name="files_permission_title">Wymagany dostęp do wszystkich plików</string>
+    <string name="files_permission_message">Aby przeglądać i zmieniać pliki, Analizator potrzebuje dostępu do wszystkich plików na tym urządzeniu. Możesz go cofnąć w dowolnej chwili w ustawieniach systemu.</string>
+    <string name="files_permission_grant">Przyznaj dostęp</string>
+    <string name="files_internal_storage">Pamięć wewnętrzna</string>
+    <string name="files_sd_card">Karta SD</string>
+    <string name="files_root">Katalog główny</string>
+    <string name="files_empty_folder">Ten folder jest pusty</string>
+    <string name="files_more_options">Więcej opcji</string>
+    <string name="files_sort_by">Sortuj według</string>
+    <string name="files_sort_name">Nazwy</string>
+    <string name="files_sort_size">Rozmiaru</string>
+    <string name="files_sort_date">Daty</string>
+    <string name="files_sort_type">Typu</string>
+    <string name="files_sort_descending">Malejąco</string>
+    <string name="files_show_hidden">Pokazuj ukryte pliki</string>
+    <string name="files_select_all">Zaznacz wszystko</string>
+    <plurals name="files_selected_x">
+        <item quantity="one">Zaznaczono %1$d element</item>
+        <item quantity="few">Zaznaczono %1$d elementy</item>
+        <item quantity="many">Zaznaczono %1$d elementów</item>
+        <item quantity="other">Zaznaczono %1$d elementu</item>
+    </plurals>
+    <string name="files_properties">Właściwości</string>
+    <string name="files_create">Utwórz</string>
+    <string name="files_new_folder">Nowy folder</string>
+    <string name="files_new_file">Nowy plik</string>
+    <string name="files_new_file_summary">Dowolne rozszerzenie, na przykład notatki.txt</string>
+    <string name="files_name">Nazwa</string>
+    <string name="files_name_invalid">Nie może zawierać \"/\" ani spacji na początku i końcu</string>
+    <string name="files_rename">Zmień nazwę</string>
+    <string name="files_copy">Kopiuj</string>
+    <string name="files_cut">Wytnij</string>
+    <string name="files_paste">Wklej</string>
+    <string name="files_share">Udostępnij</string>
+    <string name="files_delete">Usuń</string>
+    <string name="files_cancel">Anuluj</string>
+    <string name="files_close">Zamknij</string>
+    <string name="files_delete_title">Usunąć?</string>
+    <plurals name="files_delete_message">
+        <item quantity="one">Trwale usunąć %1$d element? Tej operacji nie można cofnąć.</item>
+        <item quantity="few">Trwale usunąć %1$d elementy? Tej operacji nie można cofnąć.</item>
+        <item quantity="many">Trwale usunąć %1$d elementów? Tej operacji nie można cofnąć.</item>
+        <item quantity="other">Trwale usunąć %1$d elementu? Tej operacji nie można cofnąć.</item>
+    </plurals>
+    <plurals name="files_clipboard_copy_x">
+        <item quantity="one">%1$d element do skopiowania</item>
+        <item quantity="few">%1$d elementy do skopiowania</item>
+        <item quantity="many">%1$d elementów do skopiowania</item>
+        <item quantity="other">%1$d elementu do skopiowania</item>
+    </plurals>
+    <plurals name="files_clipboard_move_x">
+        <item quantity="one">%1$d element do przeniesienia</item>
+        <item quantity="few">%1$d elementy do przeniesienia</item>
+        <item quantity="many">%1$d elementów do przeniesienia</item>
+        <item quantity="other">%1$d elementu do przeniesienia</item>
+    </plurals>
+    <string name="files_create_success">Utworzono</string>
+    <string name="files_create_failed">Nie udało się utworzyć — nazwa może być już zajęta</string>
+    <string name="files_rename_success">Zmieniono nazwę</string>
+    <string name="files_rename_failed">Nie udało się zmienić nazwy</string>
+    <string name="files_delete_success">Usunięto</string>
+    <string name="files_delete_failed">Nie udało się usunąć części elementów</string>
+    <string name="files_paste_success">Wklejono</string>
+    <string name="files_paste_failed">Nie udało się wkleić części elementów</string>
+    <string name="files_open_failed">Żadna aplikacja nie otworzy tego pliku</string>
+    <string name="files_property_path">Ścieżka</string>
+    <string name="files_property_type">Typ</string>
+    <string name="files_property_size">Rozmiar</string>
+    <string name="files_property_items">Elementy</string>
+    <string name="files_property_modified">Zmodyfikowano</string>
+    <string name="files_type_folder">Folder</string>
+    <string name="files_type_file">Plik</string>
+    <string name="files_calculating">Obliczanie…</string>
+
+    <!--  EDYTOR TEKSTU  -->
+    <string name="editor_find">Znajdź</string>
+    <string name="editor_find_next">Następne dopasowanie</string>
+    <string name="editor_find_previous">Poprzednie dopasowanie</string>
+    <string name="editor_match_case">Uwzględnij wielkość liter</string>
+    <string name="editor_match_x_of_y">%1$d/%2$d</string>
+    <string name="editor_no_matches">Brak dopasowań</string>
+    <string name="editor_replace">Zamień</string>
+    <string name="editor_replace_all">Zamień wszystko</string>
+    <string name="editor_replaced_all">Zamieniono wszystkie dopasowania</string>
+    <string name="editor_undo">Cofnij</string>
+    <string name="editor_redo">Ponów</string>
+    <string name="editor_save">Zapisz</string>
+    <string name="editor_save_as">Zapisz jako…</string>
+    <string name="editor_saved">Zapisano</string>
+    <string name="editor_save_failed">Nie udało się zapisać pliku</string>
+    <string name="editor_discard">Odrzuć</string>
+    <string name="editor_unsaved_title">Niezapisane zmiany</string>
+    <string name="editor_unsaved_message">Zapisać zmiany przed wyjściem?</string>
+    <string name="editor_go_to_line">Przejdź do wiersza</string>
+    <string name="editor_line_of_x">Wiersz (1–%1$d)</string>
+    <string name="editor_go">Przejdź</string>
+    <string name="editor_status_x">W. %1$d, Kol. %2$d · wierszy: %3$d · UTF-8</string>
+    <string name="editor_binary">To nie jest plik tekstowy, więc nie można go tutaj edytować.</string>
+    <string name="editor_load_failed">Nie udało się odczytać tego pliku</string>
+    <string name="editor_too_large">Ten plik ma %1$s, co może spowolnić edytor.</string>
+    <string name="editor_open_anyway">Otwórz mimo to</string>
+    <string name="editor_highlighting_disabled">Podświetlanie składni jest wyłączone dla tego pliku ze względu na jego rozmiar</string>
 </resources>

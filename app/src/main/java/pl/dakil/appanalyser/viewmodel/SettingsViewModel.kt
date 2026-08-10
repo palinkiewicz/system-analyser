@@ -25,6 +25,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     val homeColumns: StateFlow<Int> = settings.homeColumns
     val notificationIntervalSeconds: StateFlow<Int> = settings.notificationIntervalSeconds
     val pinnedCards: StateFlow<List<PinnedCard>> = pinnedNotifications.pinned
+    val fileSystemEnabled: StateFlow<Boolean> = settings.fileSystemEnabled
+    val showHiddenFiles: StateFlow<Boolean> = settings.showHiddenFiles
+    val confirmFileDeletion: StateFlow<Boolean> = settings.confirmFileDeletion
+    val editorMonospace: StateFlow<Boolean> = settings.editorMonospace
+    val editorWordWrap: StateFlow<Boolean> = settings.editorWordWrap
+    val editorSyntaxHighlighting: StateFlow<Boolean> = settings.editorSyntaxHighlighting
 
     fun setTemperatureUnit(unit: TemperatureUnit) = settings.setTemperatureUnit(unit)
     fun setSimpleSensorView(enabled: Boolean) = settings.setSimpleSensorView(enabled)
@@ -35,6 +41,13 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setHomeColumns(columns: Int) = settings.setHomeColumns(columns)
     fun setNotificationIntervalSeconds(seconds: Int) =
         settings.setNotificationIntervalSeconds(seconds)
+
+    fun setFileSystemEnabled(enabled: Boolean) = settings.setFileSystemEnabled(enabled)
+    fun setShowHiddenFiles(enabled: Boolean) = settings.setShowHiddenFiles(enabled)
+    fun setConfirmFileDeletion(enabled: Boolean) = settings.setConfirmFileDeletion(enabled)
+    fun setEditorMonospace(enabled: Boolean) = settings.setEditorMonospace(enabled)
+    fun setEditorWordWrap(enabled: Boolean) = settings.setEditorWordWrap(enabled)
+    fun setEditorSyntaxHighlighting(enabled: Boolean) = settings.setEditorSyntaxHighlighting(enabled)
 
     fun unpinCard(id: String) = PinnedNotificationsManager.unpin(getApplication(), id)
 }

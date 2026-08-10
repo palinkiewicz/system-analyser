@@ -4,4 +4,9 @@
     <cache-path
         name="shared_apks"
         path="shared_apks/" />
+
+    <!-- Arbitrary browsed files handed to other apps by the File system tab. -->
+    <root-path
+        name="files"
+        path="/" />
 </paths>

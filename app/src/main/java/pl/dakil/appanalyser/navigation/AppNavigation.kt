@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -26,10 +27,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Apps
+import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.PhoneAndroid
 import androidx.compose.material.icons.outlined.Settings
@@ -43,6 +46,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -65,6 +70,7 @@ import kotlinx.coroutines.launch
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.HomeLayoutRepository
 import pl.dakil.appanalyser.data.PinnedNotificationsRepository
+import pl.dakil.appanalyser.data.SettingsRepository
 import pl.dakil.appanalyser.domain.HomeWidget
 import pl.dakil.appanalyser.domain.HomeWidgetType
 import pl.dakil.appanalyser.domain.SensorInfo
@@ -72,10 +78,13 @@ import pl.dakil.appanalyser.service.PinnedNotificationsManager
 import pl.dakil.appanalyser.ui.screens.AppDetailsScreen
 import pl.dakil.appanalyser.ui.screens.AppListScreen
 import pl.dakil.appanalyser.ui.screens.DeviceInfoScreen
+import pl.dakil.appanalyser.ui.screens.FileEditorScreen
+import pl.dakil.appanalyser.ui.screens.FileSystemScreen
 import pl.dakil.appanalyser.ui.screens.HomeScreen
 import pl.dakil.appanalyser.ui.screens.SettingsScreen
 import pl.dakil.appanalyser.ui.screens.settings.AppearanceSettingsScreen
 import pl.dakil.appanalyser.ui.screens.settings.DeviceInfoSettingsScreen
+import pl.dakil.appanalyser.ui.screens.settings.FileSystemSettingsScreen
 import pl.dakil.appanalyser.ui.screens.settings.HomeSettingsScreen
 import pl.dakil.appanalyser.ui.screens.settings.NotificationsSettingsScreen
 import pl.dakil.appanalyser.viewmodel.AppAnalyzerViewModel
@@ -88,7 +97,12 @@ sealed class Screen(val route: String) {
         fun createRoute(tab: Int = -1) = if (tab >= 0) "device?tab=$tab" else "device"
     }
     object AppList : Screen("apps")
+    object FileSystem : Screen("files")
     object Settings : Screen("settings")
+    object FileEditor : Screen("files/edit/{path}") {
+        /** Encoded so the separators inside an absolute path don't split the route. */
+        fun createRoute(path: String) = "files/edit/${Uri.encode(path)}"
+    }
     object AppDetails : Screen("app_details/{packageName}") {
         fun createRoute(packageName: String) = "app_details/$packageName"
     }
@@ -96,13 +110,19 @@ sealed class Screen(val route: String) {
     object SettingsDeviceInfo : Screen("settings/device_info")
     object SettingsHome : Screen("settings/home")
     object SettingsNotifications : Screen("settings/notifications")
+    object SettingsFileSystem : Screen("settings/file_system")
 }
 
-/** The four bottom-bar destinations; every other route is a pushed screen without the bar. */
+/**
+ * The bottom-bar destinations; every other route is a pushed screen without the bar. File system
+ * is always a tab root — the experimental flag only decides whether its item is rendered, so
+ * transitions and bar visibility stay correct while the user is standing on it.
+ */
 private val tabRoutes = setOf(
     Screen.Home.route,
     Screen.DeviceInfo.route,
     Screen.AppList.route,
+    Screen.FileSystem.route,
     Screen.Settings.route,
 )
 
@@ -117,6 +137,7 @@ private val bottomNavItems = listOf(
     BottomNavItem(Screen.Home, R.string.nav_home, Icons.Filled.Home, Icons.Outlined.Home),
     BottomNavItem(Screen.DeviceInfo, R.string.nav_device, Icons.Filled.PhoneAndroid, Icons.Outlined.PhoneAndroid),
     BottomNavItem(Screen.AppList, R.string.nav_apps, Icons.Filled.Apps, Icons.Outlined.Apps),
+    BottomNavItem(Screen.FileSystem, R.string.nav_files, Icons.Filled.Folder, Icons.Outlined.Folder),
     BottomNavItem(Screen.Settings, R.string.nav_settings, Icons.Filled.Settings, Icons.Outlined.Settings),
 )
 
@@ -133,6 +154,19 @@ fun AppNavigation(viewModel: AppAnalyzerViewModel, navController: NavHostControl
     val currentRoute = currentBackStackEntry?.destination?.route
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val settings = SettingsRepository.get(LocalContext.current)
+    val fileSystemEnabled by settings.fileSystemEnabled.collectAsState()
+
+    // Turning the experimental feature off while standing on its tab would strand the user on a
+    // screen with no way back to it in the bar.
+    LaunchedEffect(fileSystemEnabled, currentRoute) {
+        if (!fileSystemEnabled && currentRoute?.startsWith("files") == true) {
+            navController.navigate(Screen.Home.route) {
+                popUpTo(navController.graph.findStartDestination().id)
+                launchSingleTop = true
+            }
+        }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -148,7 +182,9 @@ fun AppNavigation(viewModel: AppAnalyzerViewModel, navController: NavHostControl
                 exit = slideOutVertically(targetOffsetY = { it })
             ) {
                 NavigationBar {
-                    bottomNavItems.forEach { item ->
+                    bottomNavItems.filter {
+                        it.screen != Screen.FileSystem || fileSystemEnabled
+                    }.forEach { item ->
                         val selected = currentRoute == item.screen.route
                         NavigationBarItem(
                             selected = selected,
@@ -321,7 +357,24 @@ fun AppNavigation(viewModel: AppAnalyzerViewModel, navController: NavHostControl
                     onNavigateToHomeSettings = { navController.navigate(Screen.SettingsHome.route) },
                     onNavigateToNotificationsSettings = {
                         navController.navigate(Screen.SettingsNotifications.route)
+                    },
+                    onNavigateToFileSystemSettings = {
+                        navController.navigate(Screen.SettingsFileSystem.route)
                     }
+                )
+            }
+            composable(Screen.FileSystem.route) {
+                FileSystemScreen(
+                    onOpenEditor = { path ->
+                        navController.navigate(Screen.FileEditor.createRoute(path))
+                    }
+                )
+            }
+            composable(Screen.FileEditor.route) { backStackEntry ->
+                val path = backStackEntry.arguments?.getString("path") ?: return@composable
+                FileEditorScreen(
+                    path = path,
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
             composable(Screen.AppDetails.route) { backStackEntry ->
@@ -343,6 +396,9 @@ fun AppNavigation(viewModel: AppAnalyzerViewModel, navController: NavHostControl
             }
             composable(Screen.SettingsNotifications.route) {
                 NotificationsSettingsScreen(onNavigateBack = { navController.popBackStack() })
+            }
+            composable(Screen.SettingsFileSystem.route) {
+                FileSystemSettingsScreen(onNavigateBack = { navController.popBackStack() })
             }
         }
     }

@@ -7,6 +7,7 @@
     <string name="nav_home">Home</string>
     <string name="nav_device">Device</string>
     <string name="nav_apps">Apps</string>
+    <string name="nav_files">Files</string>
     <string name="nav_settings">Settings</string>
 
     <!--  HOME SCREEN  -->
@@ -24,6 +25,23 @@
     <string name="settings_home_summary">Card grid layout</string>
     <string name="settings_notifications">Notifications</string>
     <string name="settings_notifications_summary">Update interval, pinned cards</string>
+    <string name="settings_file_system">File system</string>
+    <string name="settings_file_system_summary">Experimental file browser and editor</string>
+    <string name="settings_file_system_experimental_warning">This feature is experimental. It can read and change every file on your device, so use it carefully — deleted files cannot be recovered.</string>
+    <string name="settings_file_system_enabled">File system tab</string>
+    <string name="settings_file_system_enabled_description">Adds a Files tab to the navigation bar</string>
+    <string name="settings_file_system_browsing">Browsing</string>
+    <string name="settings_file_system_editor">Text editor</string>
+    <string name="settings_show_hidden_files">Show hidden files</string>
+    <string name="settings_show_hidden_files_description">List files and folders whose name starts with a dot</string>
+    <string name="settings_confirm_deletion">Confirm before deleting</string>
+    <string name="settings_confirm_deletion_description">Ask for confirmation before removing files</string>
+    <string name="settings_editor_monospace">Monospace font</string>
+    <string name="settings_editor_monospace_description">Use a fixed-width font in the editor</string>
+    <string name="settings_editor_word_wrap">Word wrap</string>
+    <string name="settings_editor_word_wrap_description">Break long lines instead of scrolling sideways</string>
+    <string name="settings_editor_highlighting">Syntax highlighting</string>
+    <string name="settings_editor_highlighting_description">Color code and markup in supported file types</string>
     <string name="settings_about">About app</string>
     <string name="settings_about_summary">Version, author, repository</string>
     <string name="settings_theme_colors">Theme colors</string>
@@ -252,4 +270,100 @@
     <string name="notification_loading">Loading…</string>
     <string name="notification_card_system_identity">Device</string>
     <string name="notification_card_system_software">Software</string>
+
+    <!--  FILE SYSTEM SCREEN  -->
+    <string name="files_permission_title">All files access needed</string>
+    <string name="files_permission_message">To browse and change files, Analyser needs permission to access all files on this device. You can revoke it at any time in system settings.</string>
+    <string name="files_permission_grant">Grant access</string>
+    <string name="files_internal_storage">Internal storage</string>
+    <string name="files_sd_card">SD card</string>
+    <string name="files_root">Root</string>
+    <string name="files_empty_folder">This folder is empty</string>
+    <string name="files_more_options">More options</string>
+    <string name="files_sort_by">Sort by</string>
+    <string name="files_sort_name">Name</string>
+    <string name="files_sort_size">Size</string>
+    <string name="files_sort_date">Date</string>
+    <string name="files_sort_type">Type</string>
+    <string name="files_sort_descending">Descending</string>
+    <string name="files_show_hidden">Show hidden files</string>
+    <string name="files_select_all">Select all</string>
+    <plurals name="files_selected_x">
+        <item quantity="one">%1$d selected</item>
+        <item quantity="other">%1$d selected</item>
+    </plurals>
+    <string name="files_properties">Properties</string>
+    <string name="files_create">Create</string>
+    <string name="files_new_folder">New folder</string>
+    <string name="files_new_file">New file</string>
+    <string name="files_new_file_summary">Any extension, for example notes.txt</string>
+    <string name="files_name">Name</string>
+    <string name="files_name_invalid">Cannot contain \"/\" or leading and trailing spaces</string>
+    <string name="files_rename">Rename</string>
+    <string name="files_copy">Copy</string>
+    <string name="files_cut">Cut</string>
+    <string name="files_paste">Paste</string>
+    <string name="files_share">Share</string>
+    <string name="files_delete">Delete</string>
+    <string name="files_cancel">Cancel</string>
+    <string name="files_close">Close</string>
+    <string name="files_delete_title">Delete?</string>
+    <plurals name="files_delete_message">
+        <item quantity="one">Permanently delete %1$d item? This cannot be undone.</item>
+        <item quantity="other">Permanently delete %1$d items? This cannot be undone.</item>
+    </plurals>
+    <plurals name="files_clipboard_copy_x">
+        <item quantity="one">%1$d item ready to copy</item>
+        <item quantity="other">%1$d items ready to copy</item>
+    </plurals>
+    <plurals name="files_clipboard_move_x">
+        <item quantity="one">%1$d item ready to move</item>
+        <item quantity="other">%1$d items ready to move</item>
+    </plurals>
+    <string name="files_create_success">Created</string>
+    <string name="files_create_failed">Could not create — the name may already be taken</string>
+    <string name="files_rename_success">Renamed</string>
+    <string name="files_rename_failed">Could not rename</string>
+    <string name="files_delete_success">Deleted</string>
+    <string name="files_delete_failed">Some items could not be deleted</string>
+    <string name="files_paste_success">Pasted</string>
+    <string name="files_paste_failed">Some items could not be pasted</string>
+    <string name="files_open_failed">No app can open this file</string>
+    <string name="files_property_path">Path</string>
+    <string name="files_property_type">Type</string>
+    <string name="files_property_size">Size</string>
+    <string name="files_property_items">Items</string>
+    <string name="files_property_modified">Modified</string>
+    <string name="files_type_folder">Folder</string>
+    <string name="files_type_file">File</string>
+    <string name="files_calculating">Calculating…</string>
+
+    <!--  TEXT EDITOR  -->
+    <string name="editor_find">Find</string>
+    <string name="editor_find_next">Next match</string>
+    <string name="editor_find_previous">Previous match</string>
+    <string name="editor_match_case">Match case</string>
+    <string name="editor_match_x_of_y">%1$d/%2$d</string>
+    <string name="editor_no_matches">No matches</string>
+    <string name="editor_replace">Replace</string>
+    <string name="editor_replace_all">Replace all</string>
+    <string name="editor_replaced_all">All matches replaced</string>
+    <string name="editor_undo">Undo</string>
+    <string name="editor_redo">Redo</string>
+    <string name="editor_save">Save</string>
+    <string name="editor_save_as">Save as…</string>
+    <string name="editor_saved">Saved</string>
+    <string name="editor_save_failed">Could not save the file</string>
+    <string name="editor_discard">Discard</string>
+    <string name="editor_unsaved_title">Unsaved changes</string>
+    <string name="editor_unsaved_message">Save your changes before leaving?</string>
+    <string name="editor_go_to_line">Go to line</string>
+    <string name="editor_line_of_x">Line (1–%1$d)</string>
+    <string name="editor_go">Go</string>
+    <string name="editor_status_x">Ln %1$d, Col %2$d · %3$d lines · UTF-8</string>
+    <string name="editor_binary">This is not a text file, so it cannot be edited here.</string>
+    <string name="editor_load_failed">Could not read this file</string>
+    <string name="editor_too_large">This file is %1$s, which is large enough to slow the editor down.</string>
+    <string name="editor_open_anyway">Open anyway</string>
+    <string name="editor_highlighting_disabled">Syntax highlighting is off for this file because of its size</string>
 </resources>
