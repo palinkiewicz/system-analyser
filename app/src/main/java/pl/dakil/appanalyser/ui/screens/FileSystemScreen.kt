@@ -77,6 +77,7 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
@@ -558,33 +559,76 @@ private fun SelectionTopBar(
     onDelete: () -> Unit,
     onShare: () -> Unit,
 ) {
+    var menuExpanded by remember { mutableStateOf(false) }
+
+    // Everything lives in the overflow: five icon buttons overflowed the bar, which both hid the
+    // trailing actions and squeezed the count label onto three lines.
     TopAppBar(
-        title = { Text(pluralStringResource(R.plurals.files_selected_x, count, count)) },
+        title = {
+            Text(
+                text = pluralStringResource(R.plurals.files_selected_x, count, count),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        },
         navigationIcon = {
             IconButton(onClick = onClose) {
                 Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.files_cancel))
             }
         },
         actions = {
-            IconButton(onClick = onCopy) {
-                Icon(Icons.Rounded.ContentCopy, contentDescription = stringResource(R.string.files_copy))
+            IconButton(onClick = { menuExpanded = true }) {
+                Icon(
+                    Icons.Rounded.MoreVert,
+                    contentDescription = stringResource(R.string.files_more_options),
+                )
             }
-            IconButton(onClick = onCut) {
-                Icon(Icons.Rounded.ContentCut, contentDescription = stringResource(R.string.files_cut))
-            }
-            if (count == 1) {
-                IconButton(onClick = onRename) {
-                    Icon(
-                        Icons.Rounded.DriveFileRenameOutline,
-                        contentDescription = stringResource(R.string.files_rename),
+            DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.files_copy)) },
+                    leadingIcon = { Icon(Icons.Rounded.ContentCopy, contentDescription = null) },
+                    onClick = {
+                        menuExpanded = false
+                        onCopy()
+                    },
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.files_cut)) },
+                    leadingIcon = { Icon(Icons.Rounded.ContentCut, contentDescription = null) },
+                    onClick = {
+                        menuExpanded = false
+                        onCut()
+                    },
+                )
+                if (count == 1) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.files_rename)) },
+                        leadingIcon = {
+                            Icon(Icons.Rounded.DriveFileRenameOutline, contentDescription = null)
+                        },
+                        onClick = {
+                            menuExpanded = false
+                            onRename()
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.files_share)) },
+                        leadingIcon = { Icon(Icons.Rounded.Share, contentDescription = null) },
+                        onClick = {
+                            menuExpanded = false
+                            onShare()
+                        },
                     )
                 }
-                IconButton(onClick = onShare) {
-                    Icon(Icons.Rounded.Share, contentDescription = stringResource(R.string.files_share))
-                }
-            }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Rounded.Delete, contentDescription = stringResource(R.string.files_delete))
+                HorizontalDivider()
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.files_delete)) },
+                    leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null) },
+                    onClick = {
+                        menuExpanded = false
+                        onDelete()
+                    },
+                )
             }
         },
         colors = flatTopAppBarColors(),

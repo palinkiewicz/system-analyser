@@ -4,6 +4,7 @@ import android.text.format.DateUtils
 import android.text.format.Formatter
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.InsertDriveFile
 import androidx.compose.material.icons.rounded.Android
 import androidx.compose.material.icons.rounded.Archive
 import androidx.compose.material.icons.rounded.AudioFile
@@ -18,14 +20,15 @@ import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Image
-import androidx.compose.material.icons.rounded.InsertDriveFile
 import androidx.compose.material.icons.rounded.PictureAsPdf
 import androidx.compose.material.icons.rounded.VideoFile
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -33,10 +36,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import pl.dakil.appanalyser.domain.FileEntry
 
 private const val HIDDEN_ALPHA = 0.6f
+
+/** Fixed leading slot so the row height never depends on selection mode. */
+private val LEADING_SIZE = 40.dp
 
 /** Extension groups worth a distinct icon; everything else falls back to a generic file. */
 private val IMAGE_EXTENSIONS = setOf("png", "jpg", "jpeg", "gif", "webp", "bmp", "heic", "svg", "ico")
@@ -62,7 +69,7 @@ fun iconForEntry(entry: FileEntry): ImageVector = when {
     entry.extension == "pdf" -> Icons.Rounded.PictureAsPdf
     entry.extension in CODE_EXTENSIONS -> Icons.Rounded.Code
     entry.extension in TEXT_EXTENSIONS -> Icons.Rounded.Description
-    else -> Icons.Rounded.InsertDriveFile
+    else -> Icons.AutoMirrored.Rounded.InsertDriveFile
 }
 
 /**
@@ -86,22 +93,29 @@ fun FileRow(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (selectionMode) {
-            Checkbox(checked = selected, onCheckedChange = { onClick() })
-        } else {
-            Icon(
-                imageVector = iconForEntry(entry),
-                contentDescription = null,
-                tint = if (entry.isDirectory) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
-                modifier = Modifier
-                    .size(40.dp)
-                    .padding(8.dp)
-                    .alpha(if (entry.isHidden) HIDDEN_ALPHA else 1f),
-            )
+        // Both leading states share one fixed slot: the checkbox's 48.dp minimum touch target
+        // would otherwise make every row taller the moment selection mode starts.
+        Box(modifier = Modifier.size(LEADING_SIZE), contentAlignment = Alignment.Center) {
+            if (selectionMode) {
+                CompositionLocalProvider(
+                    LocalMinimumInteractiveComponentSize provides Dp.Unspecified
+                ) {
+                    Checkbox(checked = selected, onCheckedChange = { onClick() })
+                }
+            } else {
+                Icon(
+                    imageVector = iconForEntry(entry),
+                    contentDescription = null,
+                    tint = if (entry.isDirectory) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    modifier = Modifier
+                        .size(24.dp)
+                        .alpha(if (entry.isHidden) HIDDEN_ALPHA else 1f),
+                )
+            }
         }
         Spacer(Modifier.width(16.dp))
         androidx.compose.foundation.layout.Column(Modifier.weight(1f)) {
