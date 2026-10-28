@@ -25,7 +25,9 @@ import pl.dakil.appanalyser.domain.ScanFreshness
 import java.io.File
 
 /**
- * Holds the disk usage scans the app remembers, in memory only, plus the one that may be running.
+ * Holds the disk usage scans the app remembers, plus the one that may be running. Finished scans are
+ * mirrored to the cache dir by [DiskScanStore], so they outlive the process (until Android clears
+ * the cache, which only costs a rescan).
  *
  * Scans run strictly on request — nothing here starts one by itself, and a finished scan is reused
  * (including for any folder inside it) until the user asks for a rescan. Several are kept at once
@@ -51,6 +53,26 @@ class DiskUsageRepository private constructor(context: Context) {
 
     @Volatile
     private var job: Job? = null
+
+    private val store = DiskScanStore(File(context.cacheDir, STORE_DIRECTORY)) {
+        resources.getString(R.string.disk_usage_restricted)
+    }
+
+    init {
+        // One I/O thread owns the store: it loads once, then mirrors every change to disk. The
+        // order matters — syncing before the load would delete the files it is about to read.
+        scope.launch(Dispatchers.IO.limitedParallelism(1)) {
+            val saved = store.load(MAX_SCANS, DiskScanner.LARGEST_FILES_LIMIT)
+            // A scan finished before the load completed is merged in by age, not overwritten.
+            _scans.update { current ->
+                (saved + current).sortedBy { it.scannedAt }.fold(emptyList()) { acc, scan ->
+                    ScanCache.add(acc, scan, MAX_SCANS, DiskScanner.LARGEST_FILES_LIMIT)
+                }
+            }
+            // StateFlow is conflated already: a burst of changes costs one write of the latest list.
+            _scans.collect { store.sync(it) }
+        }
+    }
 
     /** The most recent finished scan containing [path]. */
     fun scanFor(path: String): DiskScan? = ScanCache.newestCovering(_scans.value, path)
@@ -170,6 +192,8 @@ class DiskUsageRepository private constructor(context: Context) {
 
         /** Scans remembered at once; the oldest goes first. Each holds directory totals only. */
         private const val MAX_SCANS = 8
+
+        private const val STORE_DIRECTORY = "disk_usage"
 
         /** Volume roots are `/storage/emulated/<user>` or `/storage/<uuid>`. */
         fun isVolumeRoot(path: String) = VOLUME_ROOT.matches(path)
