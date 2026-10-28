@@ -24,6 +24,12 @@ class AppAnalyzerRepository(private val context: Context) {
     private companion object {
         /** Must match the `cache-path` declared in `res/xml/file_paths.xml`. */
         const val SHARE_DIR_NAME = "shared_apks"
+
+        /**
+         * Kept apart from [SHARE_DIR_NAME] because each staging clears its directory: a later share
+         * through the chooser must not delete the file a running Wi-Fi session is serving.
+         */
+        const val NETWORK_SHARE_DIR_NAME = "network_shared_apks"
     }
 
     suspend fun getInstalledApps(showSystemApps: Boolean = false): List<AppInfo> = withContext(Dispatchers.IO) {
@@ -140,28 +146,39 @@ class AppAnalyzerRepository(private val context: Context) {
      */
     suspend fun createShareableApk(apkPath: String, fileName: String): Uri? =
         withContext(Dispatchers.IO) {
-            try {
-                val source = File(apkPath)
-                if (!source.exists() || !source.canRead()) return@withContext null
+            val staged = stageApk(apkPath, fileName, SHARE_DIR_NAME) ?: return@withContext null
+            runCatching {
+                FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", staged)
+            }.getOrNull()
+        }
 
-                val shareDir = File(context.cacheDir, SHARE_DIR_NAME)
-                shareDir.listFiles()?.forEach { it.delete() }
-                if (!shareDir.exists() && !shareDir.mkdirs()) return@withContext null
+    /**
+     * Stages a copy of the installed APK at [apkPath] for the share server. The installed file is
+     * always named `base.apk`, so serving it directly would hand the browser a meaningless name.
+     */
+    suspend fun createNetworkShareableApk(apkPath: String, fileName: String): File? =
+        withContext(Dispatchers.IO) { stageApk(apkPath, fileName, NETWORK_SHARE_DIR_NAME) }
 
+    private fun stageApk(apkPath: String, fileName: String, dirName: String): File? = try {
+        val source = File(apkPath)
+        if (!source.exists() || !source.canRead()) {
+            null
+        } else {
+            val shareDir = File(context.cacheDir, dirName)
+            shareDir.listFiles()?.forEach { it.delete() }
+            if (!shareDir.exists() && !shareDir.mkdirs()) {
+                null
+            } else {
                 val staged = File(shareDir, fileName)
                 source.inputStream().use { input ->
                     staged.outputStream().use { output -> input.copyTo(output) }
                 }
-
-                FileProvider.getUriForFile(
-                    context,
-                    "${context.packageName}.fileprovider",
-                    staged
-                )
-            } catch (e: Exception) {
-                null
+                staged
             }
         }
+    } catch (e: Exception) {
+        null
+    }
 
     private fun determineTechStack(apkPath: String): List<DetectedFramework> {
         val file = File(apkPath)

@@ -1,5 +1,6 @@
 package pl.dakil.appanalyser.ui.screens
 
+import android.Manifest
 import android.content.Intent
 import android.net.Uri
 import android.text.format.Formatter
@@ -36,9 +37,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
+import pl.dakil.appanalyser.data.NetworkInfoProvider
+import pl.dakil.appanalyser.data.SettingsRepository
 import pl.dakil.appanalyser.domain.AppDetails
 import pl.dakil.appanalyser.domain.DetectedFramework
+import pl.dakil.appanalyser.service.ShareServerManager
 import pl.dakil.appanalyser.ui.components.DetailRow
+import pl.dakil.appanalyser.ui.components.canPostNotifications
+import pl.dakil.appanalyser.ui.components.filesystem.NoNetworkDialog
+import pl.dakil.appanalyser.ui.components.filesystem.ShareMethodSheet
+import pl.dakil.appanalyser.ui.components.filesystem.openHotspotSettings
 import pl.dakil.appanalyser.viewmodel.AppAnalyzerViewModel
 import pl.dakil.appanalyser.ui.theme.*
 import kotlinx.coroutines.launch
@@ -89,6 +97,55 @@ fun AppDetailsScreen(
     val exportFailedMessage = stringResource(R.string.app_details_export_failed)
     val shareFailedMessage = stringResource(R.string.app_details_share_failed)
     val shareChooserTitle = stringResource(R.string.app_details_share_apk)
+
+    // Wi-Fi sharing is part of the experimental file-system feature; while that is off the button
+    // goes straight to the system chooser, as it always did.
+    val settings = remember(context) { SettingsRepository.get(context) }
+    val fileSystemEnabled by settings.fileSystemEnabled.collectAsState()
+    val networkInfo = remember(context) { NetworkInfoProvider(context) }
+    var showShareMethod by remember { mutableStateOf(false) }
+    var showNoNetwork by remember { mutableStateOf(false) }
+    val notificationsBlockedMessage = stringResource(R.string.share_notification_permission_required)
+
+    fun shareToApp(appDetails: AppDetails) {
+        viewModel.shareApk(suggestedApkFileName(appDetails)) { uri ->
+            if (uri == null) {
+                scope.launch { snackbarHostState.showSnackbar(shareFailedMessage) }
+            } else {
+                context.startActivity(shareApkChooser(uri, shareChooserTitle))
+            }
+        }
+    }
+
+    // The network is checked before staging so a copy is never made for a share that cannot start.
+    // The running dialog itself lives in AppNavigation and appears once the service is up.
+    fun startWifiShare() {
+        val appDetails = details ?: return
+        if (networkInfo.resolve() == null) {
+            showNoNetwork = true
+            return
+        }
+        viewModel.stageApkForNetworkShare(suggestedApkFileName(appDetails)) { file ->
+            if (file == null) {
+                scope.launch { snackbarHostState.showSnackbar(shareFailedMessage) }
+            } else {
+                ShareServerManager.start(context, file.absolutePath)
+            }
+        }
+    }
+
+    // Requested only now, the moment before starting the server, as in the file browser.
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        // Starting without it would leave a server running that the user can neither see nor stop.
+        if (granted) {
+            startWifiShare()
+        } else {
+            scope.launch { snackbarHostState.showSnackbar(notificationsBlockedMessage) }
+        }
+    }
+
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument(APK_MIME_TYPE)
     ) { uri ->
@@ -129,16 +186,10 @@ fun AppDetailsScreen(
                             )
                         } else {
                             IconButton(onClick = {
-                                viewModel.shareApk(suggestedApkFileName(appDetails)) { uri ->
-                                    if (uri == null) {
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar(shareFailedMessage)
-                                        }
-                                    } else {
-                                        context.startActivity(
-                                            shareApkChooser(uri, shareChooserTitle)
-                                        )
-                                    }
+                                if (fileSystemEnabled) {
+                                    showShareMethod = true
+                                } else {
+                                    shareToApp(appDetails)
                                 }
                             }) {
                                 Icon(
@@ -197,6 +248,34 @@ fun AppDetailsScreen(
             ) {
                 FrameworkDetailSheet(framework = framework)
             }
+        }
+
+        if (showShareMethod) {
+            ShareMethodSheet(
+                onSendToApp = {
+                    showShareMethod = false
+                    details?.let { shareToApp(it) }
+                },
+                onShareOverWifi = {
+                    showShareMethod = false
+                    if (context.canPostNotifications()) {
+                        startWifiShare()
+                    } else {
+                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                },
+                onDismiss = { showShareMethod = false },
+            )
+        }
+
+        if (showNoNetwork) {
+            NoNetworkDialog(
+                onOpenHotspotSettings = {
+                    showNoNetwork = false
+                    openHotspotSettings(context)
+                },
+                onDismiss = { showNoNetwork = false },
+            )
         }
     }
 }

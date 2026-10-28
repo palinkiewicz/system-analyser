@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import pl.dakil.appanalyser.data.AppAnalyzerRepository
 import pl.dakil.appanalyser.domain.AppDetails
 import pl.dakil.appanalyser.domain.AppInfo
+import java.io.File
 
 class AppAnalyzerViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -113,6 +114,24 @@ class AppAnalyzerViewModel(application: Application) : AndroidViewModel(applicat
             val uri = repository.createShareableApk(apkPath, fileName)
             _isExporting.value = false
             onReady(uri)
+        }
+    }
+
+    /**
+     * Stages the selected app's APK as [fileName] for the share server and hands the staged file to
+     * [onReady] (null if the copy failed).
+     */
+    fun stageApkForNetworkShare(fileName: String, onReady: (File?) -> Unit) {
+        val apkPath = _selectedAppDetails.value?.apkPath
+        if (apkPath == null) {
+            onReady(null)
+            return
+        }
+        viewModelScope.launch {
+            _isExporting.value = true
+            val file = repository.createNetworkShareableApk(apkPath, fileName)
+            _isExporting.value = false
+            onReady(file)
         }
     }
 
