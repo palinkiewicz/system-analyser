@@ -386,9 +386,10 @@
     <string name="share_no_network_message">Other devices can only reach this phone over Wi-Fi or its hotspot. Connect to a Wi-Fi network, or turn on the hotspot and try again.</string>
     <string name="share_open_hotspot_settings">Open hotspot settings</string>
     <string name="share_running_title">Sharing %1$s</string>
-    <string name="share_running_hint">Open this address in a browser on another device. That device must be on the same Wi-Fi network, or connected to this phone\'s hotspot.</string>
+    <string name="share_running_hint">Scan the code or open this address in a browser on another device. That device must be on the same Wi-Fi network, or connected to this phone\'s hotspot.</string>
     <string name="share_running_network">Connection: %1$s</string>
     <string name="share_running_pin">Code: %1$s</string>
+    <string name="share_qr_description">QR code with the share link</string>
     <string name="share_copy_link">Copy link</string>
     <string name="share_stop">Stop sharing</string>
     <string name="share_network_wifi">Wi-Fi</string>

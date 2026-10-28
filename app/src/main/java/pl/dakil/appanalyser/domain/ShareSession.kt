@@ -34,6 +34,9 @@ data class ShareEndpoint(
      * server redirects the slashless form to [basePath], so both resolve.
      */
     val url: String get() = "http://$ipAddress:$port${basePath.trimEnd('/')}"
+
+    /** The canonical form, for machines such as the QR code: skips the redirect [url] costs. */
+    val link: String get() = "http://$ipAddress:$port$basePath"
 }
 
 sealed interface ShareState {

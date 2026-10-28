@@ -295,7 +295,9 @@ class ShareServerService : Service() {
         val openIntent = PendingIntent.getActivity(
             this,
             1,
-            Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            Intent(this, MainActivity::class.java)
+                .setAction(ACTION_SHOW_SESSION)
+                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
             PendingIntent.FLAG_IMMUTABLE,
         )
 
@@ -358,6 +360,9 @@ class ShareServerService : Service() {
 
     companion object {
         const val EXTRA_PATH = "pl.dakil.appanalyser.extra.SHARE_PATH"
+
+        /** Tapping the notification opens the app with this action to bring the session dialog back. */
+        const val ACTION_SHOW_SESSION = "pl.dakil.appanalyser.action.SHOW_SHARE_SESSION"
 
         private const val CHANNEL_ID = "share_server"
         private const val NOTIFICATION_ID = 3000

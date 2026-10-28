@@ -103,7 +103,6 @@ import pl.dakil.appanalyser.ui.components.filesystem.NameInputDialog
 import pl.dakil.appanalyser.ui.components.filesystem.NoNetworkDialog
 import pl.dakil.appanalyser.ui.components.filesystem.PropertiesDialog
 import pl.dakil.appanalyser.ui.components.filesystem.ShareMethodSheet
-import pl.dakil.appanalyser.ui.components.filesystem.ShareRunningDialog
 import pl.dakil.appanalyser.ui.components.filesystem.openHotspotSettings
 import pl.dakil.appanalyser.ui.components.canPostNotifications
 import pl.dakil.appanalyser.ui.components.flatTopAppBarColors
@@ -170,9 +169,11 @@ fun FileSystemScreen(
     var showNoNetwork by remember { mutableStateOf(false) }
     val shareState by ShareServerRepository.state.collectAsState()
     val networkInfo = remember(context) { NetworkInfoProvider(context) }
-    // The running dialog is driven by service state, so dismissing it has to be remembered against
-    // the session it belongs to — otherwise Close would immediately re-show it.
-    var dismissedShareUrl by remember { mutableStateOf<String?>(null) }
+    // The running dialog itself lives in AppNavigation; once a session is up the target is spent,
+    // and keeping it would bring the method sheet back as soon as the session stops.
+    LaunchedEffect(shareState) {
+        if (shareState is ShareState.Running) shareTarget = null
+    }
     val notificationsBlockedMessage = stringResource(R.string.share_notification_permission_required)
 
     fun startWifiShare(path: String) {
@@ -447,23 +448,6 @@ fun FileSystemScreen(
             },
             onDismiss = {
                 showNoNetwork = false
-                shareTarget = null
-            },
-        )
-    }
-
-    (shareState as? ShareState.Running)
-        ?.takeIf { dismissedShareUrl != it.endpoint.url }
-        ?.let { running ->
-        ShareRunningDialog(
-            running = running,
-            networkLabel = networkInfo.label(running.network),
-            onStop = {
-                ShareServerManager.stop(context)
-                shareTarget = null
-            },
-            onDismiss = {
-                dismissedShareUrl = running.endpoint.url
                 shareTarget = null
             },
         )

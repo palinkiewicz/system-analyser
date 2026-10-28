@@ -76,6 +76,7 @@ import pl.dakil.appanalyser.domain.HomeWidgetType
 import pl.dakil.appanalyser.domain.SensorInfo
 import pl.dakil.appanalyser.service.PinnedNotificationsManager
 import pl.dakil.appanalyser.ui.components.canPostNotifications
+import pl.dakil.appanalyser.ui.components.filesystem.ShareSessionDialogHost
 import pl.dakil.appanalyser.ui.screens.AppDetailsScreen
 import pl.dakil.appanalyser.ui.screens.AppListScreen
 import pl.dakil.appanalyser.ui.screens.DeviceInfoScreen
@@ -149,7 +150,12 @@ private const val FADE_THROUGH_OUT_MS = 90
 private fun NavBackStackEntry.isTabRoot() = destination.route in tabRoutes
 
 @Composable
-fun AppNavigation(viewModel: AppAnalyzerViewModel, navController: NavHostController = rememberNavController()) {
+fun AppNavigation(
+    viewModel: AppAnalyzerViewModel,
+    shareDialogRequested: Boolean,
+    onShareDialogShown: () -> Unit,
+    navController: NavHostController = rememberNavController(),
+) {
     val animationSpec = tween<Float>(TRANSITION_DURATION_MS)
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStackEntry?.destination?.route
@@ -168,6 +174,10 @@ fun AppNavigation(viewModel: AppAnalyzerViewModel, navController: NavHostControl
             }
         }
     }
+
+    // Above the NavHost rather than inside the Files tab, so a tap on the share notification can
+    // bring it back over whichever screen is open.
+    ShareSessionDialogHost(shareDialogRequested, onShareDialogShown)
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,

@@ -394,9 +394,10 @@
     <string name="share_no_network_message">Inne urządzenia mogą połączyć się z tym telefonem tylko przez Wi-Fi lub jego hotspot. Połącz się z siecią Wi-Fi albo włącz hotspot i spróbuj ponownie.</string>
     <string name="share_open_hotspot_settings">Otwórz ustawienia hotspotu</string>
     <string name="share_running_title">Udostępnianie: %1$s</string>
-    <string name="share_running_hint">Otwórz ten adres w przeglądarce na innym urządzeniu. Musi ono być w tej samej sieci Wi-Fi albo połączone z hotspotem tego telefonu.</string>
+    <string name="share_running_hint">Zeskanuj kod albo otwórz ten adres w przeglądarce na innym urządzeniu. Musi ono być w tej samej sieci Wi-Fi albo połączone z hotspotem tego telefonu.</string>
     <string name="share_running_network">Połączenie: %1$s</string>
     <string name="share_running_pin">Kod: %1$s</string>
+    <string name="share_qr_description">Kod QR z linkiem do udostępnienia</string>
     <string name="share_copy_link">Kopiuj link</string>
     <string name="share_stop">Zatrzymaj udostępnianie</string>
     <string name="share_network_wifi">Wi-Fi</string>

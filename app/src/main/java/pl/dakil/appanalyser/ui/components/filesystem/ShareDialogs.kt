@@ -10,6 +10,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.ContentCopy
@@ -23,6 +26,14 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -30,7 +41,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.clickable
 import pl.dakil.appanalyser.R
+import pl.dakil.appanalyser.data.NetworkInfoProvider
+import pl.dakil.appanalyser.data.ShareServerRepository
 import pl.dakil.appanalyser.domain.ShareState
+import pl.dakil.appanalyser.service.ShareServerManager
 
 /** Lets the user pick between the system chooser and hosting the item over the local network. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,6 +90,37 @@ fun NoNetworkDialog(onOpenHotspotSettings: () -> Unit, onDismiss: () -> Unit) {
 }
 
 /**
+ * Shows [ShareRunningDialog] on its own when a session starts. Close only hides it until the session
+ * ends or [requested] is raised by a tap on the share notification, which is the way back to it.
+ */
+@Composable
+fun ShareSessionDialogHost(requested: Boolean, onShown: () -> Unit) {
+    val context = LocalContext.current
+    val shareState by ShareServerRepository.state.collectAsState()
+    val networkInfo = remember(context) { NetworkInfoProvider(context) }
+    var dismissed by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(shareState) {
+        if (shareState is ShareState.Stopped) dismissed = false
+    }
+    LaunchedEffect(requested) {
+        if (requested) {
+            dismissed = false
+            onShown()
+        }
+    }
+
+    val running = shareState as? ShareState.Running ?: return
+    if (dismissed) return
+    ShareRunningDialog(
+        running = running,
+        networkLabel = networkInfo.label(running.network),
+        onStop = { ShareServerManager.stop(context) },
+        onDismiss = { dismissed = true },
+    )
+}
+
+/**
  * The live session: where to point a browser, what kind of connection it is on, and how to stop it.
  * The network is described by kind rather than by name, because reading an SSID would require a
  * location permission this app does not ask for.
@@ -92,11 +137,22 @@ fun ShareRunningDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.share_running_title, running.sharedName)) },
         text = {
-            Column(Modifier.fillMaxWidth()) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+            ) {
                 Text(
                     text = stringResource(R.string.share_running_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(16.dp))
+                QrCode(
+                    text = running.endpoint.link,
+                    modifier = Modifier
+                        .size(200.dp)
+                        .align(Alignment.CenterHorizontally),
                 )
                 Spacer(Modifier.height(12.dp))
                 Text(

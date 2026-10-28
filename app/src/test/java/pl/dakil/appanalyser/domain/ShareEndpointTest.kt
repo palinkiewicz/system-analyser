@@ -20,6 +20,13 @@ class ShareEndpointTest {
     }
 
     @Test
+    fun `link keeps the trailing slash so it needs no redirect`() {
+        val endpoint = ShareEndpoint("192.168.1.42", 8080, "/dakil_share/a7f3c9d1/")
+
+        assertEquals("http://192.168.1.42:8080/dakil_share/a7f3c9d1/", endpoint.link)
+    }
+
+    @Test
     fun `base path is left untouched for routing`() {
         val endpoint = ShareEndpoint("192.168.1.42", 8080, "/dakil_share/")
 
