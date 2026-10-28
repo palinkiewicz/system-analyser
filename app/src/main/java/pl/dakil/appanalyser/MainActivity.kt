@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
+import pl.dakil.appanalyser.data.DiskUsageRepository
 import pl.dakil.appanalyser.data.SettingsRepository
 import pl.dakil.appanalyser.navigation.AppNavigation
 import pl.dakil.appanalyser.service.PinnedNotificationsManager
@@ -48,6 +49,13 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // A disk usage scan is only ever wanted while the user is looking at the app; it holds
+        // the CPU and storage, so it must not keep going in the background.
+        if (!isChangingConfigurations) DiskUsageRepository.get(this).cancel()
     }
 
     override fun onNewIntent(intent: Intent) {

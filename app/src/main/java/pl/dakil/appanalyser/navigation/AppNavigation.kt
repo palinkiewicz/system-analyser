@@ -80,6 +80,7 @@ import pl.dakil.appanalyser.ui.components.filesystem.ShareSessionDialogHost
 import pl.dakil.appanalyser.ui.screens.AppDetailsScreen
 import pl.dakil.appanalyser.ui.screens.AppListScreen
 import pl.dakil.appanalyser.ui.screens.DeviceInfoScreen
+import pl.dakil.appanalyser.ui.screens.DiskUsageScreen
 import pl.dakil.appanalyser.ui.screens.FileEditorScreen
 import pl.dakil.appanalyser.ui.screens.FileSystemScreen
 import pl.dakil.appanalyser.ui.screens.HomeScreen
@@ -99,8 +100,20 @@ sealed class Screen(val route: String) {
         fun createRoute(tab: Int = -1) = if (tab >= 0) "device?tab=$tab" else "device"
     }
     object AppList : Screen("apps")
-    object FileSystem : Screen("files")
+    object FileSystem : Screen("files?path={path}") {
+        /** Without a path the browser keeps (or restores) wherever it was. */
+        fun createRoute(path: String? = null) =
+            if (path != null) "files?path=${Uri.encode(path)}" else "files"
+    }
     object Settings : Screen("settings")
+    object DiskUsage : Screen("files/usage?path={path}&rescan={rescan}") {
+        /**
+         * Without a path the analyser opens on its volume list. [rescan] scans [path] afresh even
+         * when an older scan covers it — set once the user confirmed that in the browser.
+         */
+        fun createRoute(path: String? = null, rescan: Boolean = false) =
+            if (path != null) "files/usage?path=${Uri.encode(path)}&rescan=$rescan" else "files/usage"
+    }
     object FileEditor : Screen("files/edit/{path}") {
         /** Encoded so the separators inside an absolute path don't split the route. */
         fun createRoute(path: String) = "files/edit/${Uri.encode(path)}"
@@ -202,6 +215,7 @@ fun AppNavigation(
                             onClick = {
                                 val target = when (item.screen) {
                                     Screen.DeviceInfo -> Screen.DeviceInfo.createRoute()
+                                    Screen.FileSystem -> Screen.FileSystem.createRoute()
                                     else -> item.screen.route
                                 }
                                 navController.navigate(target) {
@@ -322,6 +336,12 @@ fun AppNavigation(
 
                 DeviceInfoScreen(
                     initialTab = backStackEntry.arguments?.getInt("tab") ?: -1,
+                    // Only offered while the File system feature (and so the analyser) exists.
+                    onAnalyseStorage = if (fileSystemEnabled) {
+                        { navController.navigate(Screen.DiskUsage.createRoute()) }
+                    } else {
+                        null
+                    },
                     onAddToHome = { type, sensor ->
                         HomeLayoutRepository.get(context).addWidget(
                             HomeWidget(
@@ -374,11 +394,53 @@ fun AppNavigation(
                     }
                 )
             }
-            composable(Screen.FileSystem.route) {
+            composable(
+                route = Screen.FileSystem.route,
+                arguments = listOf(navArgument("path") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                })
+            ) { backStackEntry ->
                 FileSystemScreen(
                     onOpenEditor = { path ->
                         navController.navigate(Screen.FileEditor.createRoute(path))
-                    }
+                    },
+                    onOpenDiskUsage = { path, rescan ->
+                        navController.navigate(Screen.DiskUsage.createRoute(path, rescan))
+                    },
+                    initialPath = backStackEntry.arguments?.getString("path"),
+                )
+            }
+            composable(
+                route = Screen.DiskUsage.route,
+                arguments = listOf(
+                    navArgument("path") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                    navArgument("rescan") {
+                        type = NavType.BoolType
+                        defaultValue = false
+                    },
+                )
+            ) {
+                DiskUsageScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onOpenEditor = { path ->
+                        navController.navigate(Screen.FileEditor.createRoute(path))
+                    },
+                    onShowInBrowser = { path ->
+                        navController.navigate(Screen.FileSystem.createRoute(path)) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            // No restoreState: restoring would revive the entry with its old
+                            // arguments and discard the requested folder.
+                        }
+                    },
                 )
             }
             composable(Screen.FileEditor.route) { backStackEntry ->

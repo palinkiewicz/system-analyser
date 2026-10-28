@@ -42,6 +42,18 @@
     <string name="settings_editor_word_wrap_description">Break long lines instead of scrolling sideways</string>
     <string name="settings_editor_highlighting">Syntax highlighting</string>
     <string name="settings_editor_highlighting_description">Color code and markup in supported file types</string>
+    <string name="settings_disk_usage_section">Disk usage</string>
+    <string name="settings_disk_scan_max_age">Scan stays current for</string>
+    <string name="settings_disk_scan_max_age_description">Opening the analyser from a folder after this asks before scanning it again</string>
+    <string name="settings_disk_scan_max_age_forever">Always</string>
+    <plurals name="settings_disk_scan_max_age_hours_x">
+        <item quantity="one">%1$d hour</item>
+        <item quantity="other">%1$d hours</item>
+    </plurals>
+    <plurals name="settings_disk_scan_max_age_days_x">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
     <string name="settings_share_section">Wi-Fi sharing</string>
     <string name="settings_share_access">Access</string>
     <string name="settings_share_access_description">How the share link is protected from others on the network</string>
@@ -376,6 +388,49 @@
     <string name="editor_too_large">This file is %1$s, which is large enough to slow the editor down.</string>
     <string name="editor_open_anyway">Open anyway</string>
     <string name="editor_highlighting_disabled">Syntax highlighting is off for this file because of its size</string>
+
+    <!--  DISK USAGE  -->
+    <string name="disk_usage_title">Disk Usage Analyser</string>
+    <string name="disk_usage_analyse_storage">Analyse storage</string>
+    <string name="disk_usage_volumes_hint">Choose a volume to analyse. Scanning reads every folder on it once, which can take a while on a full device.</string>
+    <string name="disk_usage_used_of">%1$s used of %2$s</string>
+    <string name="disk_usage_analysing">Analysing…</string>
+    <string name="disk_usage_analysed_ago">Analysed %1$s</string>
+    <string name="disk_usage_scanning_title">Analysing %1$s</string>
+    <string name="disk_usage_just_now">just now</string>
+    <string name="disk_usage_restricted_space_detail">Apps and system data</string>
+    <string name="disk_usage_unknown_size">\? B</string>
+    <string name="disk_usage_scan_prompt_title">Analyse %1$s?</string>
+    <string name="disk_usage_scan_prompt_message">There\'s no recent scan of this folder. Scanning reads every folder inside it — only this folder, not the whole storage.</string>
+    <string name="disk_usage_scan_prompt_stale">This folder was last scanned %1$s. Scanning again reads only this folder, not the whole storage.</string>
+    <string name="disk_usage_scan_prompt_volume_message">There\'s no recent scan of this storage. Scanning reads every folder on it, which can take a while.</string>
+    <string name="disk_usage_scan_prompt_volume_stale">This storage was last scanned %1$s. Scanning again reads every folder on it.</string>
+    <string name="disk_usage_show_last_scan">Show last scan</string>
+    <string name="disk_usage_rescan">Rescan</string>
+    <string name="disk_usage_show_rings">Show as rings</string>
+    <string name="disk_usage_show_treemap">Show as treemap</string>
+    <string name="disk_usage_contents">Contents</string>
+    <string name="disk_usage_largest">Largest files</string>
+    <string name="disk_usage_files_here">Files in this folder</string>
+    <string name="disk_usage_restricted">Restricted by Android</string>
+    <string name="disk_usage_stale">Files have changed since this scan</string>
+    <string name="disk_usage_free_of">%1$s free of %2$s</string>
+    <string name="disk_usage_scanned_ago">Scanned %1$s</string>
+    <string name="disk_usage_not_analysed_title">Not analysed yet</string>
+    <string name="disk_usage_not_analysed_message">Scanning reads every folder below this one. It only runs when you start it.</string>
+    <string name="disk_usage_analyse">Analyse</string>
+    <string name="disk_usage_failed">This folder can\'t be read</string>
+    <string name="disk_usage_empty">Nothing here takes up space</string>
+    <string name="disk_usage_largest_empty">No files in this folder</string>
+    <string name="disk_usage_show_in_browser">Show in file browser</string>
+    <plurals name="disk_usage_files_x">
+        <item quantity="one">%1$s file</item>
+        <item quantity="other">%1$s files</item>
+    </plurals>
+    <plurals name="disk_usage_more_items_x">
+        <item quantity="one">%1$d more small item · %2$s</item>
+        <item quantity="other">%1$d more small items · %2$s</item>
+    </plurals>
 
     <!--  WI-FI SHARING  -->
     <string name="share_method_app">Send to another app</string>

@@ -34,6 +34,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     val editorSyntaxHighlighting: StateFlow<Boolean> = settings.editorSyntaxHighlighting
     val shareAccessMode: StateFlow<ShareAccessMode> = settings.shareAccessMode
     val shareIdleTimeoutMinutes: StateFlow<Int> = settings.shareIdleTimeoutMinutes
+    val diskScanMaxAgeHours: StateFlow<Int> = settings.diskScanMaxAgeHours
 
     fun setTemperatureUnit(unit: TemperatureUnit) = settings.setTemperatureUnit(unit)
     fun setSimpleSensorView(enabled: Boolean) = settings.setSimpleSensorView(enabled)
@@ -54,6 +55,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun setShareAccessMode(mode: ShareAccessMode) = settings.setShareAccessMode(mode)
     fun setShareIdleTimeoutMinutes(minutes: Int) = settings.setShareIdleTimeoutMinutes(minutes)
+    fun setDiskScanMaxAgeHours(hours: Int) = settings.setDiskScanMaxAgeHours(hours)
 
     fun unpinCard(id: String) = PinnedNotificationsManager.unpin(getApplication(), id)
 }

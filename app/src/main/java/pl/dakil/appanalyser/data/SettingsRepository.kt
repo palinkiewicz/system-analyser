@@ -4,6 +4,7 @@ import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import pl.dakil.appanalyser.domain.DiskChartType
 import pl.dakil.appanalyser.domain.FileSortOrder
 import pl.dakil.appanalyser.domain.ShareAccessMode
 import pl.dakil.appanalyser.domain.TemperatureUnit
@@ -86,6 +87,23 @@ class SettingsRepository private constructor(context: Context) {
     private val _editorSyntaxHighlighting =
         MutableStateFlow(prefs.getBoolean(KEY_EDITOR_SYNTAX_HIGHLIGHTING, true))
     val editorSyntaxHighlighting: StateFlow<Boolean> = _editorSyntaxHighlighting.asStateFlow()
+
+    /** Rings or treemap in the disk usage analyser; switched from the analyser's own top bar. */
+    private val _diskChartType = MutableStateFlow(
+        runCatching { DiskChartType.valueOf(prefs.getString(KEY_DISK_CHART_TYPE, null)!!) }
+            .getOrDefault(DiskChartType.RINGS)
+    )
+    val diskChartType: StateFlow<DiskChartType> = _diskChartType.asStateFlow()
+
+    /**
+     * How long a disk usage scan counts as current, in hours; 0 means it never goes stale. Past it,
+     * opening the analyser from a folder asks before rescanning instead of showing old numbers.
+     */
+    private val _diskScanMaxAgeHours = MutableStateFlow(
+        prefs.getInt(KEY_DISK_SCAN_MAX_AGE, DEFAULT_DISK_SCAN_MAX_AGE)
+            .takeIf { it in DISK_SCAN_MAX_AGE_OPTIONS } ?: DEFAULT_DISK_SCAN_MAX_AGE
+    )
+    val diskScanMaxAgeHours: StateFlow<Int> = _diskScanMaxAgeHours.asStateFlow()
 
     private val _shareAccessMode = MutableStateFlow(
         runCatching { ShareAccessMode.valueOf(prefs.getString(KEY_SHARE_ACCESS_MODE, null)!!) }
@@ -181,6 +199,16 @@ class SettingsRepository private constructor(context: Context) {
         _editorSyntaxHighlighting.value = enabled
     }
 
+    fun setDiskChartType(type: DiskChartType) {
+        prefs.edit().putString(KEY_DISK_CHART_TYPE, type.name).apply()
+        _diskChartType.value = type
+    }
+
+    fun setDiskScanMaxAgeHours(hours: Int) {
+        prefs.edit().putInt(KEY_DISK_SCAN_MAX_AGE, hours).apply()
+        _diskScanMaxAgeHours.value = hours
+    }
+
     fun setShareAccessMode(mode: ShareAccessMode) {
         prefs.edit().putString(KEY_SHARE_ACCESS_MODE, mode.name).apply()
         _shareAccessMode.value = mode
@@ -209,8 +237,14 @@ class SettingsRepository private constructor(context: Context) {
         private const val KEY_EDITOR_MONOSPACE = "editor_monospace"
         private const val KEY_EDITOR_WORD_WRAP = "editor_word_wrap"
         private const val KEY_EDITOR_SYNTAX_HIGHLIGHTING = "editor_syntax_highlighting"
+        private const val KEY_DISK_CHART_TYPE = "disk_chart_type"
+        private const val KEY_DISK_SCAN_MAX_AGE = "disk_scan_max_age_hours"
         private const val KEY_SHARE_ACCESS_MODE = "share_access_mode"
         private const val KEY_SHARE_IDLE_TIMEOUT = "share_idle_timeout_minutes"
+
+        /** Steps of the disk scan staleness slider, in hours; 0 is "never stale". */
+        val DISK_SCAN_MAX_AGE_OPTIONS = listOf(0, 1, 2, 3, 4, 5, 6, 9, 12, 24, 48, 72, 96, 120, 144, 168)
+        const val DEFAULT_DISK_SCAN_MAX_AGE = 6
 
         /** Options offered for the share idle timeout, in minutes; 0 is "never". */
         val SHARE_IDLE_TIMEOUT_OPTIONS = listOf(0, 15, 30, 60)

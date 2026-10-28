@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import pl.dakil.appanalyser.R
+import pl.dakil.appanalyser.data.DiskUsageRepository
 import pl.dakil.appanalyser.data.FileSystemRepository
 import pl.dakil.appanalyser.data.SettingsRepository
 import pl.dakil.appanalyser.domain.ClipboardOperation
@@ -26,6 +27,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
 
     private val repository = FileSystemRepository(application)
     private val settings = SettingsRepository.get(application)
+    private val diskUsage = DiskUsageRepository.get(application)
 
     /** Null while sitting on the volume chooser at the top level. */
     private val _currentPath = MutableStateFlow<String?>(null)
@@ -76,6 +78,15 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
                 refresh()
             }
         }
+    }
+
+    /**
+     * Every mutation lands here afterwards with the paths it touched; the disk usage scans covering
+     * them can't know what changed, so they are flagged for the analyser to offer a rescan.
+     */
+    private fun refreshAfterChange(changed: Collection<String>) {
+        diskUsage.markStale(changed)
+        refresh()
     }
 
     fun refresh() {
@@ -163,7 +174,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
             _isBusy.value = false
             _clipboard.value = null
             _messages.tryEmit(if (ok) R.string.files_paste_success else R.string.files_paste_failed)
-            refresh()
+            refreshAfterChange(clip.paths + destination)
         }
     }
 
@@ -176,7 +187,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             val ok = repository.createFolder(parent, name)
             _messages.tryEmit(if (ok) R.string.files_create_success else R.string.files_create_failed)
-            refresh()
+            refreshAfterChange(listOf(parent))
         }
     }
 
@@ -185,7 +196,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             val ok = repository.createFile(parent, name)
             _messages.tryEmit(if (ok) R.string.files_create_success else R.string.files_create_failed)
-            refresh()
+            refreshAfterChange(listOf(parent))
         }
     }
 
@@ -194,7 +205,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
             val ok = repository.rename(path, newName)
             _messages.tryEmit(if (ok) R.string.files_rename_success else R.string.files_rename_failed)
             clearSelection()
-            refresh()
+            refreshAfterChange(listOf(path))
         }
     }
 
@@ -207,7 +218,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
             _isBusy.value = false
             _messages.tryEmit(if (ok) R.string.files_delete_success else R.string.files_delete_failed)
             clearSelection()
-            refresh()
+            refreshAfterChange(paths)
         }
     }
 
@@ -239,6 +250,9 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
     fun mimeType(path: String) = repository.mimeType(path)
 
     suspend fun directorySize(path: String) = repository.directorySize(path)
+
+    /** Whether the analyser can show [path] from its cached scan, or should ask to scan it. */
+    fun diskScanFreshness(path: String) = diskUsage.freshnessFor(path, settings.diskScanMaxAgeHours.value)
 
     suspend fun childCount(path: String) = repository.childCount(path)
 }

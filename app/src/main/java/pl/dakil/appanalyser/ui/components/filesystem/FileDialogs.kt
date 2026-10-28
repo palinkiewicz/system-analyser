@@ -91,6 +91,58 @@ fun DeleteConfirmDialog(count: Int, onConfirm: () -> Unit, onDismiss: () -> Unit
 }
 
 /**
+ * Asked before the analyser scans [folderName], when no current scan covers it. Only that folder
+ * is scanned, never the whole volume. With an outdated scan ([lastScannedAt]) the user may also
+ * look at the old numbers instead.
+ */
+@Composable
+fun ScanFolderDialog(
+    folderName: String,
+    /** The folder is a whole volume, so "only this folder" would be misleading. */
+    isVolume: Boolean,
+    lastScannedAt: Long?,
+    onScan: () -> Unit,
+    onShowLastScan: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.disk_usage_scan_prompt_title, folderName)) },
+        text = {
+            Text(
+                if (lastScannedAt == null) {
+                    stringResource(
+                        if (isVolume) R.string.disk_usage_scan_prompt_volume_message
+                        else R.string.disk_usage_scan_prompt_message
+                    )
+                } else {
+                    stringResource(
+                        if (isVolume) R.string.disk_usage_scan_prompt_volume_stale
+                        else R.string.disk_usage_scan_prompt_stale,
+                        DateUtils.getRelativeTimeSpanString(
+                            lastScannedAt,
+                            System.currentTimeMillis(),
+                            DateUtils.MINUTE_IN_MILLIS,
+                        ),
+                    )
+                }
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onScan) { Text(stringResource(R.string.disk_usage_analyse)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.files_cancel)) }
+            if (lastScannedAt != null) {
+                TextButton(onClick = onShowLastScan) {
+                    Text(stringResource(R.string.disk_usage_show_last_scan))
+                }
+            }
+        },
+    )
+}
+
+/**
  * Details for a single entry. Folder size and child count are passed in already resolved, since
  * computing them walks the tree and must not happen on the main thread.
  */

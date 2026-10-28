@@ -9,6 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AddHome
+import androidx.compose.material.icons.rounded.DonutLarge
 import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.NotificationsOff
 import androidx.compose.material3.*
@@ -64,6 +65,8 @@ import pl.dakil.appanalyser.viewmodel.DeviceInfoViewModel
 fun DeviceInfoScreen(
     onAddToHome: (HomeWidgetType, SensorInfo?) -> Unit = { _, _ -> },
     onTogglePin: (HomeWidgetType, SensorInfo?) -> Unit = { _, _ -> },
+    /** Opens the disk usage analyser from the Storage card's menu; null hides the entry. */
+    onAnalyseStorage: (() -> Unit)? = null,
     initialTab: Int = -1,
     viewModel: DeviceInfoViewModel = viewModel()
 ) {
@@ -116,8 +119,8 @@ fun DeviceInfoScreen(
             val showSensorUnits by viewModel.showSensorUnits.collectAsState()
             val pinnedCards by viewModel.pinnedCards.collectAsState()
 
-            val menu = remember(onAddToHome, onTogglePin, pinnedCards) {
-                CardMenu(onAddToHome, onTogglePin, pinnedCards.map { it.dedupeKey }.toSet())
+            val menu = remember(onAddToHome, onTogglePin, onAnalyseStorage, pinnedCards) {
+                CardMenu(onAddToHome, onTogglePin, onAnalyseStorage, pinnedCards.map { it.dedupeKey }.toSet())
             }
 
             // The pager composes only the visible page (beyondViewportPageCount = 0), so each tab
@@ -188,6 +191,7 @@ private fun CardContextMenuHost(
     onAddToHome: () -> Unit,
     onTogglePin: () -> Unit,
     isPinned: Boolean,
+    onAnalyseStorage: (() -> Unit)?,
     content: @Composable (Modifier) -> Unit
 ) {
     var pressPosition by remember { mutableStateOf<Offset?>(null) }
@@ -246,6 +250,18 @@ private fun CardContextMenuHost(
                             onTogglePin()
                         }
                     )
+                    onAnalyseStorage?.let { analyse ->
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.disk_usage_analyse_storage)) },
+                            leadingIcon = {
+                                Icon(Icons.Rounded.DonutLarge, contentDescription = null)
+                            },
+                            onClick = {
+                                pressPosition = null
+                                analyse()
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -260,6 +276,7 @@ private fun CardContextMenuHost(
 private class CardMenu(
     private val onAddToHome: (HomeWidgetType, SensorInfo?) -> Unit,
     private val onTogglePin: (HomeWidgetType, SensorInfo?) -> Unit,
+    private val onAnalyseStorage: (() -> Unit)?,
     private val pinnedKeys: Set<String>,
 ) {
     @Composable
@@ -272,6 +289,7 @@ private class CardMenu(
             onAddToHome = { onAddToHome(type, sensor) },
             onTogglePin = { onTogglePin(type, sensor) },
             isPinned = PinnedCard.dedupeKeyOf(type, sensor?.type) in pinnedKeys,
+            onAnalyseStorage = onAnalyseStorage.takeIf { type == HomeWidgetType.STORAGE },
             content = content
         )
     }

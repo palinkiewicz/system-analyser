@@ -42,6 +42,22 @@
     <string name="settings_editor_word_wrap_description">Łam długie wiersze zamiast przewijać w bok</string>
     <string name="settings_editor_highlighting">Podświetlanie składni</string>
     <string name="settings_editor_highlighting_description">Koloruj kod i znaczniki w obsługiwanych typach plików</string>
+    <string name="settings_disk_usage_section">Użycie pamięci</string>
+    <string name="settings_disk_scan_max_age">Skan jest aktualny przez</string>
+    <string name="settings_disk_scan_max_age_description">Po tym czasie otwarcie analizy z folderu zapyta przed ponownym skanowaniem</string>
+    <string name="settings_disk_scan_max_age_forever">Zawsze</string>
+    <plurals name="settings_disk_scan_max_age_hours_x">
+        <item quantity="one">%1$d godzina</item>
+        <item quantity="few">%1$d godziny</item>
+        <item quantity="many">%1$d godzin</item>
+        <item quantity="other">%1$d godziny</item>
+    </plurals>
+    <plurals name="settings_disk_scan_max_age_days_x">
+        <item quantity="one">%1$d dzień</item>
+        <item quantity="few">%1$d dni</item>
+        <item quantity="many">%1$d dni</item>
+        <item quantity="other">%1$d dnia</item>
+    </plurals>
     <string name="settings_share_section">Udostępnianie przez Wi-Fi</string>
     <string name="settings_share_access">Dostęp</string>
     <string name="settings_share_access_description">Jak link jest chroniony przed innymi w sieci</string>
@@ -384,6 +400,53 @@
     <string name="editor_too_large">Ten plik ma %1$s, co może spowolnić edytor.</string>
     <string name="editor_open_anyway">Otwórz mimo to</string>
     <string name="editor_highlighting_disabled">Podświetlanie składni jest wyłączone dla tego pliku ze względu na jego rozmiar</string>
+
+    <!--  ANALIZA UŻYCIA PAMIĘCI  -->
+    <string name="disk_usage_title">Analizator użycia pamięci</string>
+    <string name="disk_usage_analyse_storage">Analizuj pamięć</string>
+    <string name="disk_usage_volumes_hint">Wybierz wolumin do analizy. Skanowanie raz odczytuje każdy folder, więc na zapełnionym urządzeniu może chwilę potrwać.</string>
+    <string name="disk_usage_used_of">Zajęte %1$s z %2$s</string>
+    <string name="disk_usage_analysing">Analizowanie…</string>
+    <string name="disk_usage_analysed_ago">Przeanalizowano %1$s</string>
+    <string name="disk_usage_scanning_title">Analizowanie: %1$s</string>
+    <string name="disk_usage_just_now">przed chwilą</string>
+    <string name="disk_usage_restricted_space_detail">Aplikacje i dane systemu</string>
+    <string name="disk_usage_unknown_size">\? B</string>
+    <string name="disk_usage_scan_prompt_title">Przeanalizować %1$s?</string>
+    <string name="disk_usage_scan_prompt_message">Brak aktualnego skanu tego folderu. Skanowanie odczyta wszystkie foldery w nim — tylko ten folder, nie całą pamięć.</string>
+    <string name="disk_usage_scan_prompt_stale">Ostatnie skanowanie tego folderu: %1$s. Ponowne skanowanie odczyta tylko ten folder, nie całą pamięć.</string>
+    <string name="disk_usage_scan_prompt_volume_message">Brak aktualnego skanu tej pamięci. Skanowanie odczyta wszystkie foldery, co może chwilę potrwać.</string>
+    <string name="disk_usage_scan_prompt_volume_stale">Ostatnie skanowanie tej pamięci: %1$s. Ponowne skanowanie odczyta wszystkie foldery.</string>
+    <string name="disk_usage_show_last_scan">Pokaż ostatni skan</string>
+    <string name="disk_usage_rescan">Skanuj ponownie</string>
+    <string name="disk_usage_show_rings">Pokaż jako pierścienie</string>
+    <string name="disk_usage_show_treemap">Pokaż jako mapę kafelkową</string>
+    <string name="disk_usage_contents">Zawartość</string>
+    <string name="disk_usage_largest">Największe pliki</string>
+    <string name="disk_usage_files_here">Pliki w tym folderze</string>
+    <string name="disk_usage_restricted">Ograniczone przez Androida</string>
+    <string name="disk_usage_stale">Pliki zmieniły się od tego skanowania</string>
+    <string name="disk_usage_free_of">Wolne %1$s z %2$s</string>
+    <string name="disk_usage_scanned_ago">Zeskanowano %1$s</string>
+    <string name="disk_usage_not_analysed_title">Jeszcze nie przeanalizowano</string>
+    <string name="disk_usage_not_analysed_message">Skanowanie odczytuje wszystkie foldery poniżej tego. Uruchamia się tylko wtedy, gdy je rozpoczniesz.</string>
+    <string name="disk_usage_analyse">Analizuj</string>
+    <string name="disk_usage_failed">Nie można odczytać tego folderu</string>
+    <string name="disk_usage_empty">Nic tu nie zajmuje miejsca</string>
+    <string name="disk_usage_largest_empty">Brak plików w tym folderze</string>
+    <string name="disk_usage_show_in_browser">Pokaż w przeglądarce plików</string>
+    <plurals name="disk_usage_files_x">
+        <item quantity="one">%1$s plik</item>
+        <item quantity="few">%1$s pliki</item>
+        <item quantity="many">%1$s plików</item>
+        <item quantity="other">%1$s pliku</item>
+    </plurals>
+    <plurals name="disk_usage_more_items_x">
+        <item quantity="one">Jeszcze %1$d mały element · %2$s</item>
+        <item quantity="few">Jeszcze %1$d małe elementy · %2$s</item>
+        <item quantity="many">Jeszcze %1$d małych elementów · %2$s</item>
+        <item quantity="other">Jeszcze %1$d małego elementu · %2$s</item>
+    </plurals>
 
     <!--  UDOSTĘPNIANIE PRZEZ WI-FI  -->
     <string name="share_method_app">Wyślij do innej aplikacji</string>

@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.os.StatFs
 import android.os.storage.StorageManager
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
@@ -72,7 +73,14 @@ class FileSystemRepository(private val context: Context) {
                     }
                 }
         }
-        roots
+        roots.map { root ->
+            runCatching { StatFs(root.path) }.getOrNull()?.let { stat ->
+                root.copy(
+                    totalBytes = stat.blockCountLong * stat.blockSizeLong,
+                    freeBytes = stat.availableBlocksLong * stat.blockSizeLong,
+                )
+            } ?: root
+        }
     }
 
     // -----------------------------------------------------------------------

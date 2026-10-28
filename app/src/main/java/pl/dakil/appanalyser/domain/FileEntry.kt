@@ -29,7 +29,12 @@ data class StorageRoot(
     val label: String,
     val path: String,
     val isRemovable: Boolean,
-)
+    /** Capacity from `StatFs`; 0 when the volume doesn't report it. */
+    val totalBytes: Long = 0L,
+    val freeBytes: Long = 0L,
+) {
+    val usedBytes: Long get() = (totalBytes - freeBytes).coerceAtLeast(0)
+}
 
 /** Outcome of loading a file into the text editor. */
 sealed interface TextLoadResult {
