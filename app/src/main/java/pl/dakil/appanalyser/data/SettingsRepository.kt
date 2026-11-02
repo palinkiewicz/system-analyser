@@ -47,6 +47,9 @@ class SettingsRepository private constructor(context: Context) {
     private val _pureBlack = MutableStateFlow(prefs.getBoolean(KEY_PURE_BLACK, false))
     val pureBlack: StateFlow<Boolean> = _pureBlack.asStateFlow()
 
+    private val _hapticsEnabled = MutableStateFlow(prefs.getBoolean(KEY_HAPTICS_ENABLED, true))
+    val hapticsEnabled: StateFlow<Boolean> = _hapticsEnabled.asStateFlow()
+
     private val _homeColumns = MutableStateFlow(
         prefs.getInt(KEY_HOME_COLUMNS, DEFAULT_HOME_COLUMNS).coerceIn(MIN_HOME_COLUMNS, MAX_HOME_COLUMNS)
     )
@@ -147,6 +150,11 @@ class SettingsRepository private constructor(context: Context) {
         _pureBlack.value = enabled
     }
 
+    fun setHapticsEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_HAPTICS_ENABLED, enabled).apply()
+        _hapticsEnabled.value = enabled
+    }
+
     fun setHomeColumns(columns: Int) {
         val clamped = columns.coerceIn(MIN_HOME_COLUMNS, MAX_HOME_COLUMNS)
         prefs.edit().putInt(KEY_HOME_COLUMNS, clamped).apply()
@@ -227,6 +235,7 @@ class SettingsRepository private constructor(context: Context) {
         private const val KEY_COLOR_THEME = "color_theme"
         private const val KEY_DARK_THEME_OPTION = "dark_theme_option"
         private const val KEY_PURE_BLACK = "pure_black"
+        private const val KEY_HAPTICS_ENABLED = "haptics_enabled"
         private const val KEY_HOME_COLUMNS = "home_columns"
         private const val KEY_NOTIFICATION_INTERVAL = "notification_interval_seconds"
         private const val KEY_FILE_SYSTEM_ENABLED = "file_system_enabled"

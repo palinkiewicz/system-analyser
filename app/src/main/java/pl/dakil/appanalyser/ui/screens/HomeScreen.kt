@@ -1,17 +1,19 @@
 package pl.dakil.appanalyser.ui.screens
 
+import android.os.Build
+import android.text.format.DateFormat
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -20,35 +22,39 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.contentColorFor
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.graphics.shapes.Morph
 import androidx.lifecycle.viewmodel.compose.viewModel
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.domain.HomeWidget
 import pl.dakil.appanalyser.domain.HomeWidgetType
@@ -57,6 +63,7 @@ import pl.dakil.appanalyser.ui.components.BatteryDetailsCard
 import pl.dakil.appanalyser.ui.components.CpuClockSpeedsCard
 import pl.dakil.appanalyser.ui.components.CpuTemperaturesCard
 import pl.dakil.appanalyser.ui.components.CpuUsageCard
+import pl.dakil.appanalyser.ui.components.DeviceCardDefaults
 import pl.dakil.appanalyser.ui.components.DisplayCard
 import pl.dakil.appanalyser.ui.components.RamCard
 import pl.dakil.appanalyser.ui.components.SensorCard
@@ -67,9 +74,15 @@ import pl.dakil.appanalyser.ui.components.SystemUptimeCard
 import pl.dakil.appanalyser.ui.components.homegrid.GridMode
 import pl.dakil.appanalyser.ui.components.homegrid.WidgetGrid
 import pl.dakil.appanalyser.ui.components.homegrid.rememberWidgetGridState
+import pl.dakil.appanalyser.ui.designsystem.CollapsingScaffold
+import pl.dakil.appanalyser.ui.designsystem.EmptyState
+import pl.dakil.appanalyser.ui.designsystem.MorphShape
+import pl.dakil.appanalyser.ui.designsystem.icon.AppIcon
+import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbols
+import pl.dakil.appanalyser.ui.designsystem.pressScale
+import pl.dakil.appanalyser.ui.theme.Spacing
 import pl.dakil.appanalyser.viewmodel.HomeViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onOpenDeviceTab: (Int) -> Unit = {},
@@ -78,44 +91,67 @@ fun HomeScreen(
     val widgets by viewModel.widgets.collectAsState()
     val columns by viewModel.homeColumns.collectAsState()
     val gridState = rememberWidgetGridState()
+    val editing = gridState.mode != GridMode.Idle
 
-    BackHandler(enabled = gridState.mode != GridMode.Idle) {
+    BackHandler(enabled = editing) {
         gridState.exitEditMode()
     }
 
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-
-    Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            LargeTopAppBar(
-                title = { Text(stringResource(R.string.app_name)) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                ),
-                scrollBehavior = scrollBehavior
-            )
+    CollapsingScaffold(
+        title = stringResource(greetingRes()),
+        // Static on purpose: the header must not collect any flow, so a metric is only polled
+        // while a card of its family is on the grid.
+        subtitle = if (editing) stringResource(R.string.home_edit_hint) else rememberDateLine(),
+        large = true,
+        actions = {
+            AnimatedContent(targetState = editing, label = "homeAction") { isEditing ->
+                if (isEditing) {
+                    Button(
+                        onClick = { gridState.exitEditMode() },
+                        shapes = ButtonDefaults.shapes(),
+                        modifier = Modifier.padding(end = Spacing.s),
+                    ) {
+                        AppIcon(AppSymbols.Check, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                        Text(
+                            stringResource(R.string.home_edit_done),
+                            modifier = Modifier.padding(start = ButtonDefaults.IconSpacing),
+                        )
+                    }
+                } else {
+                    IconButton(onClick = { onOpenDeviceTab(0) }, shapes = IconButtonDefaults.shapes()) {
+                        AppIcon(AppSymbols.AddHome, contentDescription = stringResource(R.string.home_add_cards))
+                    }
+                }
+            }
         },
-        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter,
         ) {
             if (widgets.isEmpty()) {
-                Text(
-                    text = stringResource(R.string.home_empty_hint),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
+                EmptyState(
+                    symbol = AppSymbols.Widgets,
+                    title = stringResource(R.string.home_empty_title),
+                    body = stringResource(R.string.home_empty_hint),
                     modifier = Modifier
                         .align(Alignment.Center)
-                        .padding(32.dp)
-                )
+                        .verticalScroll(rememberScrollState()),
+                ) {
+                    FilledTonalButton(onClick = { onOpenDeviceTab(0) }, shapes = ButtonDefaults.shapes()) {
+                        AppIcon(AppSymbols.PhoneAndroid, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                        Text(
+                            stringResource(R.string.home_browse_cards),
+                            modifier = Modifier.padding(start = ButtonDefaults.IconSpacing),
+                        )
+                    }
+                }
             } else {
                 Column(
                     modifier = Modifier
+                        .widthIn(max = Spacing.maxContentWidth)
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
                         // Tapping empty space leaves edit mode, like a launcher.
@@ -124,7 +160,7 @@ fun HomeScreen(
                                 if (gridState.mode is GridMode.Editing) gridState.exitEditMode()
                             }
                         }
-                        .padding(16.dp)
+                        .padding(horizontal = Spacing.gutter, vertical = Spacing.s)
                 ) {
                     WidgetGrid(
                         widgets = widgets,
@@ -134,15 +170,12 @@ fun HomeScreen(
                         onRemove = { viewModel.removeWidget(it) },
                         modifier = Modifier.fillMaxWidth()
                     ) { widget ->
-                        val shape = if (widget.type == HomeWidgetType.BATTERY_POWER) {
-                            MaterialTheme.shapes.extraLarge
-                        } else {
-                            MaterialTheme.shapes.large
-                        }
+                        val interactionSource = remember { MutableInteractionSource() }
                         Box(
                             modifier = Modifier
-                                .clip(shape)
-                                .clickable {
+                                .pressScale(interactionSource, pressedScale = 0.97f)
+                                .clip(DeviceCardDefaults.shape)
+                                .clickable(interactionSource = interactionSource, indication = ripple()) {
                                     if (gridState.mode == GridMode.Idle) {
                                         onOpenDeviceTab(widget.type.deviceTab())
                                     } else {
@@ -156,7 +189,7 @@ fun HomeScreen(
                             HomeWidgetContent(widget, columns, viewModel)
                         }
                     }
-                    Spacer(modifier = Modifier.height(96.dp))
+                    Spacer(modifier = Modifier.height(112.dp))
                 }
             }
 
@@ -166,9 +199,28 @@ fun HomeScreen(
                 onPositioned = { gridState.trashBoundsInRoot = it },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = 24.dp)
+                    .padding(bottom = Spacing.xl)
             )
         }
+    }
+}
+
+@Composable
+private fun greetingRes(): Int = when (LocalDateTime.now().hour) {
+    in 5..11 -> R.string.home_greeting_morning
+    in 12..16 -> R.string.home_greeting_afternoon
+    in 17..21 -> R.string.home_greeting_evening
+    else -> R.string.home_greeting_night
+}
+
+/** "Monday, November 2 · Pixel 9": today's date in the user's locale, then the device model. */
+@Composable
+private fun rememberDateLine(): String {
+    val locale = LocalConfiguration.current.locales[0]
+    return remember(locale) {
+        val pattern = DateFormat.getBestDateTimePattern(locale, "EEEEdMMMM")
+        val date = LocalDateTime.now().format(DateTimeFormatter.ofPattern(pattern, locale))
+        "${date.replaceFirstChar { it.titlecase(locale) }} · ${Build.MODEL}"
     }
 }
 
@@ -256,17 +308,21 @@ private fun HomeWidgetType.deviceTab(): Int = when (this) {
     HomeWidgetType.DISPLAY -> 5
 }
 
+/**
+ * The drop-to-remove target shown while a card is dragged: a circle that blooms into a burst and
+ * turns from error container to error once the card hovers it.
+ */
 @Composable
 private fun TrashTarget(
     visible: Boolean,
     hovered: Boolean,
-    onPositioned: (androidx.compose.ui.geometry.Rect) -> Unit,
+    onPositioned: (Rect) -> Unit,
     modifier: Modifier = Modifier
 ) {
     AnimatedVisibility(
         visible = visible,
-        enter = scaleIn(spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessMedium)) + fadeIn(),
-        exit = scaleOut() + fadeOut(),
+        enter = scaleIn(MaterialTheme.motionScheme.fastSpatialSpec()) + fadeIn(MaterialTheme.motionScheme.fastEffectsSpec()),
+        exit = scaleOut(MaterialTheme.motionScheme.fastSpatialSpec()) + fadeOut(MaterialTheme.motionScheme.fastEffectsSpec()),
         modifier = modifier
     ) {
         val container by animateColorAsState(
@@ -275,32 +331,40 @@ private fun TrashTarget(
             } else {
                 MaterialTheme.colorScheme.errorContainer
             },
+            animationSpec = MaterialTheme.motionScheme.fastEffectsSpec(),
             label = "trashColor"
         )
-        val scale by animateFloatAsState(
-            targetValue = if (hovered) 1.15f else 1f,
-            animationSpec = spring(stiffness = Spring.StiffnessMedium),
-            label = "trashScale"
+        val progress by animateFloatAsState(
+            targetValue = if (hovered) 1f else 0f,
+            animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+            label = "trashMorph"
         )
+        val morph = remember { Morph(MaterialShapes.Circle, MaterialShapes.SoftBurst) }
         Surface(
-            shape = CircleShape,
+            shape = MorphShape(morph, progress),
             color = container,
-            tonalElevation = 6.dp,
-            shadowElevation = 4.dp,
+            shadowElevation = 6.dp,
             modifier = Modifier
-                .size(64.dp)
+                .size(72.dp)
                 .graphicsLayer {
+                    val scale = 1f + 0.15f * progress
                     scaleX = scale
                     scaleY = scale
+                    rotationZ = 30f * progress
                 }
                 .onGloballyPositioned { onPositioned(it.boundsInRoot()) }
         ) {
-            Icon(
-                imageVector = Icons.Outlined.Delete,
-                contentDescription = stringResource(R.string.home_remove_widget),
-                tint = contentColorFor(container),
-                modifier = Modifier.padding(18.dp)
-            )
+            Box(contentAlignment = Alignment.Center) {
+                AppIcon(
+                    AppSymbols.Delete,
+                    contentDescription = stringResource(R.string.home_remove_widget),
+                    tint = contentColorFor(container),
+                    filled = hovered,
+                    modifier = Modifier
+                        .size(28.dp)
+                        .graphicsLayer { rotationZ = -30f * progress }
+                )
+            }
         }
     }
 }

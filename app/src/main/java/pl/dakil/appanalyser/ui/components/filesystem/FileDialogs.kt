@@ -5,7 +5,12 @@ import android.text.format.Formatter
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -24,7 +29,12 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
 import pl.dakil.appanalyser.R
+import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbols
+import pl.dakil.appanalyser.ui.designsystem.rememberHaptics
+import pl.dakil.appanalyser.ui.theme.Spacing
+import pl.dakil.appanalyser.ui.theme.tabular
 import pl.dakil.appanalyser.domain.FileEntry
 
 /** Create-file, create-folder and rename all share this single-field dialog. */
@@ -42,10 +52,14 @@ fun NameInputDialog(
         (name.trim() != name || name.contains('/') || name == "." || name == "..")
     val canConfirm = name.isNotBlank() && !invalid
 
+    val haptics = rememberHaptics()
+    val submit = { if (canConfirm) onConfirm(name) else haptics.reject() }
+
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        icon = { DialogIcon(AppSymbols.DriveFileRenameOutline) },
         title = { Text(title) },
         text = {
             OutlinedTextField(
@@ -61,31 +75,47 @@ fun NameInputDialog(
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Done,
                 ),
+                keyboardActions = KeyboardActions(onDone = { submit() }),
+                shape = MaterialTheme.shapes.large,
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(focusRequester),
             )
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(name) }, enabled = canConfirm) { Text(confirmLabel) }
+            Button(onClick = { onConfirm(name) }, enabled = canConfirm, shapes = ButtonDefaults.shapes()) {
+                Text(confirmLabel)
+            }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.files_cancel)) }
+            TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes()) { Text(stringResource(R.string.files_cancel)) }
         },
     )
 }
 
 @Composable
 fun DeleteConfirmDialog(count: Int, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    val haptics = rememberHaptics()
     AlertDialog(
         onDismissRequest = onDismiss,
+        icon = { DialogIcon(AppSymbols.Delete, error = true) },
         title = { Text(stringResource(R.string.files_delete_title)) },
         text = { Text(pluralStringResource(R.plurals.files_delete_message, count, count)) },
         confirmButton = {
-            TextButton(onClick = onConfirm) { Text(stringResource(R.string.files_delete)) }
+            Button(
+                onClick = {
+                    haptics.confirm()
+                    onConfirm()
+                },
+                shapes = ButtonDefaults.shapes(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError,
+                ),
+            ) { Text(stringResource(R.string.files_delete)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.files_cancel)) }
+            TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes()) { Text(stringResource(R.string.files_cancel)) }
         },
     )
 }
@@ -107,6 +137,7 @@ fun ScanFolderDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
+        icon = { DialogIcon(AppSymbols.DonutLarge, polygon = MaterialShapes.Sunny) },
         title = { Text(stringResource(R.string.disk_usage_scan_prompt_title, folderName)) },
         text = {
             Text(
@@ -129,12 +160,12 @@ fun ScanFolderDialog(
             )
         },
         confirmButton = {
-            TextButton(onClick = onScan) { Text(stringResource(R.string.disk_usage_analyse)) }
+            Button(onClick = onScan, shapes = ButtonDefaults.shapes()) { Text(stringResource(R.string.disk_usage_analyse)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.files_cancel)) }
+            TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes()) { Text(stringResource(R.string.files_cancel)) }
             if (lastScannedAt != null) {
-                TextButton(onClick = onShowLastScan) {
+                TextButton(onClick = onShowLastScan, shapes = ButtonDefaults.shapes()) {
                     Text(stringResource(R.string.disk_usage_show_last_scan))
                 }
             }
@@ -156,9 +187,10 @@ fun PropertiesDialog(
     val context = LocalContext.current
     AlertDialog(
         onDismissRequest = onDismiss,
+        icon = { EntryIcon(entry, size = 56.dp) },
         title = { Text(entry.name) },
         text = {
-            Column(Modifier.fillMaxWidth()) {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
                 PropertyLine(stringResource(R.string.files_property_path), entry.path)
                 PropertyLine(
                     stringResource(R.string.files_property_type),
@@ -190,7 +222,7 @@ fun PropertiesDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.files_close)) }
+            TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes()) { Text(stringResource(R.string.files_close)) }
         },
     )
 }
@@ -200,10 +232,10 @@ private fun PropertyLine(label: String, value: String) {
     Column(Modifier.fillMaxWidth()) {
         Text(
             text = label,
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelMediumEmphasized,
             color = MaterialTheme.colorScheme.primary,
         )
-        Text(text = value, style = MaterialTheme.typography.bodyMedium)
+        Text(text = value, style = MaterialTheme.typography.bodyMedium.tabular())
     }
 }
 
@@ -212,11 +244,14 @@ private fun PropertyLine(label: String, value: String) {
 fun UnsavedChangesDialog(onSave: () -> Unit, onDiscard: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
+        icon = { DialogIcon(AppSymbols.Save) },
         title = { Text(stringResource(R.string.editor_unsaved_title)) },
         text = { Text(stringResource(R.string.editor_unsaved_message)) },
-        confirmButton = { TextButton(onClick = onSave) { Text(stringResource(R.string.editor_save)) } },
+        confirmButton = {
+            Button(onClick = onSave, shapes = ButtonDefaults.shapes()) { Text(stringResource(R.string.editor_save)) }
+        },
         dismissButton = {
-            TextButton(onClick = onDiscard) { Text(stringResource(R.string.editor_discard)) }
+            TextButton(onClick = onDiscard, shapes = ButtonDefaults.shapes()) { Text(stringResource(R.string.editor_discard)) }
         },
     )
 }
@@ -227,6 +262,7 @@ fun GoToLineDialog(lineCount: Int, onConfirm: (Int) -> Unit, onDismiss: () -> Un
     val line = value.toIntOrNull()
     AlertDialog(
         onDismissRequest = onDismiss,
+        icon = { DialogIcon(AppSymbols.FormatListNumbered) },
         title = { Text(stringResource(R.string.editor_go_to_line)) },
         text = {
             OutlinedTextField(
@@ -238,17 +274,20 @@ fun GoToLineDialog(lineCount: Int, onConfirm: (Int) -> Unit, onDismiss: () -> Un
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Done,
                 ),
+                keyboardActions = KeyboardActions(onDone = { line?.takeIf { it >= 1 }?.let(onConfirm) }),
+                shape = MaterialTheme.shapes.large,
                 modifier = Modifier.fillMaxWidth(),
             )
         },
         confirmButton = {
-            TextButton(
+            Button(
                 onClick = { line?.let(onConfirm) },
                 enabled = line != null && line >= 1,
+                shapes = ButtonDefaults.shapes(),
             ) { Text(stringResource(R.string.editor_go)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.files_cancel)) }
+            TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes()) { Text(stringResource(R.string.files_cancel)) }
         },
     )
 }

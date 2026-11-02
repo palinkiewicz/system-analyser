@@ -23,6 +23,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     val colorTheme: StateFlow<AppColorTheme> = settings.colorTheme
     val darkThemeOption: StateFlow<DarkThemeOption> = settings.darkThemeOption
     val pureBlack: StateFlow<Boolean> = settings.pureBlack
+    val hapticsEnabled: StateFlow<Boolean> = settings.hapticsEnabled
     val homeColumns: StateFlow<Int> = settings.homeColumns
     val notificationIntervalSeconds: StateFlow<Int> = settings.notificationIntervalSeconds
     val pinnedCards: StateFlow<List<PinnedCard>> = pinnedNotifications.pinned
@@ -42,6 +43,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setColorTheme(theme: AppColorTheme) = settings.setColorTheme(theme)
     fun setDarkThemeOption(option: DarkThemeOption) = settings.setDarkThemeOption(option)
     fun setPureBlack(enabled: Boolean) = settings.setPureBlack(enabled)
+    fun setHapticsEnabled(enabled: Boolean) = settings.setHapticsEnabled(enabled)
     fun setHomeColumns(columns: Int) = settings.setHomeColumns(columns)
     fun setNotificationIntervalSeconds(seconds: Int) =
         settings.setNotificationIntervalSeconds(seconds)

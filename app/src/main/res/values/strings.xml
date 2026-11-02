@@ -14,9 +14,17 @@
     <string name="home_empty_hint">Long-press a card on the Device screen to add it here</string>
     <string name="home_remove_widget">Remove card</string>
     <string name="home_sensor_unavailable">Sensor unavailable on this device</string>
+    <string name="home_greeting_morning">Good morning</string>
+    <string name="home_greeting_afternoon">Good afternoon</string>
+    <string name="home_greeting_evening">Good evening</string>
+    <string name="home_greeting_night">Good night</string>
+    <string name="home_empty_title">Nothing here yet</string>
+    <string name="home_browse_cards">Browse device cards</string>
+    <string name="home_add_cards">Add cards</string>
+    <string name="home_edit_done">Done</string>
+    <string name="home_edit_hint">Drag to move, pull an edge to resize</string>
 
     <!--  SETTINGS SCREEN  -->
-    <string name="settings_title">Settings</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_appearance_summary">Theme and app colors</string>
     <string name="settings_device_info">Device info</string>
@@ -66,6 +74,11 @@
     <string name="settings_share_idle_minutes_x">%1$d min</string>
     <string name="settings_about">About app</string>
     <string name="settings_about_summary">Version, author, repository</string>
+    <string name="settings_tagline">A closer look at your phone, its apps and its files</string>
+    <string name="settings_section_personalize">Personalize</string>
+    <string name="settings_section_features">Features</string>
+    <string name="settings_section_about">About</string>
+    <string name="settings_experimental_badge">Experimental</string>
     <string name="settings_theme_colors">Theme colors</string>
     <string name="settings_dark_mode">Dark mode</string>
     <string name="settings_dark_follow_system">System</string>
@@ -73,6 +86,9 @@
     <string name="settings_dark_dark">Dark</string>
     <string name="settings_pure_black">Pure black</string>
     <string name="settings_pure_black_description">Fully black background in dark mode, saves battery on OLED screens</string>
+    <string name="settings_feel">Feel</string>
+    <string name="settings_haptics">Haptic feedback</string>
+    <string name="settings_haptics_description">Subtle vibrations when you switch, drag or confirm something</string>
     <string name="settings_home_columns">Columns</string>
     <string name="settings_home_columns_description">Number of columns on the home screen grid</string>
     <string name="settings_notifications_interval">Update interval</string>
@@ -102,13 +118,18 @@
     <string name="about_how_it_works">How it works</string>
     <string name="about_how_it_works_description">App Analyser detects the core tech stack of your installed applications by reading their APK signatures dynamically without fully extracting them. It maps file names to determine the underlying framework.</string>
     <string name="about_repository">Repository</string>
-    <string name="about_author">Author</string>
     <string name="about_close">Close</string>
 
     <!--  APP LIST SCREEN  -->
     <string name="app_list_show_system_apps">Show system apps</string>
     <string name="app_list_search_apps">Search apps...</string>
     <string name="app_list_system_app_label">System app</string>
+    <plurals name="app_list_count_x">
+        <item quantity="one">%1$d app</item>
+        <item quantity="other">%1$d apps</item>
+    </plurals>
+    <string name="app_list_no_results">No apps match your search</string>
+    <string name="app_list_clear_search">Clear search</string>
 
     <!--  APP DETAILS SCREEN  -->
     <string name="app_details_title">App details</string>
@@ -128,6 +149,11 @@
     <string name="app_details_share_failed">Could not prepare the APK for sharing</string>
     <string name="app_details_export_success">APK exported</string>
     <string name="app_details_export_failed">Could not export the APK</string>
+    <string name="app_details_confidence_very_likely">Very likely</string>
+    <string name="app_details_confidence_likely">Likely</string>
+    <string name="app_details_confidence_possible">Possible</string>
+    <string name="app_details_confidence_unlikely">Unlikely</string>
+    <string name="app_details_top_match">Best match</string>
 
     <!--  TECH STACKS  -->
     <string name="tech_stack_flutter_name">Flutter</string>
@@ -191,7 +217,6 @@
     <string name="tech_stack_unknown_description">This placeholder represents an unidentified or unsupported technology stack within the analyzer\'s codebase. It possesses no specific origin, language framework, or performance metrics until the underlying code can be properly resolved. It is utilized purely for error handling and fallback categorization.</string>
 
     <!--  DEVICE INFO SCREEN  -->
-    <string name="device_info_title">Device info</string>
     <string name="device_unknown">Unknown</string>
     <string name="device_value_unavailable">N/A</string>
     <string name="device_add_to_home">Add to Home screen</string>
@@ -221,6 +246,8 @@
     <string name="device_system_security_patch">Security patch</string>
     <string name="device_system_build">Build</string>
     <string name="device_system_kernel">Kernel</string>
+    <string name="device_system_identity_title">Identity</string>
+    <string name="device_system_software_title">Software</string>
     <string name="device_system_uptime_title">Uptime</string>
     <string name="device_system_uptime">Since boot</string>
     <string name="device_system_awake">Awake time</string>
@@ -278,6 +305,7 @@
     <string name="device_memory_total">Total</string>
     <string name="device_memory_used">Used</string>
     <string name="device_memory_available">Available</string>
+    <string name="device_memory_used_of_x">used of %1$s</string>
 
     <!--  Display tab  -->
     <string name="device_display_resolution">Resolution</string>
@@ -318,7 +346,6 @@
     <string name="files_create">Create</string>
     <string name="files_new_folder">New folder</string>
     <string name="files_new_file">New file</string>
-    <string name="files_new_file_summary">Any extension, for example notes.txt</string>
     <string name="files_name">Name</string>
     <string name="files_name_invalid">Cannot contain \"/\" or leading and trailing spaces</string>
     <string name="files_rename">Rename</string>

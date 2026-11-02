@@ -36,10 +36,12 @@ class MainActivity : ComponentActivity() {
             val colorTheme by settings.colorTheme.collectAsState()
             val darkThemeOption by settings.darkThemeOption.collectAsState()
             val pureBlack by settings.pureBlack.collectAsState()
+            val hapticsEnabled by settings.hapticsEnabled.collectAsState()
             AppAnalyserTheme(
                 colorTheme = colorTheme,
                 darkThemeOption = darkThemeOption,
-                pureBlack = pureBlack
+                pureBlack = pureBlack,
+                hapticsEnabled = hapticsEnabled,
             ) {
                 val viewModel: AppAnalyzerViewModel = viewModel()
                 AppNavigation(

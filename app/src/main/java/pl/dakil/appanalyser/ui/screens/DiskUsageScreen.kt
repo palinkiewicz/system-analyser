@@ -6,8 +6,13 @@ import android.text.format.Formatter
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
-import androidx.compose.foundation.clickable
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -26,41 +31,29 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Dashboard
-import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.DonutLarge
-import androidx.compose.material.icons.rounded.ErrorOutline
-import androidx.compose.material.icons.rounded.FolderOpen
-import androidx.compose.material.icons.rounded.Refresh
-import androidx.compose.material.icons.rounded.SdStorage
-import androidx.compose.material.icons.rounded.Share
-import androidx.compose.material.icons.rounded.Smartphone
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ContainedLoadingIndicator
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.ListItem
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -72,12 +65,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -85,6 +76,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import java.text.NumberFormat
 import kotlinx.coroutines.launch
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.NetworkInfoProvider
@@ -110,13 +102,25 @@ import pl.dakil.appanalyser.ui.components.filesystem.DeleteConfirmDialog
 import pl.dakil.appanalyser.ui.components.filesystem.EDITABLE_EXTENSIONS
 import pl.dakil.appanalyser.ui.components.filesystem.NoNetworkDialog
 import pl.dakil.appanalyser.ui.components.filesystem.ShareMethodSheet
-import pl.dakil.appanalyser.ui.components.filesystem.openHotspotSettings
 import pl.dakil.appanalyser.ui.components.filesystem.openFile
+import pl.dakil.appanalyser.ui.components.filesystem.openHotspotSettings
 import pl.dakil.appanalyser.ui.components.filesystem.shareFile
-import pl.dakil.appanalyser.ui.components.flatTopAppBarColors
+import pl.dakil.appanalyser.ui.designsystem.BackButton
+import pl.dakil.appanalyser.ui.designsystem.ConnectedToggleRow
+import pl.dakil.appanalyser.ui.designsystem.EmptyState
+import pl.dakil.appanalyser.ui.designsystem.RollingNumber
+import pl.dakil.appanalyser.ui.designsystem.ShapedIcon
+import pl.dakil.appanalyser.ui.designsystem.ToggleOption
+import pl.dakil.appanalyser.ui.designsystem.UsageBar
+import pl.dakil.appanalyser.ui.designsystem.appTopBarColors
+import pl.dakil.appanalyser.ui.designsystem.icon.AppIcon
+import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbol
+import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbols
+import pl.dakil.appanalyser.ui.designsystem.rememberHaptics
+import pl.dakil.appanalyser.ui.designsystem.segmentedItemColors
+import pl.dakil.appanalyser.ui.theme.Spacing
 import pl.dakil.appanalyser.viewmodel.DiskUsageRows
 import pl.dakil.appanalyser.viewmodel.DiskUsageViewModel
-import java.text.NumberFormat
 
 /**
  * The disk usage analyser: a volume list, then a Baobab-style chart (rings or treemap) of the
@@ -124,7 +128,6 @@ import java.text.NumberFormat
  *
  * Opening the screen never scans by itself; see [DiskUsageViewModel].
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DiskUsageScreen(
     onNavigateBack: () -> Unit,
@@ -213,12 +216,14 @@ fun DiskUsageScreen(
 
     val showingResult = viewRoot != null && rootNode != null && focusNode != null
     val volumeLabel = roots.firstOrNull { it.path == viewRoot }?.label
+    val haptics = rememberHaptics()
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = MaterialTheme.colorScheme.surface,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            if (selection.isNotEmpty()) {
+          AnimatedContent(targetState = selection.isNotEmpty(), label = "usageTopBar") { selecting ->
+            if (selecting) {
                 val selected = viewModel.selectedItems()
                 val single = selected.singleOrNull()
                 SelectionBar(
@@ -230,7 +235,12 @@ fun DiskUsageScreen(
                         { onShowInBrowser(if (item.isDirectory) item.path else item.path.substringBeforeLast('/')) }
                     },
                     onDelete = {
-                        if (confirmDeletion) showDeleteConfirm = true else viewModel.deleteSelection()
+                        if (confirmDeletion) {
+                            showDeleteConfirm = true
+                        } else {
+                            haptics.confirm()
+                            viewModel.deleteSelection()
+                        }
                     },
                 )
             } else {
@@ -242,37 +252,44 @@ fun DiskUsageScreen(
                             overflow = TextOverflow.Ellipsis,
                         )
                     },
-                    navigationIcon = {
-                        IconButton(onClick = onNavigateBack) {
-                            Icon(
-                                Icons.AutoMirrored.Rounded.ArrowBack,
-                                contentDescription = stringResource(R.string.common_back),
-                            )
-                        }
-                    },
+                    navigationIcon = { BackButton(onNavigateBack) },
                     actions = {
-                        if (showingResult) {
-                            IconButton(onClick = { viewModel.toggleChartType() }) {
-                                if (chartType == DiskChartType.RINGS) {
-                                    Icon(
-                                        Icons.Rounded.Dashboard,
-                                        contentDescription = stringResource(R.string.disk_usage_show_treemap),
-                                    )
-                                } else {
-                                    Icon(
-                                        Icons.Rounded.DonutLarge,
-                                        contentDescription = stringResource(R.string.disk_usage_show_rings),
-                                    )
+                        AnimatedVisibility(
+                            visible = showingResult,
+                            enter = fadeIn() + scaleIn(),
+                            exit = fadeOut() + scaleOut(),
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                // Rings or treemap, as a two-icon connected toggle.
+                                ConnectedToggleRow(
+                                    options = listOf(
+                                        ToggleOption(
+                                            DiskChartType.RINGS,
+                                            stringResource(R.string.disk_usage_show_rings),
+                                            AppSymbols.DonutLarge,
+                                            iconOnly = true,
+                                        ),
+                                        ToggleOption(
+                                            DiskChartType.TREEMAP,
+                                            stringResource(R.string.disk_usage_show_treemap),
+                                            AppSymbols.Dashboard,
+                                            iconOnly = true,
+                                        ),
+                                    ),
+                                    selected = chartType,
+                                    onSelect = { if (it != chartType) viewModel.toggleChartType() },
+                                    fillWidth = false,
+                                )
+                                IconButton(onClick = { viewModel.rescan() }, shapes = IconButtonDefaults.shapes()) {
+                                    AppIcon(AppSymbols.Refresh, contentDescription = stringResource(R.string.disk_usage_rescan))
                                 }
                             }
-                            IconButton(onClick = { viewModel.rescan() }) {
-                                Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.disk_usage_rescan))
-                            }
                         }
                     },
-                    colors = flatTopAppBarColors(),
+                    colors = appTopBarColors(),
                 )
             }
+          }
         },
     ) { padding ->
         Column(
@@ -291,7 +308,6 @@ fun DiskUsageScreen(
                     onSegmentClick = { viewModel.open(it) },
                     minPath = root,
                 )
-                HorizontalDivider()
             }
             Box(Modifier.weight(1f)) { when {
                 !hasAccess -> AllFilesAccessGate(onGranted = { viewModel.refreshAccess() })
@@ -330,14 +346,14 @@ fun DiskUsageScreen(
                         },
                     )
                 }
-                currentState is DiskScanState.Failed && currentState.rootPath == root -> EmptyState(
-                    icon = Icons.Rounded.ErrorOutline,
+                currentState is DiskScanState.Failed && currentState.rootPath == root -> AnalyseState(
+                    symbol = AppSymbols.Error,
                     title = stringResource(R.string.disk_usage_failed),
                     message = null,
                     onAnalyse = { viewModel.analyseAgain() },
                 )
-                else -> EmptyState(
-                    icon = Icons.Rounded.DonutLarge,
+                else -> AnalyseState(
+                    symbol = AppSymbols.DonutLarge,
                     title = stringResource(R.string.disk_usage_not_analysed_title),
                     message = stringResource(R.string.disk_usage_not_analysed_message),
                     onAnalyse = { viewModel.analyseAgain() },
@@ -407,35 +423,36 @@ private fun VolumeList(
     onSelect: (String) -> Unit,
 ) {
     val context = LocalContext.current
-    LazyColumn(contentPadding = PaddingValues(vertical = 8.dp)) {
+    LazyColumn(
+        contentPadding = PaddingValues(horizontal = Spacing.gutter, vertical = Spacing.s),
+        verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap),
+    ) {
         item {
             Text(
                 text = stringResource(R.string.disk_usage_volumes_hint),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.padding(start = Spacing.xs, end = Spacing.xs, bottom = Spacing.m),
             )
         }
-        items(roots, key = { it.path }) { root ->
+        itemsIndexed(roots, key = { _, root -> root.path }) { index, root ->
+            val scanning = state is DiskScanState.Scanning && state.rootPath == root.path
             val status = when {
-                state is DiskScanState.Scanning && state.rootPath == root.path ->
-                    stringResource(R.string.disk_usage_analysing)
+                scanning -> stringResource(R.string.disk_usage_analysing)
                 else -> scans.firstOrNull { it.root.path == root.path }?.let {
                     stringResource(R.string.disk_usage_analysed_ago, relativeTime(it.scannedAt))
                 }
             }
-            ListItem(
-                modifier = Modifier.clickable { onSelect(root.path) },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                headlineContent = { Text(root.label) },
+            SegmentedListItem(
+                onClick = { onSelect(root.path) },
+                shapes = ListItemDefaults.segmentedShapes(index, roots.size),
+                colors = segmentedItemColors(),
                 supportingContent = {
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
                         if (root.totalBytes > 0) {
-                            LinearProgressIndicator(
-                                progress = { root.usedBytes.toFloat() / root.totalBytes },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 6.dp),
+                            UsageBar(
+                                root.usedBytes.toFloat() / root.totalBytes,
+                                modifier = Modifier.padding(top = Spacing.xs),
                             )
                             Text(
                                 stringResource(
@@ -446,25 +463,25 @@ private fun VolumeList(
                             )
                         }
                         status?.let {
-                            Text(it, color = MaterialTheme.colorScheme.primary)
+                            Text(it, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
                         }
                     }
                 },
                 leadingContent = {
-                    Icon(
-                        imageVector = if (root.isRemovable) Icons.Rounded.SdStorage else Icons.Rounded.Smartphone,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                    ShapedIcon(
+                        if (root.isRemovable) AppSymbols.SdCard else AppSymbols.Smartphone,
+                        polygon = if (root.isRemovable) MaterialShapes.Cookie6Sided else MaterialShapes.Cookie9Sided,
+                        size = 48.dp,
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
                 },
                 trailingContent = {
-                    Icon(
-                        Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    AppIcon(AppSymbols.ChevronRight, contentDescription = null)
                 },
-            )
+            ) {
+                Text(root.label, style = MaterialTheme.typography.titleMedium)
+            }
         }
     }
 }
@@ -477,15 +494,16 @@ private fun VolumeList(
 private fun ScanProgress(state: DiskScanState.Scanning, label: String, onCancel: () -> Unit) {
     val context = LocalContext.current
     CenteredColumn {
-        CircularProgressIndicator(modifier = Modifier.size(56.dp))
+        ContainedLoadingIndicator(modifier = Modifier.size(112.dp))
         Text(
             text = stringResource(R.string.disk_usage_scanning_title, label),
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.headlineSmall,
             textAlign = TextAlign.Center,
         )
-        Text(
+        RollingNumber(
             text = "${filesLabel(state.files)} · ${Formatter.formatShortFileSize(context, state.bytes)}",
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.titleMediumEmphasized,
+            color = MaterialTheme.colorScheme.primary,
         )
         Text(
             text = state.currentDir.removePrefix(state.rootPath).ifEmpty { "/" },
@@ -494,29 +512,36 @@ private fun ScanProgress(state: DiskScanState.Scanning, label: String, onCancel:
             maxLines = 1,
             overflow = TextOverflow.MiddleEllipsis,
         )
-        OutlinedButton(onClick = onCancel) { Text(stringResource(R.string.files_cancel)) }
+        OutlinedButton(onClick = onCancel, shapes = ButtonDefaults.shapes()) {
+            AppIcon(AppSymbols.Close, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+            Text(stringResource(R.string.files_cancel), modifier = Modifier.padding(start = ButtonDefaults.IconSpacing))
+        }
     }
 }
 
 @Composable
-private fun EmptyState(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+private fun AnalyseState(
+    symbol: AppSymbol,
     title: String,
     message: String?,
     onAnalyse: () -> Unit,
 ) {
-    CenteredColumn {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(64.dp))
-        Text(title, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
-        message?.let {
-            Text(
-                it,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
+    Box(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+        contentAlignment = Alignment.Center,
+    ) {
+        EmptyState(symbol = symbol, title = title, body = message, polygon = MaterialShapes.Sunny) {
+            Button(
+                onClick = onAnalyse,
+                shapes = ButtonDefaults.shapes(),
+                contentPadding = ButtonDefaults.MediumContentPadding,
+            ) {
+                AppIcon(AppSymbols.DonutLarge, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                Text(stringResource(R.string.disk_usage_analyse), modifier = Modifier.padding(start = ButtonDefaults.IconSpacing))
+            }
         }
-        Button(onClick = onAnalyse) { Text(stringResource(R.string.disk_usage_analyse)) }
     }
 }
 
@@ -525,12 +550,12 @@ private fun CenteredColumn(content: @Composable () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(32.dp),
+            .padding(Spacing.xxl),
         contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(Spacing.l),
         ) { content() }
     }
 }
@@ -605,7 +630,7 @@ private fun AnalysisContent(
     }
 
     Column(Modifier.fillMaxSize()) {
-        if (isBusy) LinearProgressIndicator(Modifier.fillMaxWidth())
+        AnimatedVisibility(visible = isBusy) { LinearWavyProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = Spacing.gutter)) }
 
         BoxWithConstraints(Modifier.weight(1f)) {
             val wide = maxWidth > maxHeight && maxWidth >= 600.dp
@@ -621,19 +646,24 @@ private fun AnalysisContent(
                     LazyColumn(
                         state = listState,
                         modifier = Modifier.weight(0.55f),
-                        contentPadding = PaddingValues(bottom = 16.dp),
+                        contentPadding = PaddingValues(start = Spacing.gutter, end = Spacing.gutter, bottom = Spacing.l),
+                        verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap),
                     ) {
                         header()
                         list()
                     }
                 }
             } else {
-                LazyColumn(state = listState, contentPadding = PaddingValues(bottom = 16.dp)) {
+                LazyColumn(
+                    state = listState,
+                    contentPadding = PaddingValues(start = Spacing.gutter, end = Spacing.gutter, bottom = Spacing.l),
+                    verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap),
+                ) {
                     item(key = "chart") {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 24.dp, vertical = 8.dp),
+                                .padding(horizontal = Spacing.s, vertical = Spacing.s),
                             contentAlignment = Alignment.Center,
                         ) { chart(Modifier.widthIn(max = 420.dp)) }
                     }
@@ -649,11 +679,9 @@ private fun AnalysisContent(
 private fun RingsCenter(focus: DiskNode, label: String) {
     val context = LocalContext.current
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
+        RollingNumber(
             text = Formatter.formatShortFileSize(context, focus.sizeBytes),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1,
+            style = MaterialTheme.typography.titleLargeEmphasized,
         )
         Text(
             text = label,
@@ -683,7 +711,7 @@ private fun Summary(scan: DiskScan, focus: DiskNode, onRescan: () -> Unit) {
         }
         add(stringResource(R.string.disk_usage_scanned_ago, relativeTime(scan.scannedAt)))
     }
-    Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+    Column(Modifier.padding(vertical = Spacing.xs)) {
         Text(
             text = parts.joinToString(" · "),
             style = MaterialTheme.typography.bodySmall,
@@ -692,55 +720,52 @@ private fun Summary(scan: DiskScan, focus: DiskNode, onRescan: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
         )
         if (scan.stale) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(Spacing.m))
             Surface(
-                color = MaterialTheme.colorScheme.secondaryContainer,
-                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.tertiaryContainer,
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                shape = MaterialTheme.shapes.extraLarge,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Row(
-                    modifier = Modifier.padding(start = 16.dp, end = 4.dp),
+                    modifier = Modifier.padding(start = Spacing.l, end = Spacing.s, top = Spacing.s, bottom = Spacing.s),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    ShapedIcon(
+                        AppSymbols.History,
+                        polygon = MaterialShapes.Cookie6Sided,
+                        size = 32.dp,
+                        iconSize = 18.dp,
+                        containerColor = MaterialTheme.colorScheme.tertiary,
+                        contentColor = MaterialTheme.colorScheme.onTertiary,
+                    )
                     Text(
                         text = stringResource(R.string.disk_usage_stale),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = Spacing.m),
                     )
-                    TextButton(onClick = onRescan) { Text(stringResource(R.string.disk_usage_rescan)) }
+                    FilledTonalButton(onClick = onRescan, shapes = ButtonDefaults.shapes()) {
+                        Text(stringResource(R.string.disk_usage_rescan))
+                    }
                 }
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ModeSelector(mode: DiskListMode, onSelect: (DiskListMode) -> Unit) {
-    val modes = DiskListMode.entries
-    SingleChoiceSegmentedButtonRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-    ) {
-        modes.forEachIndexed { index, entry ->
-            SegmentedButton(
-                selected = entry == mode,
-                onClick = { onSelect(entry) },
-                shape = SegmentedButtonDefaults.itemShape(index, modes.size),
-            ) {
-                Text(
-                    stringResource(
-                        when (entry) {
-                            DiskListMode.CONTENTS -> R.string.disk_usage_contents
-                            DiskListMode.LARGEST -> R.string.disk_usage_largest
-                        }
-                    )
-                )
-            }
-        }
-    }
+    ConnectedToggleRow(
+        options = listOf(
+            ToggleOption(DiskListMode.CONTENTS, stringResource(R.string.disk_usage_contents), AppSymbols.FolderOpen),
+            ToggleOption(DiskListMode.LARGEST, stringResource(R.string.disk_usage_largest), AppSymbols.Sort),
+        ),
+        selected = mode,
+        onSelect = onSelect,
+        modifier = Modifier.padding(vertical = Spacing.s),
+    )
 }
 
 private fun LazyListScope.listRows(
@@ -769,7 +794,7 @@ private fun LazyListScope.listRows(
         return
     }
     val total = focus.sizeBytes.coerceAtLeast(1)
-    items(rows.items, key = { it.path }) { item ->
+    itemsIndexed(rows.items, key = { _, item -> item.path }) { index, item ->
         val color = when {
             listMode == DiskListMode.LARGEST -> MaterialTheme.colorScheme.primary
             item.isRestrictedSpace -> palette.restricted
@@ -784,6 +809,9 @@ private fun LazyListScope.listRows(
             selectionMode = selection.isNotEmpty(),
             onClick = { onClick(item) },
             onLongClick = { onLongClick(item) },
+            index = index,
+            count = rows.items.size,
+            modifier = Modifier.animateItem(),
             // In the largest-files list the folder matters more than a file count of one.
             detail = if (listMode == DiskListMode.LARGEST) {
                 item.path.removePrefix("${focus.path}/").substringBeforeLast('/', "").ifEmpty { null }
@@ -817,7 +845,6 @@ private fun LazyListScope.listRows(
 // Bars and helpers
 // ---------------------------------------------------------------------------
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SelectionBar(
     count: Int,
@@ -828,33 +855,40 @@ private fun SelectionBar(
 ) {
     TopAppBar(
         title = {
-            Text(
-                text = pluralStringResource(R.plurals.files_selected_x, count, count),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            AnimatedContent(targetState = count, label = "usageSelectionCount") {
+                Text(
+                    text = pluralStringResource(R.plurals.files_selected_x, it, it),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         },
         navigationIcon = {
-            IconButton(onClick = onClose) {
-                Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.files_cancel))
+            IconButton(onClick = onClose, shapes = IconButtonDefaults.shapes()) {
+                AppIcon(AppSymbols.Close, contentDescription = stringResource(R.string.files_cancel))
             }
         },
         actions = {
             onShare?.let {
-                IconButton(onClick = it) {
-                    Icon(Icons.Rounded.Share, contentDescription = stringResource(R.string.files_share))
+                IconButton(onClick = it, shapes = IconButtonDefaults.shapes()) {
+                    AppIcon(AppSymbols.Share, contentDescription = stringResource(R.string.files_share))
                 }
             }
             onShowInBrowser?.let {
-                IconButton(onClick = it) {
-                    Icon(Icons.Rounded.FolderOpen, contentDescription = stringResource(R.string.disk_usage_show_in_browser))
+                IconButton(onClick = it, shapes = IconButtonDefaults.shapes()) {
+                    AppIcon(AppSymbols.FolderOpen, contentDescription = stringResource(R.string.disk_usage_show_in_browser))
                 }
             }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Rounded.Delete, contentDescription = stringResource(R.string.files_delete))
+            IconButton(onClick = onDelete, shapes = IconButtonDefaults.shapes()) {
+                AppIcon(AppSymbols.Delete, contentDescription = stringResource(R.string.files_delete))
             }
         },
-        colors = flatTopAppBarColors(),
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            titleContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            navigationIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            actionIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        ),
     )
 }
 

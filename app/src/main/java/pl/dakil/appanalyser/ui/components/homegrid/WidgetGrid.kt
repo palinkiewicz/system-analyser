@@ -1,8 +1,6 @@
 package pl.dakil.appanalyser.ui.components.homegrid
 
-import android.os.Build
-import android.view.HapticFeedbackConstants
-import android.view.View
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -14,12 +12,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,13 +30,14 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import pl.dakil.appanalyser.domain.HomeWidget
+import pl.dakil.appanalyser.ui.designsystem.AppHaptics
+import pl.dakil.appanalyser.ui.designsystem.rememberHaptics
 import kotlin.math.roundToInt
 
 private val GRID_GAP = 12.dp
@@ -61,7 +61,9 @@ fun WidgetGrid(
 ) {
     state.latestWidgets = widgets
     val displayList = state.workingWidgets ?: widgets
-    val view = LocalView.current
+    val haptics = rememberHaptics()
+    val density = LocalDensity.current.density
+    val feedback = remember(haptics, density) { GridFeedback(haptics, density) }
 
     Box(modifier = modifier) {
         Layout(
@@ -71,7 +73,7 @@ fun WidgetGrid(
                         GridItem(
                             widget = widget,
                             state = state,
-                            view = view,
+                            feedback = feedback,
                             onCommit = onCommit,
                             onRemove = onRemove,
                         ) {
@@ -178,7 +180,7 @@ fun WidgetGrid(
             }
         }
 
-        ResizeOverlay(state = state, view = view, columns = columns, onCommit = onCommit)
+        ResizeOverlay(state = state, feedback = feedback, columns = columns, onCommit = onCommit)
     }
 }
 
@@ -190,7 +192,7 @@ fun WidgetGrid(
 private fun GridItem(
     widget: HomeWidget,
     state: WidgetGridState,
-    view: View,
+    feedback: GridFeedback,
     onCommit: (List<HomeWidget>) -> Unit,
     onRemove: (String) -> Unit,
     content: @Composable () -> Unit,
@@ -235,7 +237,7 @@ private fun GridItem(
             .pointerInput(id) {
                 detectDragGesturesAfterLongPress(
                     onDragStart = {
-                        view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                        feedback.haptics.longPress()
                         state.workingWidgets = state.workingWidgets ?: state.latestWidgets
                         state.overTrash = false
                         state.reorderPending = false
@@ -248,10 +250,10 @@ private fun GridItem(
                         state.scope.launch {
                             state.dragOffset.snapTo(state.dragOffset.value + dragAmount)
                         }
-                        handleDragPositionChange(state, id, view)
+                        handleDragPositionChange(state, id, feedback)
                     },
-                    onDragEnd = { finishDrag(state, id, view, onCommit, onRemove) },
-                    onDragCancel = { finishDrag(state, id, view, onCommit, onRemove, cancelled = true) },
+                    onDragEnd = { finishDrag(state, id, feedback, onCommit, onRemove) },
+                    onDragCancel = { finishDrag(state, id, feedback, onCommit, onRemove, cancelled = true) },
                 )
             }
             .graphicsLayer {
@@ -272,26 +274,18 @@ private fun GridItem(
 }
 
 /** Re-targets the working list order and the trash highlight from the card's visual center. */
-private fun handleDragPositionChange(state: WidgetGridState, id: String, view: View) {
+private fun handleDragPositionChange(state: WidgetGridState, id: String, feedback: GridFeedback) {
     val center = state.visualCenter(id) ?: return
 
     // Trash hit-testing happens in root coordinates.
     val trash = state.trashBoundsInRoot
     if (trash != null) {
         val centerInRoot = state.gridOriginInRoot + center
-        val slop = TRASH_HIT_SLOP.value * view.resources.displayMetrics.density
+        val slop = TRASH_HIT_SLOP.value * feedback.density
         val hovering = trash.inflate(slop).contains(centerInRoot)
         if (hovering != state.overTrash) {
             state.overTrash = hovering
-            if (hovering) {
-                view.performHapticFeedback(
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        HapticFeedbackConstants.GESTURE_START
-                    } else {
-                        HapticFeedbackConstants.CLOCK_TICK
-                    }
-                )
-            }
+            if (hovering) feedback.haptics.threshold()
         }
         if (hovering) return
     }
@@ -331,7 +325,7 @@ private fun handleDragPositionChange(state: WidgetGridState, id: String, view: V
     val now = android.os.SystemClock.uptimeMillis()
     if (now - state.lastTickUptimeMillis >= TICK_HAPTIC_MIN_INTERVAL_MS) {
         state.lastTickUptimeMillis = now
-        view.performTickHaptic()
+        feedback.haptics.frequentTick()
     }
 }
 
@@ -340,20 +334,14 @@ private const val TICK_HAPTIC_MIN_INTERVAL_MS = 80L
 private fun finishDrag(
     state: WidgetGridState,
     id: String,
-    view: View,
+    feedback: GridFeedback,
     onCommit: (List<HomeWidget>) -> Unit,
     onRemove: (String) -> Unit,
     cancelled: Boolean = false,
 ) {
     val working = state.workingWidgets
     if (!cancelled && state.overTrash) {
-        view.performHapticFeedback(
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                HapticFeedbackConstants.CONFIRM
-            } else {
-                HapticFeedbackConstants.VIRTUAL_KEY
-            }
-        )
+        feedback.haptics.confirm()
         if (working != null) onCommit(working.filterNot { it.id == id }) else onRemove(id)
         state.exitEditMode()
         state.scope.launch {
@@ -384,15 +372,11 @@ private fun finishDrag(
     }
 }
 
-private fun View.performTickHaptic() {
-    performHapticFeedback(
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            HapticFeedbackConstants.SEGMENT_TICK
-        } else {
-            HapticFeedbackConstants.CLOCK_TICK
-        }
-    )
-}
+/**
+ * What the gesture code needs from composition: the haptics (which honour the user's setting) and
+ * the density for converting hit slop, captured once so the pointer handlers stay non-composable.
+ */
+private class GridFeedback(val haptics: AppHaptics, val density: Float)
 
 // ---------------------------------------------------------------------
 // Resize overlay — Android 16 launcher-style outline with edge handles
@@ -401,7 +385,7 @@ private fun View.performTickHaptic() {
 @Composable
 private fun ResizeOverlay(
     state: WidgetGridState,
-    view: View,
+    feedback: GridFeedback,
     columns: Int,
     onCommit: (List<HomeWidget>) -> Unit,
 ) {
@@ -428,27 +412,39 @@ private fun ResizeOverlay(
         )
     }
 
+    // Springs in (a slight settle from larger) each time a different card is selected.
+    val appear = remember(selectedId) { Animatable(0f) }
+    val appearSpec = MaterialTheme.motionScheme.fastSpatialSpec<Float>()
+    LaunchedEffect(selectedId) { appear.animateTo(1f, appearSpec) }
+
     Box(
         modifier = Modifier
             .offset { overlayOffset }
             .size(overlaySize)
+            .graphicsLayer {
+                val p = appear.value
+                alpha = p.coerceIn(0f, 1f)
+                scaleX = 1.04f - 0.04f * p
+                scaleY = 1.04f - 0.04f * p
+            }
             .border(
-                width = 2.dp,
+                width = 3.dp,
                 color = MaterialTheme.colorScheme.primary,
-                shape = RoundedCornerShape(20.dp)
+                // The card's own corner grown by the outline's padding, so the two stay concentric.
+                shape = MaterialTheme.shapes.extraLargeIncreased
             )
     ) {
-        ResizeHandle(state, view, columns, selectedId, ResizeEdge.LEFT, onCommit, Alignment.CenterStart)
-        ResizeHandle(state, view, columns, selectedId, ResizeEdge.RIGHT, onCommit, Alignment.CenterEnd)
-        ResizeHandle(state, view, columns, selectedId, ResizeEdge.TOP, onCommit, Alignment.TopCenter)
-        ResizeHandle(state, view, columns, selectedId, ResizeEdge.BOTTOM, onCommit, Alignment.BottomCenter)
+        ResizeHandle(state, feedback, columns, selectedId, ResizeEdge.LEFT, onCommit, Alignment.CenterStart)
+        ResizeHandle(state, feedback, columns, selectedId, ResizeEdge.RIGHT, onCommit, Alignment.CenterEnd)
+        ResizeHandle(state, feedback, columns, selectedId, ResizeEdge.TOP, onCommit, Alignment.TopCenter)
+        ResizeHandle(state, feedback, columns, selectedId, ResizeEdge.BOTTOM, onCommit, Alignment.BottomCenter)
     }
 }
 
 @Composable
 private fun BoxScope.ResizeHandle(
     state: WidgetGridState,
-    view: View,
+    feedback: GridFeedback,
     columns: Int,
     widgetId: String,
     edge: ResizeEdge,
@@ -508,7 +504,7 @@ private fun BoxScope.ResizeHandle(
                                 widget.copy(rowSpan = newSpan)
                             }
                             state.workingWidgets = working.map { if (it.id == widgetId) updated else it }
-                            view.performTickHaptic()
+                            feedback.haptics.tick()
                         }
                     },
                     onDragEnd = {
@@ -528,13 +524,13 @@ private fun BoxScope.ResizeHandle(
         Box(
             modifier = Modifier
                 .size(haloSize)
-                .clip(RoundedCornerShape(50))
-                .background(MaterialTheme.colorScheme.background)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surface)
         )
         Box(
             modifier = Modifier
                 .size(handleSize)
-                .clip(RoundedCornerShape(50))
+                .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.primary)
         )
     }

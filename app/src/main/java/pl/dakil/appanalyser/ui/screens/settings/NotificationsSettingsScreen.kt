@@ -1,35 +1,30 @@
 package pl.dakil.appanalyser.ui.screens.settings
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.SettingsRepository
 import pl.dakil.appanalyser.service.cardTitle
-import pl.dakil.appanalyser.ui.components.flatTopAppBarColors
+import pl.dakil.appanalyser.ui.designsystem.SegmentedGroup
+import pl.dakil.appanalyser.ui.designsystem.ShapedIcon
+import pl.dakil.appanalyser.ui.designsystem.icon.AppIcon
+import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbols
+import pl.dakil.appanalyser.ui.designsystem.rememberHaptics
+import pl.dakil.appanalyser.ui.theme.Spacing
 import pl.dakil.appanalyser.viewmodel.SettingsViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun NotificationsSettingsScreen(
     onNavigateBack: () -> Unit,
@@ -39,30 +34,10 @@ fun NotificationsSettingsScreen(
     val pinnedCards by viewModel.pinnedCards.collectAsState()
     val context = LocalContext.current
     val intervalLabel = stringResource(R.string.settings_notifications_seconds_x, interval)
+    val haptics = rememberHaptics()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.settings_notifications)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = stringResource(R.string.common_back)
-                        )
-                    }
-                },
-                colors = flatTopAppBarColors()
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-        ) {
+    SettingsSubscreen(stringResource(R.string.settings_notifications), onNavigateBack) {
+        SegmentedGroup {
             SliderRow(
                 title = stringResource(R.string.settings_notifications_interval),
                 summary = stringResource(R.string.settings_notifications_interval_description),
@@ -73,30 +48,45 @@ fun NotificationsSettingsScreen(
                 // SliderRow only ever labels the current value, which intervalLabel already holds.
                 valueLabel = { intervalLabel }
             )
+        }
 
-            SectionHeader(stringResource(R.string.settings_notifications_pinned))
-            if (pinnedCards.isEmpty()) {
+        SectionHeader(stringResource(R.string.settings_notifications_pinned))
+        AnimatedContent(targetState = pinnedCards.isEmpty(), label = "pinnedEmpty") { empty ->
+            if (empty) {
                 Text(
                     text = stringResource(R.string.settings_notifications_pinned_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    modifier = Modifier.padding(horizontal = Spacing.l, vertical = Spacing.s)
                 )
             } else {
-                pinnedCards.forEach { card ->
-                    SettingRow(
-                        // Same title function the notification uses, so the two never diverge.
-                        title = cardTitle(context, card),
-                        trailing = {
-                            IconButton(onClick = { viewModel.unpinCard(card.id) }) {
-                                Icon(
-                                    Icons.Rounded.Close,
-                                    contentDescription =
-                                        stringResource(R.string.settings_notifications_unpin)
+                SegmentedGroup {
+                    pinnedCards.forEach { card ->
+                        SettingRow(
+                            // Same title function the notification uses, so the two never diverge.
+                            title = cardTitle(context, card),
+                            leading = {
+                                ShapedIcon(
+                                    AppSymbols.NotificationsActive,
+                                    polygon = MaterialShapes.Cookie6Sided,
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                                 )
+                            },
+                            trailing = {
+                                IconButton(onClick = {
+                                    haptics.confirm()
+                                    viewModel.unpinCard(card.id)
+                                }) {
+                                    AppIcon(
+                                        AppSymbols.Close,
+                                        contentDescription =
+                                            stringResource(R.string.settings_notifications_unpin)
+                                    )
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }

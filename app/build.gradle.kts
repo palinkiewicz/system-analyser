@@ -6,17 +6,16 @@ plugins {
 android {
     namespace = "pl.dakil.appanalyser"
     compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
+        // 37 is required by the Compose BOM; targetSdk (runtime behaviour) stays at 36.
+        version = release(37)
     }
 
     defaultConfig {
         applicationId = "pl.dakil.appanalyser"
         minSdk = 29
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.2.0"
+        versionCode = 6
+        versionName = "1.3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -50,6 +49,17 @@ android {
     }
 }
 
+kotlin {
+    compilerOptions {
+        optIn.addAll(
+            "androidx.compose.material3.ExperimentalMaterial3Api",
+            "androidx.compose.material3.ExperimentalMaterial3ExpressiveApi",
+            "androidx.compose.foundation.ExperimentalFoundationApi",
+            "androidx.compose.foundation.layout.ExperimentalLayoutApi",
+        )
+    }
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -59,6 +69,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.graphics.shapes)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -70,5 +81,4 @@ dependencies {
     implementation(libs.accompanist.drawablepainter)
     implementation(libs.zxing.core)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
-    implementation(libs.androidx.compose.material.icons.extended)
 }

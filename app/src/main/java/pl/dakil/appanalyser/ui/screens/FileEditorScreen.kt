@@ -4,7 +4,14 @@ import android.text.format.Formatter
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -16,37 +23,27 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.Redo
-import androidx.compose.material.icons.automirrored.rounded.Undo
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
-import androidx.compose.material.icons.rounded.KeyboardArrowUp
-import androidx.compose.material.icons.rounded.TextFields
-import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.Save
-import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.IconToggleButton
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -57,6 +54,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
@@ -66,7 +64,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import pl.dakil.appanalyser.R
@@ -75,9 +73,21 @@ import pl.dakil.appanalyser.ui.components.filesystem.UnsavedChangesDialog
 import pl.dakil.appanalyser.ui.components.filesystem.applyMatchHighlights
 import pl.dakil.appanalyser.ui.components.filesystem.highlight
 import pl.dakil.appanalyser.ui.components.filesystem.languageForExtension
-import pl.dakil.appanalyser.ui.components.flatTopAppBarColors
+import pl.dakil.appanalyser.ui.designsystem.AppMenu
+import pl.dakil.appanalyser.ui.designsystem.AppMenuCheckItem
+import pl.dakil.appanalyser.ui.designsystem.AppMenuGroup
+import pl.dakil.appanalyser.ui.designsystem.AppMenuItem
+import pl.dakil.appanalyser.ui.designsystem.EmptyState
+import pl.dakil.appanalyser.ui.designsystem.appTopBarColors
+import pl.dakil.appanalyser.ui.designsystem.icon.AppIcon
+import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbol
+import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbols
+import pl.dakil.appanalyser.ui.designsystem.rememberHaptics
+import pl.dakil.appanalyser.ui.theme.Spacing
+import pl.dakil.appanalyser.ui.theme.tabular
 import pl.dakil.appanalyser.viewmodel.EditorState
 import pl.dakil.appanalyser.viewmodel.FileEditorViewModel
+
 
 /**
  * Basic text editor for files created or found in the File system tab.
@@ -85,7 +95,6 @@ import pl.dakil.appanalyser.viewmodel.FileEditorViewModel
  * Uses the `TextFieldValue` flavour of [BasicTextField] on purpose: syntax highlighting and search
  * hits are span-level styling, which only [VisualTransformation] can apply.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FileEditorScreen(
     path: String,
@@ -127,95 +136,116 @@ fun FileEditorScreen(
 
     BackHandler { attemptBack() }
 
+    val haptics = rememberHaptics()
+
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = MaterialTheme.colorScheme.surface,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = if (isDirty) "$fileName •" else fileName,
-                        maxLines = 1,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = fileName,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false),
+                        )
+                        // The unsaved-changes dot pops in and out rather than appending a "•".
+                        AnimatedVisibility(
+                            visible = isDirty,
+                            enter = scaleIn(MaterialTheme.motionScheme.fastSpatialSpec()) + fadeIn(),
+                            exit = scaleOut(MaterialTheme.motionScheme.fastSpatialSpec()) + fadeOut(),
+                        ) {
+                            Box(
+                                Modifier
+                                    .padding(start = Spacing.s)
+                                    .size(10.dp)
+                                    .background(MaterialTheme.colorScheme.primary, CircleShape)
+                            )
+                        }
+                    }
                 },
                 navigationIcon = {
-                    IconButton(onClick = { attemptBack() }) {
-                        Icon(
-                            Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = stringResource(R.string.common_back),
-                        )
+                    IconButton(onClick = { attemptBack() }, shapes = IconButtonDefaults.shapes()) {
+                        AppIcon(AppSymbols.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
                     if (state is EditorState.Ready) {
-                        IconButton(onClick = { viewModel.toggleFind() }) {
-                            Icon(
-                                Icons.Rounded.Search,
-                                contentDescription = stringResource(R.string.editor_find),
-                            )
-                        }
-                        IconButton(onClick = { viewModel.undo() }, enabled = canUndo) {
-                            Icon(
-                                Icons.AutoMirrored.Rounded.Undo,
-                                contentDescription = stringResource(R.string.editor_undo),
-                            )
-                        }
-                        IconButton(onClick = { viewModel.redo() }, enabled = canRedo) {
-                            Icon(
-                                Icons.AutoMirrored.Rounded.Redo,
-                                contentDescription = stringResource(R.string.editor_redo),
-                            )
-                        }
-                        IconButton(onClick = { viewModel.save() }, enabled = isDirty) {
-                            Icon(
-                                Icons.Rounded.Save,
-                                contentDescription = stringResource(R.string.editor_save),
-                            )
-                        }
-                        IconButton(onClick = { menuExpanded = true }) {
-                            Icon(
-                                Icons.Rounded.MoreVert,
-                                contentDescription = stringResource(R.string.files_more_options),
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = menuExpanded,
-                            onDismissRequest = { menuExpanded = false },
+                        IconToggleButton(
+                            checked = findVisible,
+                            onCheckedChange = { viewModel.toggleFind() },
+                            shapes = IconButtonDefaults.toggleableShapes(),
                         ) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.editor_go_to_line)) },
-                                onClick = {
-                                    menuExpanded = false
-                                    showGoToLine = true
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.settings_editor_word_wrap)) },
-                                onClick = { viewModel.setWordWrap(!wordWrap) },
-                                trailingIcon = { CheckMark(wordWrap) },
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.settings_editor_monospace)) },
-                                onClick = { viewModel.setMonospace(!monospace) },
-                                trailingIcon = { CheckMark(monospace) },
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.settings_editor_highlighting)) },
-                                onClick = { viewModel.setSyntaxHighlighting(!syntaxHighlighting) },
-                                trailingIcon = { CheckMark(syntaxHighlighting) },
-                            )
-                            HorizontalDivider()
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.editor_save_as)) },
-                                onClick = {
-                                    menuExpanded = false
-                                    saveAsLauncher.launch(fileName)
-                                },
-                            )
+                            AppIcon(AppSymbols.Search, contentDescription = stringResource(R.string.editor_find))
+                        }
+                        IconButton(onClick = { viewModel.undo() }, enabled = canUndo, shapes = IconButtonDefaults.shapes()) {
+                            AppIcon(AppSymbols.Undo, contentDescription = stringResource(R.string.editor_undo))
+                        }
+                        IconButton(onClick = { viewModel.redo() }, enabled = canRedo, shapes = IconButtonDefaults.shapes()) {
+                            AppIcon(AppSymbols.Redo, contentDescription = stringResource(R.string.editor_redo))
+                        }
+                        FilledTonalIconButton(
+                            onClick = {
+                                haptics.confirm()
+                                viewModel.save()
+                            },
+                            enabled = isDirty,
+                            shapes = IconButtonDefaults.shapes(),
+                        ) {
+                            AppIcon(AppSymbols.Save, contentDescription = stringResource(R.string.editor_save))
+                        }
+                        Box {
+                            IconButton(onClick = { menuExpanded = true }, shapes = IconButtonDefaults.shapes()) {
+                                AppIcon(AppSymbols.MoreVert, contentDescription = stringResource(R.string.files_more_options))
+                            }
+                            AppMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                                AppMenuGroup(index = 0, count = 3) {
+                                    AppMenuItem(
+                                        text = stringResource(R.string.editor_go_to_line),
+                                        symbol = AppSymbols.FormatListNumbered,
+                                        onClick = {
+                                            menuExpanded = false
+                                            showGoToLine = true
+                                        },
+                                    )
+                                }
+                                AppMenuGroup(index = 1, count = 3) {
+                                    AppMenuCheckItem(
+                                        text = stringResource(R.string.settings_editor_word_wrap),
+                                        checked = wordWrap,
+                                        onCheckedChange = { viewModel.setWordWrap(it) },
+                                        symbol = AppSymbols.WrapText,
+                                    )
+                                    AppMenuCheckItem(
+                                        text = stringResource(R.string.settings_editor_monospace),
+                                        checked = monospace,
+                                        onCheckedChange = { viewModel.setMonospace(it) },
+                                        symbol = AppSymbols.TextFields,
+                                    )
+                                    AppMenuCheckItem(
+                                        text = stringResource(R.string.settings_editor_highlighting),
+                                        checked = syntaxHighlighting,
+                                        onCheckedChange = { viewModel.setSyntaxHighlighting(it) },
+                                        symbol = AppSymbols.DataObject,
+                                    )
+                                }
+                                AppMenuGroup(index = 2, count = 3) {
+                                    AppMenuItem(
+                                        text = stringResource(R.string.editor_save_as),
+                                        symbol = AppSymbols.Download,
+                                        onClick = {
+                                            menuExpanded = false
+                                            saveAsLauncher.launch(fileName)
+                                        },
+                                    )
+                                }
+                            }
                         }
                     }
                 },
-                colors = flatTopAppBarColors(),
+                colors = appTopBarColors(),
             )
         },
     ) { padding ->
@@ -226,11 +256,12 @@ fun FileEditorScreen(
         ) {
             when (val current = state) {
                 EditorState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-                    CircularProgressIndicator()
+                    LoadingIndicator(Modifier.size(64.dp))
                 }
-                EditorState.Binary -> EditorPlaceholder(stringResource(R.string.editor_binary))
-                EditorState.Failed -> EditorPlaceholder(stringResource(R.string.editor_load_failed))
+                EditorState.Binary -> EditorPlaceholder(AppSymbols.Draft, stringResource(R.string.editor_binary))
+                EditorState.Failed -> EditorPlaceholder(AppSymbols.Error, stringResource(R.string.editor_load_failed))
                 is EditorState.TooLarge -> EditorPlaceholder(
+                    symbol = AppSymbols.Description,
                     message = stringResource(
                         R.string.editor_too_large,
                         Formatter.formatFileSize(context, current.sizeBytes),
@@ -239,7 +270,11 @@ fun FileEditorScreen(
                     onAction = { viewModel.load(path, force = true) },
                 )
                 EditorState.Ready -> {
-                    AnimatedVisibility(visible = findVisible) {
+                    AnimatedVisibility(
+                        visible = findVisible,
+                        enter = expandVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) + fadeIn(),
+                        exit = shrinkVertically(MaterialTheme.motionScheme.fastSpatialSpec()) + fadeOut(),
+                    ) {
                         FindBar(viewModel)
                     }
                     if (highlightingSuppressed && syntaxHighlighting) {
@@ -247,7 +282,7 @@ fun FileEditorScreen(
                             text = stringResource(R.string.editor_highlighting_disabled),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                            modifier = Modifier.padding(horizontal = Spacing.l, vertical = Spacing.xs),
                         )
                     }
                     EditorBody(
@@ -289,11 +324,6 @@ fun FileEditorScreen(
             onDismiss = { showGoToLine = false },
         )
     }
-}
-
-@Composable
-private fun CheckMark(checked: Boolean) {
-    if (checked) Icon(Icons.Rounded.Check, contentDescription = null)
 }
 
 /** The text surface itself. */
@@ -350,7 +380,7 @@ private fun EditorBody(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(colors.background)
+            .background(colors.surface)
             .verticalScroll(rememberScrollState())
             .then(if (wordWrap) Modifier else Modifier.horizontalScroll(rememberScrollState())),
     ) {
@@ -372,6 +402,25 @@ private fun EditorBody(
     }
 }
 
+/** A pill-shaped, borderless field for the find panel. */
+@Composable
+private fun PanelField(value: String, onValueChange: (String) -> Unit, placeholder: String, modifier: Modifier = Modifier) {
+    TextField(
+        value = value,
+        onValueChange = onValueChange,
+        placeholder = { Text(placeholder) },
+        singleLine = true,
+        shape = CircleShape,
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+        ),
+        modifier = modifier,
+    )
+}
+
 @Composable
 private fun FindBar(viewModel: FileEditorViewModel) {
     val query by viewModel.findQuery.collectAsState()
@@ -380,78 +429,74 @@ private fun FindBar(viewModel: FileEditorViewModel) {
     val currentMatch by viewModel.currentMatch.collectAsState()
     val matchCase by viewModel.matchCase.collectAsState()
 
-    Surface(tonalElevation = 3.dp) {
-        Column(Modifier.padding(horizontal = 8.dp, vertical = 8.dp)) {
+    Surface(
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = Modifier.padding(horizontal = Spacing.s, vertical = Spacing.xs),
+    ) {
+        Column(
+            Modifier.padding(Spacing.s),
+            verticalArrangement = Arrangement.spacedBy(Spacing.s),
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(
+                PanelField(
                     value = query,
                     onValueChange = { viewModel.setFindQuery(it) },
-                    label = { Text(stringResource(R.string.editor_find)) },
-                    singleLine = true,
+                    placeholder = stringResource(R.string.editor_find),
                     modifier = Modifier.weight(1f),
                 )
-                Text(
-                    text = if (matches.isEmpty()) {
-                        stringResource(R.string.editor_no_matches)
-                    } else {
-                        stringResource(R.string.editor_match_x_of_y, currentMatch + 1, matches.size)
-                    },
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 8.dp),
-                )
-                IconButton(onClick = { viewModel.toggleMatchCase() }) {
-                    Icon(
-                        Icons.Rounded.TextFields,
-                        contentDescription = stringResource(R.string.editor_match_case),
-                        tint = if (matchCase) {
-                            MaterialTheme.colorScheme.primary
+                AnimatedContent(targetState = matches.isEmpty() to currentMatch, label = "matchCount") { (none, index) ->
+                    Text(
+                        text = if (none) {
+                            stringResource(R.string.editor_no_matches)
                         } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
+                            stringResource(R.string.editor_match_x_of_y, index + 1, matches.size)
                         },
+                        style = MaterialTheme.typography.labelLarge.tabular(),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = Spacing.s),
                     )
                 }
-                IconButton(onClick = { viewModel.findPrevious() }) {
-                    Icon(
-                        Icons.Rounded.KeyboardArrowUp,
-                        contentDescription = stringResource(R.string.editor_find_previous),
-                    )
+                IconToggleButton(
+                    checked = matchCase,
+                    onCheckedChange = { viewModel.toggleMatchCase() },
+                    shapes = IconButtonDefaults.toggleableShapes(),
+                ) {
+                    AppIcon(AppSymbols.MatchCase, contentDescription = stringResource(R.string.editor_match_case))
                 }
-                IconButton(onClick = { viewModel.findNext() }) {
-                    Icon(
-                        Icons.Rounded.KeyboardArrowDown,
-                        contentDescription = stringResource(R.string.editor_find_next),
-                    )
+                IconButton(onClick = { viewModel.findPrevious() }, shapes = IconButtonDefaults.shapes()) {
+                    AppIcon(AppSymbols.KeyboardArrowUp, contentDescription = stringResource(R.string.editor_find_previous))
                 }
-                IconButton(onClick = { viewModel.toggleFind() }) {
-                    Icon(
-                        Icons.Rounded.Close,
-                        contentDescription = stringResource(R.string.files_cancel),
-                    )
+                IconButton(onClick = { viewModel.findNext() }, shapes = IconButtonDefaults.shapes()) {
+                    AppIcon(AppSymbols.KeyboardArrowDown, contentDescription = stringResource(R.string.editor_find_next))
+                }
+                IconButton(onClick = { viewModel.toggleFind() }, shapes = IconButtonDefaults.shapes()) {
+                    AppIcon(AppSymbols.Close, contentDescription = stringResource(R.string.files_cancel))
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(
+                PanelField(
                     value = replaceWith,
                     onValueChange = { viewModel.setReplaceWith(it) },
-                    label = { Text(stringResource(R.string.editor_replace)) },
-                    singleLine = true,
+                    placeholder = stringResource(R.string.editor_replace),
                     modifier = Modifier.weight(1f),
                 )
                 TextButton(
                     onClick = { viewModel.replaceCurrent() },
                     enabled = matches.isNotEmpty(),
+                    shapes = ButtonDefaults.shapes(),
                 ) { Text(stringResource(R.string.editor_replace)) }
                 TextButton(
                     onClick = { viewModel.replaceAll() },
                     enabled = matches.isNotEmpty(),
+                    shapes = ButtonDefaults.shapes(),
                 ) { Text(stringResource(R.string.editor_replace_all)) }
             }
         }
     }
 }
 
-/** `Ln 12, Col 4 · 340 lines · UTF-8` */
+/** `Ln 12, Col 4 · 340 lines`, as a small pill at the editor's bottom edge. */
 @Composable
 private fun EditorStatusBar(text: String, caret: Int) {
     val safeCaret = caret.coerceIn(0, text.length)
@@ -459,19 +504,29 @@ private fun EditorStatusBar(text: String, caret: Int) {
     val column = safeCaret - (text.lastIndexOf('\n', safeCaret - 1) + 1) + 1
     val lineCount = text.count { it == '\n' } + 1
 
-    HorizontalDivider()
-    Text(
-        text = stringResource(R.string.editor_status_x, line, column, lineCount),
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp),
-    )
+            .padding(horizontal = Spacing.m, vertical = Spacing.s),
+        contentAlignment = Alignment.CenterEnd,
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        ) {
+            Text(
+                text = stringResource(R.string.editor_status_x, line, column, lineCount),
+                style = MaterialTheme.typography.labelMedium.tabular(),
+                modifier = Modifier.padding(horizontal = Spacing.m, vertical = Spacing.xs),
+            )
+        }
+    }
 }
 
 @Composable
 private fun EditorPlaceholder(
+    symbol: AppSymbol,
     message: String,
     actionLabel: String? = null,
     onAction: (() -> Unit)? = null,
@@ -479,22 +534,16 @@ private fun EditorPlaceholder(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(32.dp),
+            .verticalScroll(rememberScrollState()),
         contentAlignment = Alignment.Center,
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-            if (actionLabel != null && onAction != null) {
-                Button(onClick = onAction) { Text(actionLabel) }
-            }
-        }
+        EmptyState(
+            symbol = symbol,
+            title = message,
+            polygon = MaterialShapes.Cookie9Sided,
+            actions = if (actionLabel != null && onAction != null) {
+                { Button(onClick = onAction, shapes = ButtonDefaults.shapes()) { Text(actionLabel) } }
+            } else null,
+        )
     }
 }

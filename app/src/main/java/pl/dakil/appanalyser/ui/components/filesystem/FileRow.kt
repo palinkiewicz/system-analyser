@@ -2,43 +2,36 @@ package pl.dakil.appanalyser.ui.components.filesystem
 
 import android.text.format.DateUtils
 import android.text.format.Formatter
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.InsertDriveFile
-import androidx.compose.material.icons.rounded.Android
-import androidx.compose.material.icons.rounded.Archive
-import androidx.compose.material.icons.rounded.AudioFile
-import androidx.compose.material.icons.rounded.Code
-import androidx.compose.material.icons.rounded.Description
-import androidx.compose.material.icons.rounded.Folder
-import androidx.compose.material.icons.rounded.Image
-import androidx.compose.material.icons.rounded.PictureAsPdf
-import androidx.compose.material.icons.rounded.VideoFile
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import pl.dakil.appanalyser.domain.FileEntry
+import pl.dakil.appanalyser.ui.designsystem.ShapedIcon
+import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbol
+import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbols
+import pl.dakil.appanalyser.ui.designsystem.rememberHaptics
+import pl.dakil.appanalyser.ui.designsystem.segmentedItemColors
 
 private const val HIDDEN_ALPHA = 0.6f
 
@@ -59,24 +52,51 @@ private val TEXT_EXTENSIONS = setOf("txt", "md", "log", "csv", "ini", "conf", "p
 /** Extensions the built-in editor opens directly rather than handing to another app. */
 val EDITABLE_EXTENSIONS: Set<String> = CODE_EXTENSIONS + TEXT_EXTENSIONS
 
-fun iconForEntry(entry: FileEntry): ImageVector = when {
-    entry.isDirectory -> Icons.Rounded.Folder
-    entry.extension in IMAGE_EXTENSIONS -> Icons.Rounded.Image
-    entry.extension in VIDEO_EXTENSIONS -> Icons.Rounded.VideoFile
-    entry.extension in AUDIO_EXTENSIONS -> Icons.Rounded.AudioFile
-    entry.extension in ARCHIVE_EXTENSIONS -> Icons.Rounded.Archive
-    entry.extension == "apk" -> Icons.Rounded.Android
-    entry.extension == "pdf" -> Icons.Rounded.PictureAsPdf
-    entry.extension in CODE_EXTENSIONS -> Icons.Rounded.Code
-    entry.extension in TEXT_EXTENSIONS -> Icons.Rounded.Description
-    else -> Icons.AutoMirrored.Rounded.InsertDriveFile
+fun iconForEntry(entry: FileEntry): AppSymbol = when {
+    entry.isDirectory -> AppSymbols.Folder
+    entry.extension in IMAGE_EXTENSIONS -> AppSymbols.Image
+    entry.extension in VIDEO_EXTENSIONS -> AppSymbols.VideoFile
+    entry.extension in AUDIO_EXTENSIONS -> AppSymbols.AudioFile
+    entry.extension in ARCHIVE_EXTENSIONS -> AppSymbols.FolderOpen
+    entry.extension == "apk" -> AppSymbols.Android
+    entry.extension == "pdf" -> AppSymbols.PictureAsPdf
+    entry.extension in CODE_EXTENSIONS -> AppSymbols.Code
+    entry.extension in TEXT_EXTENSIONS -> AppSymbols.Description
+    else -> AppSymbols.Draft
 }
 
 /**
- * One directory child. Mirrors the app-list row proportions so both lists feel the same; in
- * selection mode the leading icon is swapped for a checkbox.
+ * An entry's type badge: folders sit in a primary cookie, media in tertiary, packages in secondary,
+ * and documents in a neutral rounded square, so a listing reads by kind at a glance.
  */
-@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun EntryIcon(entry: FileEntry, modifier: Modifier = Modifier, size: Dp = LEADING_SIZE) {
+    val scheme = MaterialTheme.colorScheme
+    val (container, content) = when {
+        entry.isDirectory -> scheme.primaryContainer to scheme.onPrimaryContainer
+        entry.extension in IMAGE_EXTENSIONS || entry.extension in VIDEO_EXTENSIONS ->
+            scheme.tertiaryContainer to scheme.onTertiaryContainer
+        entry.extension in AUDIO_EXTENSIONS || entry.extension in ARCHIVE_EXTENSIONS || entry.extension == "apk" ->
+            scheme.secondaryContainer to scheme.onSecondaryContainer
+        else -> scheme.surfaceContainerHighest to scheme.onSurfaceVariant
+    }
+    ShapedIcon(
+        symbol = iconForEntry(entry),
+        polygon = if (entry.isDirectory) MaterialShapes.Cookie9Sided else MaterialShapes.Square,
+        size = size,
+        iconSize = 22.dp,
+        containerColor = container,
+        contentColor = content,
+        filled = entry.isDirectory,
+        modifier = modifier,
+    )
+}
+
+/**
+ * One directory child as a segmented tile: [index] and [count] place it in its list so the first
+ * and last tiles carry the group's big corners. A selected tile fills and rounds; in selection mode
+ * the type badge flips to a checkbox.
+ */
 @Composable
 fun FileRow(
     entry: FileEntry,
@@ -84,57 +104,61 @@ fun FileRow(
     selectionMode: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    index: Int = 0,
+    count: Int = 1,
 ) {
     val context = LocalContext.current
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        // Both leading states share one fixed slot: the checkbox's 48.dp minimum touch target
-        // would otherwise make every row taller the moment selection mode starts.
-        Box(modifier = Modifier.size(LEADING_SIZE), contentAlignment = Alignment.Center) {
-            if (selectionMode) {
-                CompositionLocalProvider(
-                    LocalMinimumInteractiveComponentSize provides Dp.Unspecified
-                ) {
-                    Checkbox(checked = selected, onCheckedChange = { onClick() })
-                }
-            } else {
-                Icon(
-                    imageVector = iconForEntry(entry),
-                    contentDescription = null,
-                    tint = if (entry.isDirectory) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
+    val haptics = rememberHaptics()
+    val entryAlpha = if (entry.isHidden) HIDDEN_ALPHA else 1f
+    val swapSpec = MaterialTheme.motionScheme.fastSpatialSpec<Float>()
+    SegmentedListItem(
+        selected = selected,
+        onClick = onClick,
+        onLongClick = {
+            if (!selectionMode) haptics.longPress()
+            onLongClick()
+        },
+        shapes = ListItemDefaults.segmentedShapes(index, count),
+        colors = segmentedItemColors(),
+        modifier = modifier,
+        leadingContent = {
+            // Both leading states share one fixed slot: the checkbox's 48.dp minimum touch target
+            // would otherwise make every row taller the moment selection mode starts.
+            Box(modifier = Modifier.size(LEADING_SIZE), contentAlignment = Alignment.Center) {
+                AnimatedContent(
+                    targetState = selectionMode,
+                    transitionSpec = {
+                        (scaleIn(swapSpec) + fadeIn()) togetherWith (scaleOut(swapSpec) + fadeOut())
                     },
-                    modifier = Modifier
-                        .size(24.dp)
-                        .alpha(if (entry.isHidden) HIDDEN_ALPHA else 1f),
-                )
+                    label = "rowLeading",
+                ) { selecting ->
+                    if (selecting) {
+                        CompositionLocalProvider(
+                            LocalMinimumInteractiveComponentSize provides Dp.Unspecified
+                        ) {
+                            Checkbox(checked = selected, onCheckedChange = { onClick() })
+                        }
+                    } else {
+                        EntryIcon(entry, Modifier.alpha(entryAlpha))
+                    }
+                }
             }
-        }
-        Spacer(Modifier.width(16.dp))
-        androidx.compose.foundation.layout.Column(Modifier.weight(1f)) {
-            Text(
-                text = entry.name,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.alpha(if (entry.isHidden) HIDDEN_ALPHA else 1f),
-            )
+        },
+        supportingContent = {
             Text(
                 text = entrySubtitle(entry, context),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-        }
+        },
+    ) {
+        Text(
+            text = entry.name,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.alpha(entryAlpha),
+        )
     }
 }
 

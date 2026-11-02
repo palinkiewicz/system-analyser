@@ -1,26 +1,13 @@
 package pl.dakil.appanalyser.ui.screens.settings
 
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Science
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -28,15 +15,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.SettingsRepository
 import pl.dakil.appanalyser.domain.ShareAccessMode
-import pl.dakil.appanalyser.ui.components.flatTopAppBarColors
+import pl.dakil.appanalyser.ui.designsystem.SegmentedGroup
+import pl.dakil.appanalyser.ui.designsystem.ShapedIcon
+import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbols
+import pl.dakil.appanalyser.ui.theme.Spacing
 import pl.dakil.appanalyser.viewmodel.SettingsViewModel
 
-/** "Never" for 0, otherwise a minutes label. */
 @Composable
 private fun idleTimeoutLabel(minutes: Int): String = if (minutes <= 0) {
     stringResource(R.string.settings_share_idle_never)
@@ -56,7 +44,6 @@ private fun scanMaxAgeLabel(hours: Int): String = when {
  * Home of the experimental File system feature: the master switch that puts its tab in the
  * navigation bar, plus the browser and editor preferences it owns.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FileSystemSettingsScreen(
     onNavigateBack: () -> Unit,
@@ -72,64 +59,20 @@ fun FileSystemSettingsScreen(
     val shareIdleTimeout by viewModel.shareIdleTimeoutMinutes.collectAsState()
     val scanMaxAge by viewModel.diskScanMaxAgeHours.collectAsState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.settings_file_system)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = stringResource(R.string.common_back)
-                        )
-                    }
-                },
-                colors = flatTopAppBarColors()
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-        ) {
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                ),
-                shape = MaterialTheme.shapes.large,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Rounded.Science,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(Modifier.width(16.dp))
-                    Text(
-                        text = stringResource(R.string.settings_file_system_experimental_warning),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+    SettingsSubscreen(stringResource(R.string.settings_file_system), onNavigateBack) {
+        ExperimentalCallout()
 
+        SegmentedGroup {
             SwitchRow(
                 title = stringResource(R.string.settings_file_system_enabled),
                 summary = stringResource(R.string.settings_file_system_enabled_description),
                 checked = enabled,
                 onCheckedChange = { viewModel.setFileSystemEnabled(it) }
             )
+        }
 
-            SectionHeader(stringResource(R.string.settings_file_system_browsing))
+        SectionHeader(stringResource(R.string.settings_file_system_browsing))
+        SegmentedGroup {
             SwitchRow(
                 title = stringResource(R.string.settings_show_hidden_files),
                 summary = stringResource(R.string.settings_show_hidden_files_description),
@@ -144,8 +87,10 @@ fun FileSystemSettingsScreen(
                 onCheckedChange = { viewModel.setConfirmFileDeletion(it) },
                 enabled = enabled
             )
+        }
 
-            SectionHeader(stringResource(R.string.settings_file_system_editor))
+        SectionHeader(stringResource(R.string.settings_file_system_editor))
+        SegmentedGroup {
             SwitchRow(
                 title = stringResource(R.string.settings_editor_monospace),
                 summary = stringResource(R.string.settings_editor_monospace_description),
@@ -167,13 +112,15 @@ fun FileSystemSettingsScreen(
                 onCheckedChange = { viewModel.setEditorSyntaxHighlighting(it) },
                 enabled = enabled
             )
+        }
 
-            SectionHeader(stringResource(R.string.settings_disk_usage_section))
-            // The slider moves over the option list's indices, so its steps aren't evenly spaced
-            // in time: hours first, then days.
-            val maxAgeOptions = SettingsRepository.DISK_SCAN_MAX_AGE_OPTIONS
-            // Resolved here: SliderRow's label lambda isn't composable.
-            val maxAgeLabels = maxAgeOptions.map { scanMaxAgeLabel(it) }
+        SectionHeader(stringResource(R.string.settings_disk_usage_section))
+        // The slider moves over the option list's indices, so its steps aren't evenly spaced
+        // in time: hours first, then days.
+        val maxAgeOptions = SettingsRepository.DISK_SCAN_MAX_AGE_OPTIONS
+        // Resolved here: SliderRow's label lambda isn't composable.
+        val maxAgeLabels = maxAgeOptions.map { scanMaxAgeLabel(it) }
+        SegmentedGroup {
             SliderRow(
                 title = stringResource(R.string.settings_disk_scan_max_age),
                 summary = stringResource(R.string.settings_disk_scan_max_age_description),
@@ -183,8 +130,10 @@ fun FileSystemSettingsScreen(
                 valueLabel = { maxAgeLabels[it] },
                 enabled = enabled
             )
+        }
 
-            SectionHeader(stringResource(R.string.settings_share_section))
+        SectionHeader(stringResource(R.string.settings_share_section))
+        SegmentedGroup {
             SelectRow(
                 title = stringResource(R.string.settings_share_access),
                 summary = stringResource(R.string.settings_share_access_description),
@@ -202,6 +151,34 @@ fun FileSystemSettingsScreen(
                 },
                 onSelect = { viewModel.setShareIdleTimeoutMinutes(it) },
                 enabled = enabled
+            )
+        }
+    }
+}
+
+/** The "handle with care" note above the master switch. */
+@Composable
+private fun ExperimentalCallout() {
+    Surface(
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+        modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.m),
+    ) {
+        Row(
+            modifier = Modifier.padding(Spacing.l),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.l),
+        ) {
+            ShapedIcon(
+                AppSymbols.Science,
+                polygon = MaterialShapes.Sunny,
+                containerColor = MaterialTheme.colorScheme.tertiary,
+                contentColor = MaterialTheme.colorScheme.onTertiary,
+            )
+            Text(
+                text = stringResource(R.string.settings_file_system_experimental_warning),
+                style = MaterialTheme.typography.bodyMedium,
             )
         }
     }

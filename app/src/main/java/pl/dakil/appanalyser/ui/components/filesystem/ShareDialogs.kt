@@ -5,24 +5,24 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Send
-import androidx.compose.material.icons.rounded.ContentCopy
-import androidx.compose.material.icons.rounded.Wifi
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SegmentedListItem
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -39,15 +39,21 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.clickable
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.NetworkInfoProvider
 import pl.dakil.appanalyser.data.ShareServerRepository
 import pl.dakil.appanalyser.domain.ShareState
 import pl.dakil.appanalyser.service.ShareServerManager
+import pl.dakil.appanalyser.ui.designsystem.ShapedIcon
+import pl.dakil.appanalyser.ui.designsystem.icon.AppIcon
+import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbol
+import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbols
+import pl.dakil.appanalyser.ui.designsystem.rememberHaptics
+import pl.dakil.appanalyser.ui.designsystem.segmentedItemColors
+import pl.dakil.appanalyser.ui.theme.Spacing
+import pl.dakil.appanalyser.ui.theme.tabular
 
 /** Lets the user pick between the system chooser and hosting the item over the local network. */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShareMethodSheet(
     onSendToApp: () -> Unit,
@@ -55,20 +61,45 @@ fun ShareMethodSheet(
     onDismiss: () -> Unit,
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        ListItem(
-            modifier = Modifier.clickable(onClick = onSendToApp),
-            headlineContent = { Text(stringResource(R.string.share_method_app)) },
-            supportingContent = { Text(stringResource(R.string.share_method_app_summary)) },
-            leadingContent = { Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = null) },
-        )
-        ListItem(
-            modifier = Modifier.clickable(onClick = onShareOverWifi),
-            headlineContent = { Text(stringResource(R.string.share_method_wifi)) },
-            supportingContent = { Text(stringResource(R.string.share_method_wifi_summary)) },
-            leadingContent = { Icon(Icons.Rounded.Wifi, contentDescription = null) },
-        )
-        Spacer(Modifier.height(16.dp))
+        Column(
+            modifier = Modifier.padding(start = Spacing.gutter, end = Spacing.gutter, bottom = Spacing.xl),
+            verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap),
+        ) {
+            ShareMethodTile(
+                symbol = AppSymbols.Send,
+                title = stringResource(R.string.share_method_app),
+                summary = stringResource(R.string.share_method_app_summary),
+                index = 0,
+                onClick = onSendToApp,
+            )
+            ShareMethodTile(
+                symbol = AppSymbols.Wifi,
+                title = stringResource(R.string.share_method_wifi),
+                summary = stringResource(R.string.share_method_wifi_summary),
+                index = 1,
+                onClick = onShareOverWifi,
+            )
+        }
     }
+}
+
+@Composable
+private fun ShareMethodTile(symbol: AppSymbol, title: String, summary: String, index: Int, onClick: () -> Unit) {
+    SegmentedListItem(
+        onClick = onClick,
+        shapes = ListItemDefaults.segmentedShapes(index, 2),
+        colors = segmentedItemColors(),
+        leadingContent = {
+            ShapedIcon(
+                symbol,
+                polygon = if (index == 0) MaterialShapes.Cookie9Sided else MaterialShapes.Sunny,
+                size = 48.dp,
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
+        },
+        supportingContent = { Text(summary) },
+    ) { Text(title, style = MaterialTheme.typography.titleMedium) }
 }
 
 /** Shown when the device is on neither Wi-Fi nor a hotspot, since neither can be enabled for them. */
@@ -76,15 +107,16 @@ fun ShareMethodSheet(
 fun NoNetworkDialog(onOpenHotspotSettings: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
+        icon = { DialogIcon(AppSymbols.WifiTethering) },
         title = { Text(stringResource(R.string.share_no_network_title)) },
         text = { Text(stringResource(R.string.share_no_network_message)) },
         confirmButton = {
-            TextButton(onClick = onOpenHotspotSettings) {
+            Button(onClick = onOpenHotspotSettings, shapes = ButtonDefaults.shapes()) {
                 Text(stringResource(R.string.share_open_hotspot_settings))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.files_cancel)) }
+            TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes()) { Text(stringResource(R.string.files_cancel)) }
         },
     )
 }
@@ -133,66 +165,124 @@ fun ShareRunningDialog(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
+    val haptics = rememberHaptics()
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.share_running_title, running.sharedName)) },
+        icon = { DialogIcon(AppSymbols.WifiTethering, polygon = MaterialShapes.Sunny) },
+        title = {
+            Text(
+                stringResource(R.string.share_running_title, running.sharedName),
+                textAlign = TextAlign.Center,
+            )
+        },
         text = {
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(Spacing.m),
             ) {
                 Text(
                     text = stringResource(R.string.share_running_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.height(16.dp))
-                QrCode(
-                    text = running.endpoint.link,
-                    modifier = Modifier
-                        .size(200.dp)
-                        .align(Alignment.CenterHorizontally),
-                )
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    text = running.endpoint.url,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    text = stringResource(R.string.share_running_network, networkLabel),
                     style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
                 )
-                running.pin?.let { pin ->
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = stringResource(R.string.share_running_pin, pin),
-                        style = MaterialTheme.typography.bodyMedium,
+                // The code itself stays black on white (QrCode), framed by a tonal plate.
+                Surface(
+                    shape = MaterialTheme.shapes.extraLarge,
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                ) {
+                    QrCode(
+                        text = running.endpoint.link,
+                        modifier = Modifier
+                            .padding(Spacing.m)
+                            .size(200.dp),
                     )
                 }
-                TextButton(
-                    onClick = { copyToClipboard(context, running.endpoint.url) },
-                    modifier = Modifier.padding(top = 4.dp),
+                // The link doubles as its copy button.
+                Surface(
+                    onClick = {
+                        haptics.confirm()
+                        copyToClipboard(context, running.endpoint.url)
+                    },
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                 ) {
-                    Icon(Icons.Rounded.ContentCopy, contentDescription = null)
-                    Spacer(Modifier.height(0.dp))
-                    Text(
-                        text = stringResource(R.string.share_copy_link),
-                        modifier = Modifier.padding(start = 8.dp),
-                    )
+                    Row(
+                        modifier = Modifier.padding(start = Spacing.l, end = Spacing.m, top = Spacing.s, bottom = Spacing.s),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = running.endpoint.url,
+                            style = MaterialTheme.typography.titleSmallEmphasized,
+                            modifier = Modifier.weight(1f, fill = false),
+                        )
+                        AppIcon(
+                            AppSymbols.ContentCopy,
+                            contentDescription = stringResource(R.string.share_copy_link),
+                            modifier = Modifier
+                                .padding(start = Spacing.s)
+                                .size(18.dp),
+                        )
+                    }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
+                    InfoPill(AppSymbols.Wifi, stringResource(R.string.share_running_network, networkLabel))
+                    running.pin?.let { pin ->
+                        InfoPill(AppSymbols.Lock, stringResource(R.string.share_running_pin, pin))
+                    }
                 }
             }
         },
         confirmButton = {
-            TextButton(onClick = onStop) { Text(stringResource(R.string.share_stop)) }
+            Button(
+                onClick = onStop,
+                shapes = ButtonDefaults.shapes(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError,
+                ),
+            ) {
+                AppIcon(AppSymbols.StopCircle, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                Text(stringResource(R.string.share_stop), modifier = Modifier.padding(start = ButtonDefaults.IconSpacing))
+            }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.files_close)) }
+            TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes()) { Text(stringResource(R.string.files_close)) }
         },
+    )
+}
+
+@Composable
+private fun InfoPill(symbol: AppSymbol, text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        AppIcon(symbol, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+        Text(
+            text,
+            style = MaterialTheme.typography.labelLarge.tabular(),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = Spacing.xs),
+        )
+    }
+}
+
+/** A dialog's icon slot, given the app's shaped look. */
+@Composable
+internal fun DialogIcon(
+    symbol: AppSymbol,
+    polygon: androidx.graphics.shapes.RoundedPolygon = MaterialShapes.Cookie9Sided,
+    error: Boolean = false,
+) {
+    ShapedIcon(
+        symbol,
+        polygon = polygon,
+        size = 56.dp,
+        iconSize = 28.dp,
+        containerColor = if (error) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = if (error) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer,
     )
 }
 

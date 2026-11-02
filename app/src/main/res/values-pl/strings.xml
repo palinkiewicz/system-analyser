@@ -14,9 +14,17 @@
     <string name="home_empty_hint">Przytrzymaj kartę na ekranie Urządzenie, aby dodać ją tutaj</string>
     <string name="home_remove_widget">Usuń kartę</string>
     <string name="home_sensor_unavailable">Czujnik niedostępny na tym urządzeniu</string>
+    <string name="home_greeting_morning">Dzień dobry</string>
+    <string name="home_greeting_afternoon">Miłego popołudnia</string>
+    <string name="home_greeting_evening">Dobry wieczór</string>
+    <string name="home_greeting_night">Dobrej nocy</string>
+    <string name="home_empty_title">Nic tu jeszcze nie ma</string>
+    <string name="home_browse_cards">Przeglądaj karty urządzenia</string>
+    <string name="home_add_cards">Dodaj karty</string>
+    <string name="home_edit_done">Gotowe</string>
+    <string name="home_edit_hint">Przeciągnij, by przenieść, pociągnij krawędź, by zmienić rozmiar</string>
 
     <!--  SETTINGS SCREEN  -->
-    <string name="settings_title">Ustawienia</string>
     <string name="settings_appearance">Wygląd</string>
     <string name="settings_appearance_summary">Motyw i kolory aplikacji</string>
     <string name="settings_device_info">Informacje o urządzeniu</string>
@@ -70,6 +78,11 @@
     <string name="settings_share_idle_minutes_x">%1$d min</string>
     <string name="settings_about">O aplikacji</string>
     <string name="settings_about_summary">Wersja, autor, repozytorium</string>
+    <string name="settings_tagline">Dokładniejsze spojrzenie na Twój telefon, jego aplikacje i pliki</string>
+    <string name="settings_section_personalize">Personalizacja</string>
+    <string name="settings_section_features">Funkcje</string>
+    <string name="settings_section_about">O aplikacji</string>
+    <string name="settings_experimental_badge">Eksperymentalne</string>
     <string name="settings_theme_colors">Kolory motywu</string>
     <string name="settings_dark_mode">Tryb ciemny</string>
     <string name="settings_dark_follow_system">Systemowy</string>
@@ -77,6 +90,9 @@
     <string name="settings_dark_dark">Ciemny</string>
     <string name="settings_pure_black">Czysta czerń</string>
     <string name="settings_pure_black_description">Całkowicie czarne tło w trybie ciemnym, oszczędza baterię na ekranach OLED</string>
+    <string name="settings_feel">Wrażenia</string>
+    <string name="settings_haptics">Reakcje haptyczne</string>
+    <string name="settings_haptics_description">Delikatne wibracje przy przełączaniu, przeciąganiu i potwierdzaniu</string>
     <string name="settings_home_columns">Kolumny</string>
     <string name="settings_home_columns_description">Liczba kolumn siatki na ekranie głównym</string>
     <string name="settings_notifications_interval">Częstotliwość odświeżania</string>
@@ -106,13 +122,20 @@
     <string name="about_how_it_works">Jak to działa</string>
     <string name="about_how_it_works_description">Analizator wykrywa technologie, w których została napisana dana aplikacja na podstawie dynamicznego odczytu z sygnatur plików APK bez pełnego rozpakowywania. Mapuje on nazwy plików znajdujących się w tym archiwum, aby zdeterminować w jakim framework\'u została ona utworzona.</string>
     <string name="about_repository">Repozytorium</string>
-    <string name="about_author">Autor</string>
     <string name="about_close">Zamknij</string>
 
     <!--  APP LIST SCREEN  -->
     <string name="app_list_show_system_apps">Pokaż aplikacje systemowe</string>
     <string name="app_list_search_apps">Wyszukaj aplikację...</string>
     <string name="app_list_system_app_label">Systemowa</string>
+    <plurals name="app_list_count_x">
+        <item quantity="one">%1$d aplikacja</item>
+        <item quantity="few">%1$d aplikacje</item>
+        <item quantity="many">%1$d aplikacji</item>
+        <item quantity="other">%1$d aplikacji</item>
+    </plurals>
+    <string name="app_list_no_results">Żadna aplikacja nie pasuje do wyszukiwania</string>
+    <string name="app_list_clear_search">Wyczyść wyszukiwanie</string>
 
     <!--  APP DETAILS SCREEN  -->
     <string name="app_details_title">Szczegóły aplikacji</string>
@@ -132,6 +155,11 @@
     <string name="app_details_share_failed">Nie udało się przygotować APK do udostępnienia</string>
     <string name="app_details_export_success">Wyeksportowano APK</string>
     <string name="app_details_export_failed">Nie udało się wyeksportować APK</string>
+    <string name="app_details_confidence_very_likely">Bardzo prawdopodobne</string>
+    <string name="app_details_confidence_likely">Prawdopodobne</string>
+    <string name="app_details_confidence_possible">Możliwe</string>
+    <string name="app_details_confidence_unlikely">Mało prawdopodobne</string>
+    <string name="app_details_top_match">Najlepsze dopasowanie</string>
 
     <!--  TECH STACKS  -->
     <string name="tech_stack_flutter_name">Flutter</string>
@@ -195,7 +223,6 @@
     <string name="tech_stack_unknown_description">Ten obiekt zastępczy reprezentuje niezidentyfikowany lub nieobsługiwany stos technologiczny w bazie kodu Analizatora. Nie posiada określonego pochodzenia, frameworku językowego ani metryk wydajności, dopóki bazowy kod nie zostanie poprawnie rozpoznany. Jest używany wyłącznie do obsługi błędów i kategoryzacji awaryjnej.</string>
 
     <!--  DEVICE INFO SCREEN  -->
-    <string name="device_info_title">Informacje o urządzeniu</string>
     <string name="device_unknown">Nieznane</string>
     <string name="device_value_unavailable">Brak</string>
     <string name="device_add_to_home">Dodaj do ekranu głównego</string>
@@ -225,6 +252,8 @@
     <string name="device_system_security_patch">Poprawka zabezpieczeń</string>
     <string name="device_system_build">Kompilacja</string>
     <string name="device_system_kernel">Jądro</string>
+    <string name="device_system_identity_title">Tożsamość</string>
+    <string name="device_system_software_title">Oprogramowanie</string>
     <string name="device_system_uptime_title">Czas działania</string>
     <string name="device_system_uptime">Od uruchomienia</string>
     <string name="device_system_awake">Czas aktywności</string>
@@ -282,6 +311,7 @@
     <string name="device_memory_total">Łącznie</string>
     <string name="device_memory_used">Użyte</string>
     <string name="device_memory_available">Dostępne</string>
+    <string name="device_memory_used_of_x">zajęte z %1$s</string>
 
     <!--  Display tab  -->
     <string name="device_display_resolution">Rozdzielczość</string>
@@ -324,7 +354,6 @@
     <string name="files_create">Utwórz</string>
     <string name="files_new_folder">Nowy folder</string>
     <string name="files_new_file">Nowy plik</string>
-    <string name="files_new_file_summary">Dowolne rozszerzenie, na przykład notatki.txt</string>
     <string name="files_name">Nazwa</string>
     <string name="files_name_invalid">Nie może zawierać \"/\" ani spacji na początku i końcu</string>
     <string name="files_rename">Zmień nazwę</string>

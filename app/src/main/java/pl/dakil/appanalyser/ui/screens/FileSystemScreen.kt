@@ -1,62 +1,52 @@
 package pl.dakil.appanalyser.ui.screens
 
 import android.Manifest
-import android.content.Intent
+import android.text.format.Formatter
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.rounded.NoteAdd
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.ContentCopy
-import androidx.compose.material.icons.rounded.ContentCut
-import androidx.compose.material.icons.rounded.CreateNewFolder
-import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.DonutLarge
-import androidx.compose.material.icons.rounded.DriveFileRenameOutline
-import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.SdStorage
-import androidx.compose.material.icons.rounded.Share
-import androidx.compose.material.icons.rounded.Smartphone
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FloatingActionButtonMenu
+import androidx.compose.material3.FloatingActionButtonMenuItem
+import androidx.compose.material3.FloatingToolbarDefaults
+import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.ToggleFloatingActionButton
+import androidx.compose.material3.ToggleFloatingActionButtonDefaults
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -64,8 +54,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -79,6 +69,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import java.io.File
 import kotlinx.coroutines.launch
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.NetworkInfoProvider
@@ -88,7 +79,9 @@ import pl.dakil.appanalyser.domain.FileEntry
 import pl.dakil.appanalyser.domain.FileSortOrder
 import pl.dakil.appanalyser.domain.ScanFreshness
 import pl.dakil.appanalyser.domain.ShareState
+import pl.dakil.appanalyser.domain.StorageRoot
 import pl.dakil.appanalyser.service.ShareServerManager
+import pl.dakil.appanalyser.ui.components.canPostNotifications
 import pl.dakil.appanalyser.ui.components.filesystem.AllFilesAccessGate
 import pl.dakil.appanalyser.ui.components.filesystem.Breadcrumbs
 import pl.dakil.appanalyser.ui.components.filesystem.DeleteConfirmDialog
@@ -102,18 +95,25 @@ import pl.dakil.appanalyser.ui.components.filesystem.ShareMethodSheet
 import pl.dakil.appanalyser.ui.components.filesystem.openFile
 import pl.dakil.appanalyser.ui.components.filesystem.openHotspotSettings
 import pl.dakil.appanalyser.ui.components.filesystem.shareFile
-import pl.dakil.appanalyser.ui.components.canPostNotifications
-import pl.dakil.appanalyser.ui.components.flatTopAppBarColors
+import pl.dakil.appanalyser.ui.designsystem.AppMenu
+import pl.dakil.appanalyser.ui.designsystem.AppMenuCheckItem
+import pl.dakil.appanalyser.ui.designsystem.AppMenuChoiceItem
+import pl.dakil.appanalyser.ui.designsystem.AppMenuGroup
+import pl.dakil.appanalyser.ui.designsystem.AppMenuItem
+import pl.dakil.appanalyser.ui.designsystem.AppMenuLabel
+import pl.dakil.appanalyser.ui.designsystem.BackButton
+import pl.dakil.appanalyser.ui.designsystem.EmptyState
+import pl.dakil.appanalyser.ui.designsystem.ShapedIcon
+import pl.dakil.appanalyser.ui.designsystem.UsageBar
+import pl.dakil.appanalyser.ui.designsystem.appTopBarColors
+import pl.dakil.appanalyser.ui.designsystem.icon.AppIcon
+import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbol
+import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbols
+import pl.dakil.appanalyser.ui.designsystem.rememberHaptics
+import pl.dakil.appanalyser.ui.designsystem.segmentedItemColors
+import pl.dakil.appanalyser.ui.theme.Spacing
 import pl.dakil.appanalyser.viewmodel.FileSystemViewModel
-import java.io.File
 
-/**
- * The experimental File system tab: a folder tree over the real volumes.
- *
- * All files access is never requested before the user gets here — the gate below is the only place
- * that asks, and only when the user taps its button.
- */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FileSystemScreen(
     onOpenEditor: (String) -> Unit,
@@ -171,7 +171,7 @@ fun FileSystemScreen(
     }
     val openFailedMessage = stringResource(R.string.files_open_failed)
 
-    var showCreateSheet by remember { mutableStateOf(false) }
+    var fabMenuExpanded by remember { mutableStateOf(false) }
     var createFolder by remember { mutableStateOf(false) }
     var createFile by remember { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf<String?>(null) }
@@ -234,171 +234,219 @@ fun FileSystemScreen(
         return
     }
 
+    val haptics = rememberHaptics()
+    val inFolder = currentPath != null
+    val selecting = selection.isNotEmpty()
+
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = MaterialTheme.colorScheme.surface,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            if (selection.isNotEmpty()) {
-                SelectionTopBar(
-                    count = selection.size,
-                    onClose = { viewModel.clearSelection() },
-                    onCopy = { viewModel.copySelection() },
-                    onCut = { viewModel.cutSelection() },
-                    onRename = { renameTarget = selection.first() },
-                    onDelete = {
-                        if (confirmDeletion) showDeleteConfirm = true else viewModel.deleteSelection()
-                    },
-                    onShare = { shareTarget = selection.firstOrNull() },
-                )
-            } else {
-                BrowserTopBar(
-                    title = currentPath?.let { File(it).name }
-                        ?: stringResource(R.string.nav_files),
-                    canNavigateUp = currentPath != null,
-                    inFolder = currentPath != null,
-                    viewModel = viewModel,
-                    onNavigateUp = { viewModel.navigateUp() },
-                    onOpenDiskUsage = { openDiskUsage() },
-                    onProperties = {
-                        currentPath?.let { path ->
-                            propertiesTarget = File(path).toEntry()
-                        }
-                    },
-                )
-            }
-        },
-        // The paste bar lives in the bottomBar slot rather than in the content, so the Scaffold
-        // lifts the FAB above it instead of letting the FAB cover Paste and Cancel.
-        bottomBar = {
-            AnimatedVisibility(
-                visible = clipboard != null && currentPath != null,
-                enter = slideInVertically(initialOffsetY = { it }),
-                exit = slideOutVertically(targetOffsetY = { it }),
-            ) {
-                val clip = clipboard
-                Surface(tonalElevation = 3.dp) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = pluralStringResource(
-                                if (clip?.operation == ClipboardOperation.MOVE) {
-                                    R.plurals.files_clipboard_move_x
-                                } else {
-                                    R.plurals.files_clipboard_copy_x
-                                },
-                                clip?.paths?.size ?: 0,
-                                clip?.paths?.size ?: 0,
-                            ),
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.weight(1f),
-                        )
-                        TextButton(onClick = { viewModel.clearClipboard() }) {
-                            Text(stringResource(R.string.files_cancel))
-                        }
-                        TextButton(onClick = { viewModel.paste() }) {
-                            Text(stringResource(R.string.files_paste))
-                        }
-                    }
+            AnimatedContent(targetState = selecting, label = "filesTopBar") { isSelecting ->
+                if (isSelecting) {
+                    SelectionTopBar(
+                        count = selection.size,
+                        onClose = { viewModel.clearSelection() },
+                        onSelectAll = { viewModel.selectAll() },
+                    )
+                } else {
+                    BrowserTopBar(
+                        title = currentPath?.let { File(it).name }
+                            ?: stringResource(R.string.nav_files),
+                        canNavigateUp = inFolder,
+                        inFolder = inFolder,
+                        viewModel = viewModel,
+                        onNavigateUp = { viewModel.navigateUp() },
+                        onOpenDiskUsage = { openDiskUsage() },
+                        onProperties = {
+                            currentPath?.let { path ->
+                                propertiesTarget = File(path).toEntry()
+                            }
+                        },
+                    )
                 }
             }
         },
+        // The create menu only exists inside a folder with nothing selected and nothing waiting to
+        // be pasted, so it never competes with the floating toolbars for the bottom edge.
         floatingActionButton = {
-            if (currentPath != null && selection.isEmpty()) {
-                FloatingActionButton(onClick = { showCreateSheet = true }) {
-                    Icon(Icons.Rounded.Add, contentDescription = stringResource(R.string.files_create))
-                }
+            AnimatedVisibility(
+                visible = inFolder && !selecting && clipboard == null,
+                enter = scaleIn(MaterialTheme.motionScheme.fastSpatialSpec()) + fadeIn(),
+                exit = scaleOut(MaterialTheme.motionScheme.fastSpatialSpec()) + fadeOut(),
+            ) {
+                CreateMenu(
+                    expanded = fabMenuExpanded,
+                    onExpandedChange = {
+                        haptics.tick()
+                        fabMenuExpanded = it
+                    },
+                    onNewFolder = {
+                        fabMenuExpanded = false
+                        createFolder = true
+                    },
+                    onNewFile = {
+                        fabMenuExpanded = false
+                        createFile = true
+                    },
+                )
             }
         },
     ) { padding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
+            contentAlignment = Alignment.TopCenter,
         ) {
-            currentPath?.let { path ->
-                Breadcrumbs(
-                    path = path,
-                    roots = roots.map { it.path to it.label },
-                    onSegmentClick = { viewModel.open(it) },
-                )
-                HorizontalDivider()
-            }
-
-            Box(Modifier.weight(1f)) {
-                when {
-                    isLoading || isBusy -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                    currentPath == null -> StorageRootList(
-                        roots = roots,
-                        onOpen = { viewModel.open(it) },
+            Column(
+                modifier = Modifier
+                    .widthIn(max = Spacing.maxContentWidth)
+                    .fillMaxSize(),
+            ) {
+                currentPath?.let { path ->
+                    Breadcrumbs(
+                        path = path,
+                        roots = roots.map { it.path to it.label },
+                        onSegmentClick = { viewModel.open(it) },
                     )
-                    entries.isEmpty() -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-                        Text(
-                            text = stringResource(R.string.files_empty_folder),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                }
+
+                Box(Modifier.weight(1f)) {
+                    when {
+                        isLoading || isBusy -> Box(Modifier.fillMaxSize(), Alignment.Center) {
+                            LoadingIndicator(Modifier.size(64.dp))
+                        }
+                        currentPath == null -> StorageRootList(
+                            roots = roots,
+                            onOpen = { viewModel.open(it) },
                         )
-                    }
-                    else -> LazyColumn(contentPadding = PaddingValues(vertical = 8.dp)) {
-                        items(entries, key = { it.path }) { entry ->
-                            FileRow(
-                                entry = entry,
-                                selected = entry.path in selection,
-                                selectionMode = selection.isNotEmpty(),
-                                onClick = {
-                                    when {
-                                        selection.isNotEmpty() -> viewModel.toggleSelection(entry.path)
-                                        entry.isDirectory -> viewModel.open(entry.path)
-                                        entry.extension in EDITABLE_EXTENSIONS ->
-                                            onOpenEditor(entry.path)
-                                        else -> openFile(
-                                            context = context,
-                                            uri = viewModel.contentUri(entry.path),
-                                            mimeType = viewModel.mimeType(entry.path),
-                                        ) {
-                                            scope.launch {
-                                                snackbarHostState.showSnackbar(openFailedMessage)
+                        entries.isEmpty() -> Box(
+                            Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState()),
+                            Alignment.Center,
+                        ) {
+                            EmptyState(
+                                symbol = AppSymbols.FolderOpen,
+                                title = stringResource(R.string.files_empty_folder),
+                                polygon = MaterialShapes.Cookie9Sided,
+                            )
+                        }
+                        else -> LazyColumn(
+                            contentPadding = PaddingValues(
+                                start = Spacing.gutter,
+                                end = Spacing.gutter,
+                                top = Spacing.xs,
+                                // Room for the FAB or a floating toolbar over the last rows.
+                                bottom = 112.dp,
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap),
+                        ) {
+                            itemsIndexed(entries, key = { _, entry -> entry.path }) { index, entry ->
+                                FileRow(
+                                    entry = entry,
+                                    selected = entry.path in selection,
+                                    selectionMode = selecting,
+                                    index = index,
+                                    count = entries.size,
+                                    modifier = Modifier.animateItem(),
+                                    onClick = {
+                                        when {
+                                            selection.isNotEmpty() -> viewModel.toggleSelection(entry.path)
+                                            entry.isDirectory -> viewModel.open(entry.path)
+                                            entry.extension in EDITABLE_EXTENSIONS ->
+                                                onOpenEditor(entry.path)
+                                            else -> openFile(
+                                                context = context,
+                                                uri = viewModel.contentUri(entry.path),
+                                                mimeType = viewModel.mimeType(entry.path),
+                                            ) {
+                                                scope.launch {
+                                                    snackbarHostState.showSnackbar(openFailedMessage)
+                                                }
                                             }
                                         }
-                                    }
-                                },
-                                onLongClick = { viewModel.toggleSelection(entry.path) },
-                            )
+                                    },
+                                    onLongClick = { viewModel.toggleSelection(entry.path) },
+                                )
+                            }
                         }
                     }
                 }
             }
 
-        }
-    }
-
-    if (showCreateSheet) {
-        ModalBottomSheet(onDismissRequest = { showCreateSheet = false }) {
-            ListItem(
-                modifier = Modifier.clickable {
-                    showCreateSheet = false
-                    createFolder = true
-                },
-                headlineContent = { Text(stringResource(R.string.files_new_folder)) },
-                leadingContent = { Icon(Icons.Rounded.CreateNewFolder, contentDescription = null) },
-            )
-            ListItem(
-                modifier = Modifier.clickable {
-                    showCreateSheet = false
-                    createFile = true
-                },
-                headlineContent = { Text(stringResource(R.string.files_new_file)) },
-                supportingContent = { Text(stringResource(R.string.files_new_file_summary)) },
-                leadingContent = {
-                    Icon(Icons.AutoMirrored.Rounded.NoteAdd, contentDescription = null)
-                },
-            )
-            Spacer(Modifier.height(16.dp))
+            // Selection actions float over the list's bottom edge (five of them didn't fit the
+            // top bar); the paste bar takes the same spot once something is on the clipboard.
+            AnimatedVisibility(
+                visible = selecting,
+                enter = slideInVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) { it * 2 } + fadeIn(),
+                exit = slideOutVertically(MaterialTheme.motionScheme.fastSpatialSpec()) { it * 2 } + fadeOut(),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = Spacing.l),
+            ) {
+                SelectionToolbar(
+                    single = selection.size == 1,
+                    onCopy = { viewModel.copySelection() },
+                    onCut = { viewModel.cutSelection() },
+                    onRename = { renameTarget = selection.first() },
+                    onShare = { shareTarget = selection.firstOrNull() },
+                    onDelete = {
+                        if (confirmDeletion) {
+                            showDeleteConfirm = true
+                        } else {
+                            haptics.confirm()
+                            viewModel.deleteSelection()
+                        }
+                    },
+                )
+            }
+            AnimatedVisibility(
+                visible = clipboard != null && inFolder && !selecting,
+                enter = slideInVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) { it * 2 } + fadeIn(),
+                exit = slideOutVertically(MaterialTheme.motionScheme.fastSpatialSpec()) { it * 2 } + fadeOut(),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = Spacing.l, start = Spacing.gutter, end = Spacing.gutter),
+            ) {
+                val clip = clipboard
+                HorizontalFloatingToolbar(
+                    expanded = true,
+                    colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
+                ) {
+                    Text(
+                        text = pluralStringResource(
+                            if (clip?.operation == ClipboardOperation.MOVE) {
+                                R.plurals.files_clipboard_move_x
+                            } else {
+                                R.plurals.files_clipboard_copy_x
+                            },
+                            clip?.paths?.size ?: 0,
+                            clip?.paths?.size ?: 0,
+                        ),
+                        style = MaterialTheme.typography.labelLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .padding(horizontal = Spacing.m)
+                            .align(Alignment.CenterVertically)
+                            .weight(1f, fill = false),
+                    )
+                    TextButton(onClick = { viewModel.clearClipboard() }) {
+                        Text(stringResource(R.string.files_cancel))
+                    }
+                    FilledTonalButton(
+                        onClick = {
+                            haptics.confirm()
+                            viewModel.paste()
+                        },
+                    ) {
+                        AppIcon(AppSymbols.ContentPaste, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text(stringResource(R.string.files_paste), modifier = Modifier.padding(start = Spacing.s))
+                    }
+                }
+            }
         }
     }
 
@@ -524,7 +572,6 @@ fun FileSystemScreen(
 // Bars
 // ---------------------------------------------------------------------------
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BrowserTopBar(
     title: String,
@@ -539,210 +586,237 @@ private fun BrowserTopBar(
     val sortOrder by viewModel.sortOrder.collectAsState()
     val descending by viewModel.sortDescending.collectAsState()
     val showHidden by viewModel.showHidden.collectAsState()
+    val haptics = rememberHaptics()
 
     TopAppBar(
-        title = { Text(title, maxLines = 1) },
-        navigationIcon = {
-            if (canNavigateUp) {
-                IconButton(onClick = onNavigateUp) {
-                    Icon(
-                        Icons.AutoMirrored.Rounded.ArrowBack,
-                        contentDescription = stringResource(R.string.common_back),
-                    )
-                }
+        title = {
+            AnimatedContent(targetState = title, label = "folderTitle") {
+                Text(it, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+        },
+        navigationIcon = {
+            if (canNavigateUp) BackButton(onNavigateUp)
         },
         actions = {
-            IconButton(onClick = onOpenDiskUsage) {
-                Icon(
-                    Icons.Rounded.DonutLarge,
-                    contentDescription = stringResource(R.string.disk_usage_title),
-                )
+            IconButton(onClick = onOpenDiskUsage, shapes = IconButtonDefaults.shapes()) {
+                AppIcon(AppSymbols.DonutLarge, contentDescription = stringResource(R.string.disk_usage_title))
             }
             if (inFolder) {
-                IconButton(onClick = { menuExpanded = true }) {
-                    Icon(
-                        Icons.Rounded.MoreVert,
-                        contentDescription = stringResource(R.string.files_more_options),
-                    )
-                }
-                DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-                    Text(
-                        text = stringResource(R.string.files_sort_by),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    )
-                    FileSortOrder.entries.forEach { order ->
-                        DropdownMenuItem(
-                            text = { Text(order.label()) },
-                            onClick = { viewModel.setSortOrder(order) },
-                            trailingIcon = {
-                                if (order == sortOrder) {
-                                    Icon(Icons.Rounded.Check, contentDescription = null)
-                                }
-                            },
-                        )
+                Box {
+                    IconButton(onClick = { menuExpanded = true }, shapes = IconButtonDefaults.shapes()) {
+                        AppIcon(AppSymbols.Sort, contentDescription = stringResource(R.string.files_more_options))
                     }
-                    HorizontalDivider()
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.files_sort_descending)) },
-                        onClick = { viewModel.setSortDescending(!descending) },
-                        trailingIcon = {
-                            if (descending) Icon(Icons.Rounded.Check, contentDescription = null)
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.files_show_hidden)) },
-                        onClick = { viewModel.setShowHidden(!showHidden) },
-                        trailingIcon = {
-                            if (showHidden) Icon(Icons.Rounded.Check, contentDescription = null)
-                        },
-                    )
-                    HorizontalDivider()
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.files_select_all)) },
-                        onClick = {
-                            viewModel.selectAll()
-                            menuExpanded = false
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.files_properties)) },
-                        leadingIcon = { Icon(Icons.Rounded.Info, contentDescription = null) },
-                        onClick = {
-                            onProperties()
-                            menuExpanded = false
-                        },
-                    )
+                    AppMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                        AppMenuGroup(index = 0, count = 3) {
+                            AppMenuLabel(stringResource(R.string.files_sort_by))
+                            FileSortOrder.entries.forEach { order ->
+                                AppMenuChoiceItem(
+                                    text = order.label(),
+                                    selected = order == sortOrder,
+                                    onClick = {
+                                        if (order != sortOrder) haptics.tick()
+                                        viewModel.setSortOrder(order)
+                                    },
+                                )
+                            }
+                        }
+                        AppMenuGroup(index = 1, count = 3) {
+                            AppMenuCheckItem(
+                                text = stringResource(R.string.files_sort_descending),
+                                checked = descending,
+                                onCheckedChange = { viewModel.setSortDescending(it) },
+                                symbol = AppSymbols.ArrowDownward,
+                            )
+                            AppMenuCheckItem(
+                                text = stringResource(R.string.files_show_hidden),
+                                checked = showHidden,
+                                onCheckedChange = { viewModel.setShowHidden(it) },
+                                symbol = AppSymbols.Visibility,
+                            )
+                        }
+                        AppMenuGroup(index = 2, count = 3) {
+                            AppMenuItem(
+                                text = stringResource(R.string.files_select_all),
+                                symbol = AppSymbols.SelectAll,
+                                onClick = {
+                                    viewModel.selectAll()
+                                    menuExpanded = false
+                                },
+                            )
+                            AppMenuItem(
+                                text = stringResource(R.string.files_properties),
+                                symbol = AppSymbols.Info,
+                                onClick = {
+                                    onProperties()
+                                    menuExpanded = false
+                                },
+                            )
+                        }
+                    }
                 }
             }
         },
-        colors = flatTopAppBarColors(),
+        colors = appTopBarColors(),
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SelectionTopBar(
     count: Int,
     onClose: () -> Unit,
-    onCopy: () -> Unit,
-    onCut: () -> Unit,
-    onRename: () -> Unit,
-    onDelete: () -> Unit,
-    onShare: () -> Unit,
+    onSelectAll: () -> Unit,
 ) {
-    var menuExpanded by remember { mutableStateOf(false) }
-
-    // Everything lives in the overflow: five icon buttons overflowed the bar, which both hid the
-    // trailing actions and squeezed the count label onto three lines.
     TopAppBar(
         title = {
-            Text(
-                text = pluralStringResource(R.plurals.files_selected_x, count, count),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            AnimatedContent(targetState = count, label = "selectionCount") {
+                Text(
+                    text = pluralStringResource(R.plurals.files_selected_x, it, it),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         },
         navigationIcon = {
-            IconButton(onClick = onClose) {
-                Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.files_cancel))
+            IconButton(onClick = onClose, shapes = IconButtonDefaults.shapes()) {
+                AppIcon(AppSymbols.Close, contentDescription = stringResource(R.string.files_cancel))
             }
         },
         actions = {
-            IconButton(onClick = { menuExpanded = true }) {
-                Icon(
-                    Icons.Rounded.MoreVert,
-                    contentDescription = stringResource(R.string.files_more_options),
-                )
+            IconButton(onClick = onSelectAll, shapes = IconButtonDefaults.shapes()) {
+                AppIcon(AppSymbols.SelectAll, contentDescription = stringResource(R.string.files_select_all))
             }
-            DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.files_copy)) },
-                    leadingIcon = { Icon(Icons.Rounded.ContentCopy, contentDescription = null) },
-                    onClick = {
-                        menuExpanded = false
-                        onCopy()
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.files_cut)) },
-                    leadingIcon = { Icon(Icons.Rounded.ContentCut, contentDescription = null) },
-                    onClick = {
-                        menuExpanded = false
-                        onCut()
-                    },
-                )
-                if (count == 1) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.files_rename)) },
-                        leadingIcon = {
-                            Icon(Icons.Rounded.DriveFileRenameOutline, contentDescription = null)
-                        },
-                        onClick = {
-                            menuExpanded = false
-                            onRename()
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.files_share)) },
-                        leadingIcon = { Icon(Icons.Rounded.Share, contentDescription = null) },
-                        onClick = {
-                            menuExpanded = false
-                            onShare()
-                        },
-                    )
-                }
-                HorizontalDivider()
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.files_delete)) },
-                    leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null) },
-                    onClick = {
-                        menuExpanded = false
-                        onDelete()
-                    },
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            titleContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            navigationIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            actionIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        ),
+    )
+}
+
+/** The actions for the current selection, on a vibrant floating toolbar. */
+@Composable
+private fun SelectionToolbar(
+    single: Boolean,
+    onCopy: () -> Unit,
+    onCut: () -> Unit,
+    onRename: () -> Unit,
+    onShare: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    HorizontalFloatingToolbar(
+        expanded = true,
+        colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
+    ) {
+        ToolbarAction(AppSymbols.ContentCopy, stringResource(R.string.files_copy), onCopy)
+        ToolbarAction(AppSymbols.ContentCut, stringResource(R.string.files_cut), onCut)
+        AnimatedVisibility(visible = single) {
+            Row {
+                ToolbarAction(AppSymbols.DriveFileRenameOutline, stringResource(R.string.files_rename), onRename)
+                ToolbarAction(AppSymbols.Share, stringResource(R.string.files_share), onShare)
+            }
+        }
+        ToolbarAction(AppSymbols.Delete, stringResource(R.string.files_delete), onDelete)
+    }
+}
+
+@Composable
+private fun ToolbarAction(symbol: AppSymbol, label: String, onClick: () -> Unit) {
+    IconButton(onClick = onClick, shapes = IconButtonDefaults.shapes()) {
+        AppIcon(symbol, contentDescription = label)
+    }
+}
+
+/** New folder / new file, from an expressive FAB menu. */
+@Composable
+private fun CreateMenu(
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    onNewFolder: () -> Unit,
+    onNewFile: () -> Unit,
+) {
+    BackHandler(enabled = expanded) { onExpandedChange(false) }
+    FloatingActionButtonMenu(
+        expanded = expanded,
+        button = {
+            ToggleFloatingActionButton(
+                checked = expanded,
+                onCheckedChange = onExpandedChange,
+            ) {
+                val progress = { checkedProgress }
+                AppIcon(
+                    if (checkedProgress > 0.5f) AppSymbols.Close else AppSymbols.Add,
+                    contentDescription = stringResource(R.string.files_create),
+                    modifier = with(ToggleFloatingActionButtonDefaults) { Modifier.animateIcon(progress) },
                 )
             }
         },
-        colors = flatTopAppBarColors(),
-    )
+    ) {
+        FloatingActionButtonMenuItem(
+            onClick = onNewFolder,
+            text = { Text(stringResource(R.string.files_new_folder)) },
+            icon = { AppIcon(AppSymbols.CreateNewFolder, contentDescription = null) },
+        )
+        FloatingActionButtonMenuItem(
+            onClick = onNewFile,
+            text = { Text(stringResource(R.string.files_new_file)) },
+            icon = { AppIcon(AppSymbols.NoteAdd, contentDescription = null) },
+        )
+    }
 }
 
 // ---------------------------------------------------------------------------
 // Pieces
 // ---------------------------------------------------------------------------
 
+/** The volumes to start from, as tiles showing how full each one is. */
 @Composable
 private fun StorageRootList(
-    roots: List<pl.dakil.appanalyser.domain.StorageRoot>,
+    roots: List<StorageRoot>,
     onOpen: (String) -> Unit,
 ) {
-    LazyColumn(contentPadding = PaddingValues(vertical = 8.dp)) {
-        items(roots, key = { it.path }) { root ->
-            ListItem(
-                modifier = Modifier.clickable { onOpen(root.path) },
-                headlineContent = { Text(root.label) },
-                supportingContent = { Text(root.path) },
+    val context = LocalContext.current
+    LazyColumn(
+        contentPadding = PaddingValues(horizontal = Spacing.gutter, vertical = Spacing.s),
+        verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap),
+    ) {
+        itemsIndexed(roots, key = { _, root -> root.path }) { index, root ->
+            SegmentedListItem(
+                onClick = { onOpen(root.path) },
+                shapes = ListItemDefaults.segmentedShapes(index, roots.size),
+                colors = segmentedItemColors(),
                 leadingContent = {
-                    Icon(
-                        imageVector = if (root.isRemovable) {
-                            Icons.Rounded.SdStorage
-                        } else {
-                            Icons.Rounded.Smartphone
-                        },
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                    ShapedIcon(
+                        if (root.isRemovable) AppSymbols.SdCard else AppSymbols.Smartphone,
+                        polygon = if (root.isRemovable) MaterialShapes.Cookie6Sided else MaterialShapes.Cookie9Sided,
+                        size = 48.dp,
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
+                },
+                supportingContent = {
+                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
+                        Text(root.path, maxLines = 1, overflow = TextOverflow.MiddleEllipsis)
+                        if (root.totalBytes > 0) {
+                            UsageBar(root.usedBytes.toFloat() / root.totalBytes)
+                            Text(
+                                stringResource(
+                                    R.string.disk_usage_used_of,
+                                    Formatter.formatShortFileSize(context, root.usedBytes),
+                                    Formatter.formatShortFileSize(context, root.totalBytes),
+                                ),
+                                style = MaterialTheme.typography.labelMedium,
+                            )
+                        }
+                    }
                 },
                 trailingContent = {
-                    Icon(
-                        Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    AppIcon(AppSymbols.ChevronRight, contentDescription = null)
                 },
-            )
+            ) {
+                Text(root.label, style = MaterialTheme.typography.titleMedium)
+            }
         }
     }
 }

@@ -3,21 +3,13 @@ package pl.dakil.appanalyser.navigation
 import android.Manifest
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
@@ -25,22 +17,11 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Apps
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.PhoneAndroid
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.Apps
-import androidx.compose.material.icons.outlined.Folder
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.PhoneAndroid
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ShortNavigationBar
+import androidx.compose.material3.ShortNavigationBarItem
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -54,7 +35,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavBackStackEntry
@@ -77,6 +57,10 @@ import pl.dakil.appanalyser.domain.SensorInfo
 import pl.dakil.appanalyser.service.PinnedNotificationsManager
 import pl.dakil.appanalyser.ui.components.canPostNotifications
 import pl.dakil.appanalyser.ui.components.filesystem.ShareSessionDialogHost
+import pl.dakil.appanalyser.ui.designsystem.icon.AnimatedAppIcon
+import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbol
+import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbols
+import pl.dakil.appanalyser.ui.designsystem.rememberHaptics
 import pl.dakil.appanalyser.ui.screens.AppDetailsScreen
 import pl.dakil.appanalyser.ui.screens.AppListScreen
 import pl.dakil.appanalyser.ui.screens.DeviceInfoScreen
@@ -144,21 +128,16 @@ private val tabRoutes = setOf(
 private data class BottomNavItem(
     val screen: Screen,
     val labelRes: Int,
-    val selectedIcon: ImageVector,
-    val unselectedIcon: ImageVector,
+    val symbol: AppSymbol,
 )
 
 private val bottomNavItems = listOf(
-    BottomNavItem(Screen.Home, R.string.nav_home, Icons.Filled.Home, Icons.Outlined.Home),
-    BottomNavItem(Screen.DeviceInfo, R.string.nav_device, Icons.Filled.PhoneAndroid, Icons.Outlined.PhoneAndroid),
-    BottomNavItem(Screen.AppList, R.string.nav_apps, Icons.Filled.Apps, Icons.Outlined.Apps),
-    BottomNavItem(Screen.FileSystem, R.string.nav_files, Icons.Filled.Folder, Icons.Outlined.Folder),
-    BottomNavItem(Screen.Settings, R.string.nav_settings, Icons.Filled.Settings, Icons.Outlined.Settings),
+    BottomNavItem(Screen.Home, R.string.nav_home, AppSymbols.Home),
+    BottomNavItem(Screen.DeviceInfo, R.string.nav_device, AppSymbols.PhoneAndroid),
+    BottomNavItem(Screen.AppList, R.string.nav_apps, AppSymbols.Apps),
+    BottomNavItem(Screen.FileSystem, R.string.nav_files, AppSymbols.Folder),
+    BottomNavItem(Screen.Settings, R.string.nav_settings, AppSymbols.Settings),
 )
-
-private const val TRANSITION_DURATION_MS = 500
-private const val FADE_THROUGH_DURATION_MS = 220
-private const val FADE_THROUGH_OUT_MS = 90
 
 private fun NavBackStackEntry.isTabRoot() = destination.route in tabRoutes
 
@@ -169,13 +148,13 @@ fun AppNavigation(
     onShareDialogShown: () -> Unit,
     navController: NavHostController = rememberNavController(),
 ) {
-    val animationSpec = tween<Float>(TRANSITION_DURATION_MS)
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStackEntry?.destination?.route
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val settings = SettingsRepository.get(LocalContext.current)
     val fileSystemEnabled by settings.fileSystemEnabled.collectAsState()
+    val haptics = rememberHaptics()
 
     // Turning the experimental feature off while standing on its tab would strand the user on a
     // screen with no way back to it in the bar.
@@ -198,21 +177,32 @@ fun AppNavigation(
         // contributes the bottom bar, so zero its content insets to avoid
         // double status-bar/navigation-bar padding.
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = {
+            SnackbarHost(snackbarHostState) { data ->
+                Snackbar(
+                    snackbarData = data,
+                    shape = MaterialTheme.shapes.large,
+                    actionColor = MaterialTheme.colorScheme.inversePrimary,
+                )
+            }
+        },
         bottomBar = {
             AnimatedVisibility(
                 visible = currentRoute in tabRoutes,
-                enter = slideInVertically(initialOffsetY = { it }),
-                exit = slideOutVertically(targetOffsetY = { it })
+                enter = slideInVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) { it } +
+                    fadeIn(MaterialTheme.motionScheme.defaultEffectsSpec()),
+                exit = slideOutVertically(MaterialTheme.motionScheme.fastSpatialSpec()) { it } +
+                    fadeOut(MaterialTheme.motionScheme.fastEffectsSpec()),
             ) {
-                NavigationBar {
+                ShortNavigationBar {
                     bottomNavItems.filter {
                         it.screen != Screen.FileSystem || fileSystemEnabled
                     }.forEach { item ->
                         val selected = currentRoute == item.screen.route
-                        NavigationBarItem(
+                        ShortNavigationBarItem(
                             selected = selected,
                             onClick = {
+                                if (!selected) haptics.tick()
                                 val target = when (item.screen) {
                                     Screen.DeviceInfo -> Screen.DeviceInfo.createRoute()
                                     Screen.FileSystem -> Screen.FileSystem.createRoute()
@@ -227,10 +217,7 @@ fun AppNavigation(
                                 }
                             },
                             icon = {
-                                Icon(
-                                    imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
-                                    contentDescription = null
-                                )
+                                AnimatedAppIcon(item.symbol, contentDescription = null, filled = selected)
                             },
                             label = { Text(stringResource(item.labelRes)) }
                         )
@@ -252,26 +239,22 @@ fun AppNavigation(
                 .consumeWindowInsets(innerPadding)
                 .background(MaterialTheme.colorScheme.background),
             // Switching between bottom-bar tabs plays Material fade-through (no direction);
-            // pushed destinations keep the Material 3 shared-axis X used before.
+            // pushed destinations play the spring-driven Material 3 shared-axis X.
             enterTransition = {
-                if (initialState.isTabRoot() && targetState.isTabRoot()) fadeThroughEnter()
-                else slideIntoContainer(SlideDirection.Start, tween(TRANSITION_DURATION_MS)) +
-                    fadeIn(animationSpec)
+                if (initialState.isTabRoot() && targetState.isTabRoot()) NavTransitions.fadeThroughEnter()
+                else NavTransitions.pushEnter()
             },
             exitTransition = {
-                if (initialState.isTabRoot() && targetState.isTabRoot()) fadeThroughExit()
-                else slideOutOfContainer(SlideDirection.Start, tween(TRANSITION_DURATION_MS)) +
-                    fadeOut(animationSpec)
+                if (initialState.isTabRoot() && targetState.isTabRoot()) NavTransitions.fadeThroughExit()
+                else NavTransitions.pushExit()
             },
             popEnterTransition = {
-                if (initialState.isTabRoot() && targetState.isTabRoot()) fadeThroughEnter()
-                else slideIntoContainer(SlideDirection.End, tween(TRANSITION_DURATION_MS)) +
-                    fadeIn(animationSpec)
+                if (initialState.isTabRoot() && targetState.isTabRoot()) NavTransitions.fadeThroughEnter()
+                else NavTransitions.popEnter()
             },
             popExitTransition = {
-                if (initialState.isTabRoot() && targetState.isTabRoot()) fadeThroughExit()
-                else slideOutOfContainer(SlideDirection.End, tween(TRANSITION_DURATION_MS)) +
-                    fadeOut(animationSpec)
+                if (initialState.isTabRoot() && targetState.isTabRoot()) NavTransitions.fadeThroughExit()
+                else NavTransitions.popExit()
             }
         ) {
             composable(Screen.Home.route) {
@@ -486,12 +469,3 @@ private fun Context.openNotificationSettings() {
         )
     }
 }
-
-private fun fadeThroughEnter(): EnterTransition =
-    fadeIn(tween(FADE_THROUGH_DURATION_MS, delayMillis = FADE_THROUGH_OUT_MS)) +
-        scaleIn(
-            initialScale = 0.92f,
-            animationSpec = tween(FADE_THROUGH_DURATION_MS, delayMillis = FADE_THROUGH_OUT_MS)
-        )
-
-private fun fadeThroughExit(): ExitTransition = fadeOut(tween(FADE_THROUGH_OUT_MS))

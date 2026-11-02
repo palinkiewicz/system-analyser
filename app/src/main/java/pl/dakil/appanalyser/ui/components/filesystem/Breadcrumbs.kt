@@ -1,29 +1,34 @@
 package pl.dakil.appanalyser.ui.components.filesystem
 
-import androidx.compose.foundation.clickable
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import pl.dakil.appanalyser.R
+import pl.dakil.appanalyser.ui.designsystem.icon.AppIcon
+import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbols
+import pl.dakil.appanalyser.ui.theme.Spacing
 
 /**
- * Tappable path segments. [roots] are (path, label) pairs; the one containing [path] becomes the
- * leading chip. Segments above [minPath] are shown for context but dimmed and not tappable — the
+ * Tappable path segments as pills; the current folder is the filled one, and the row glides to it
+ * whenever the path changes. [roots] are (path, label) pairs; the one containing [path] becomes the
+ * leading pill. Segments above [minPath] are shown for context but dimmed and not tappable — the
  * analyser uses it when it only scanned a subfolder.
  */
 @Composable
@@ -41,12 +46,17 @@ fun Breadcrumbs(
     val segments = if (relative.isEmpty()) emptyList() else relative.split('/')
     val basePath = root?.first ?: "/"
 
+    val scrollState = rememberScrollState()
+    // Keep the current folder (always last) in view as the user goes deeper or back up.
+    LaunchedEffect(path, scrollState.maxValue) { scrollState.animateScrollTo(scrollState.maxValue) }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .horizontalScroll(scrollState)
+            .padding(horizontal = Spacing.gutter - Spacing.xs, vertical = Spacing.xs),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.xxs),
     ) {
         Segment(
             text = root?.second ?: stringResource(R.string.files_root),
@@ -58,10 +68,10 @@ fun Breadcrumbs(
         segments.forEach { segment ->
             accumulated = "$accumulated/$segment"
             val target = accumulated
-            Icon(
-                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+            AppIcon(
+                AppSymbols.ChevronRight,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = MaterialTheme.colorScheme.outline,
                 modifier = Modifier.size(18.dp),
             )
             Segment(
@@ -71,20 +81,31 @@ fun Breadcrumbs(
                 onClick = { onSegmentClick(target) },
             )
         }
-        Spacer(Modifier.width(8.dp))
     }
 }
 
 @Composable
 private fun Segment(text: String, current: Boolean, reachable: Boolean, onClick: () -> Unit) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelLarge,
-        color = when {
-            current -> MaterialTheme.colorScheme.onSurface
-            reachable -> MaterialTheme.colorScheme.primary
-            else -> MaterialTheme.colorScheme.onSurfaceVariant
-        },
-        modifier = if (reachable && !current) Modifier.clickable(onClick = onClick) else Modifier,
+    val container by animateColorAsState(
+        if (current) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
+        label = "segmentContainer",
     )
+    val content = when {
+        current -> MaterialTheme.colorScheme.onSecondaryContainer
+        reachable -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+    }
+    val label: @Composable () -> Unit = {
+        Text(
+            text = text,
+            style = if (current) MaterialTheme.typography.labelLargeEmphasized else MaterialTheme.typography.labelLarge,
+            maxLines = 1,
+            modifier = Modifier.padding(horizontal = Spacing.m, vertical = Spacing.s),
+        )
+    }
+    if (reachable && !current) {
+        Surface(onClick = onClick, shape = CircleShape, color = container, contentColor = content, content = label)
+    } else {
+        Surface(shape = CircleShape, color = container, contentColor = content, content = label)
+    }
 }
