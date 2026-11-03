@@ -34,10 +34,7 @@
     <string name="settings_notifications">Powiadomienia</string>
     <string name="settings_notifications_summary">Częstotliwość odświeżania, przypięte karty</string>
     <string name="settings_file_system">System plików</string>
-    <string name="settings_file_system_summary">Eksperymentalna przeglądarka i edytor plików</string>
-    <string name="settings_file_system_experimental_warning">Ta funkcja jest eksperymentalna. Może odczytywać i zmieniać każdy plik na urządzeniu, więc korzystaj z niej ostrożnie — usuniętych plików nie da się odzyskać.</string>
-    <string name="settings_file_system_enabled">Karta Pliki</string>
-    <string name="settings_file_system_enabled_description">Dodaje kartę Pliki do paska nawigacji</string>
+    <string name="settings_file_system_summary">Przeglądarka i edytor plików, analiza zajętości i udostępnianie przez Wi-Fi</string>
     <string name="settings_file_system_browsing">Przeglądanie</string>
     <string name="settings_file_system_editor">Edytor tekstu</string>
     <string name="settings_show_hidden_files">Pokazuj ukryte pliki</string>
@@ -88,7 +85,6 @@
     <string name="settings_section_personalize">Personalizacja</string>
     <string name="settings_section_features">Funkcje</string>
     <string name="settings_section_about">O aplikacji</string>
-    <string name="settings_experimental_badge">Eksperymentalne</string>
     <string name="settings_theme_colors">Kolory motywu</string>
     <string name="settings_dark_mode">Tryb ciemny</string>
     <string name="settings_dark_follow_system">Systemowy</string>

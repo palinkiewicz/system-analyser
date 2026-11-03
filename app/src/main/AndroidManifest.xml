@@ -11,7 +11,7 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!--
-        Experimental File system tab: a general-purpose file manager has to see the whole
+        File system tab: a general-purpose file manager has to see the whole
         volume, which scoped storage cannot provide. Android 10 predates All files access,
         so it falls back to the legacy storage permissions plus requestLegacyExternalStorage.
     -->

@@ -70,7 +70,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.NetworkInfoProvider
-import pl.dakil.appanalyser.data.SettingsRepository
 import pl.dakil.appanalyser.domain.AppDetails
 import pl.dakil.appanalyser.domain.DetectedFramework
 import pl.dakil.appanalyser.service.ShareServerManager
@@ -136,10 +135,6 @@ fun AppDetailsScreen(
     val shareFailedMessage = stringResource(R.string.app_details_share_failed)
     val shareChooserTitle = stringResource(R.string.app_details_share_apk)
 
-    // Wi-Fi sharing is part of the experimental file-system feature; while that is off the button
-    // goes straight to the system chooser, as it always did.
-    val settings = remember(context) { SettingsRepository.get(context) }
-    val fileSystemEnabled by settings.fileSystemEnabled.collectAsState()
     val networkInfo = remember(context) { NetworkInfoProvider(context) }
     var showShareMethod by remember { mutableStateOf(false) }
     var showNoNetwork by remember { mutableStateOf(false) }
@@ -254,13 +249,7 @@ fun AppDetailsScreen(
                     AppDetailsContent(
                         details = appDetails,
                         isExporting = isExporting,
-                        onShare = {
-                            if (fileSystemEnabled) {
-                                showShareMethod = true
-                            } else {
-                                shareToApp(appDetails)
-                            }
-                        },
+                        onShare = { showShareMethod = true },
                         onExport = { exportLauncher.launch(suggestedApkFileName(appDetails)) },
                         modifier = Modifier
                             .widthIn(max = Spacing.maxContentWidth)

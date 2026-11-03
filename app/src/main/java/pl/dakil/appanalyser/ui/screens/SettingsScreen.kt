@@ -98,7 +98,6 @@ fun SettingsScreen(
                     title = stringResource(R.string.settings_file_system),
                     summary = stringResource(R.string.settings_file_system_summary),
                     icon = AppSymbols.FolderOpen,
-                    badge = stringResource(R.string.settings_experimental_badge),
                     onClick = onNavigateToFileSystemSettings
                 )
             }

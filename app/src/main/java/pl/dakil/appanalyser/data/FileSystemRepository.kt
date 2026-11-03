@@ -19,7 +19,7 @@ import java.io.File
 import kotlin.coroutines.coroutineContext
 
 /**
- * Plain `java.io.File` access for the experimental File system tab.
+ * Plain `java.io.File` access for the File system tab.
  *
  * Every entry point is suspending and hops to [Dispatchers.IO]; none of them throw — failures come
  * back as `false`/`null`/a failure result so the UI can show a message instead of crashing on the

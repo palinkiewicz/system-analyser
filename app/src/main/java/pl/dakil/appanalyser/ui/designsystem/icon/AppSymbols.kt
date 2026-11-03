@@ -93,7 +93,6 @@ object AppSymbols {
     val Refresh = AppSymbol(R.drawable.sym_refresh, R.drawable.sym_refresh_fill)
     val Save = AppSymbol(R.drawable.sym_save, R.drawable.sym_save_fill)
     val Schedule = AppSymbol(R.drawable.sym_schedule, R.drawable.sym_schedule_fill)
-    val Science = AppSymbol(R.drawable.sym_science, R.drawable.sym_science_fill)
     val Screenshot = AppSymbol(R.drawable.sym_screenshot, R.drawable.sym_screenshot_fill)
     val SdCard = AppSymbol(R.drawable.sym_sd_card, R.drawable.sym_sd_card_fill)
     val Sdk = AppSymbol(R.drawable.sym_sdk, R.drawable.sym_sdk_fill)

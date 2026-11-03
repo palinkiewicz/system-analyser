@@ -28,7 +28,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     val homeColumns: StateFlow<Int> = settings.homeColumns
     val notificationIntervalSeconds: StateFlow<Int> = settings.notificationIntervalSeconds
     val pinnedCards: StateFlow<List<PinnedCard>> = pinnedNotifications.pinned
-    val fileSystemEnabled: StateFlow<Boolean> = settings.fileSystemEnabled
     val showHiddenFiles: StateFlow<Boolean> = settings.showHiddenFiles
     val confirmFileDeletion: StateFlow<Boolean> = settings.confirmFileDeletion
     val fileDropAction: StateFlow<FileDropAction> = settings.fileDropAction
@@ -50,7 +49,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setNotificationIntervalSeconds(seconds: Int) =
         settings.setNotificationIntervalSeconds(seconds)
 
-    fun setFileSystemEnabled(enabled: Boolean) = settings.setFileSystemEnabled(enabled)
     fun setShowHiddenFiles(enabled: Boolean) = settings.setShowHiddenFiles(enabled)
     fun setConfirmFileDeletion(enabled: Boolean) = settings.setConfirmFileDeletion(enabled)
     fun setFileDropAction(action: FileDropAction) = settings.setFileDropAction(action)

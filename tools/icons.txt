@@ -89,7 +89,6 @@ redo
 refresh
 save
 schedule
-science
 screenshot
 sd_card
 sdk

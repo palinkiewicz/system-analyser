@@ -63,10 +63,6 @@ class SettingsRepository private constructor(context: Context) {
     )
     val notificationIntervalSeconds: StateFlow<Int> = _notificationIntervalSeconds.asStateFlow()
 
-    /** Master switch for the experimental File system tab. */
-    private val _fileSystemEnabled = MutableStateFlow(prefs.getBoolean(KEY_FILE_SYSTEM_ENABLED, false))
-    val fileSystemEnabled: StateFlow<Boolean> = _fileSystemEnabled.asStateFlow()
-
     private val _fileSortOrder = MutableStateFlow(
         runCatching { FileSortOrder.valueOf(prefs.getString(KEY_FILE_SORT_ORDER, null)!!) }
             .getOrDefault(FileSortOrder.NAME)
@@ -184,11 +180,6 @@ class SettingsRepository private constructor(context: Context) {
         _notificationIntervalSeconds.value = clamped
     }
 
-    fun setFileSystemEnabled(enabled: Boolean) {
-        prefs.edit().putBoolean(KEY_FILE_SYSTEM_ENABLED, enabled).apply()
-        _fileSystemEnabled.value = enabled
-    }
-
     fun setFileSortOrder(order: FileSortOrder) {
         prefs.edit().putString(KEY_FILE_SORT_ORDER, order.name).apply()
         _fileSortOrder.value = order
@@ -271,7 +262,6 @@ class SettingsRepository private constructor(context: Context) {
         private const val KEY_HAPTICS_ENABLED = "haptics_enabled"
         private const val KEY_HOME_COLUMNS = "home_columns"
         private const val KEY_NOTIFICATION_INTERVAL = "notification_interval_seconds"
-        private const val KEY_FILE_SYSTEM_ENABLED = "file_system_enabled"
         private const val KEY_FILE_SORT_ORDER = "file_sort_order"
         private const val KEY_FILE_SORT_DESCENDING = "file_sort_descending"
         private const val KEY_SHOW_HIDDEN_FILES = "show_hidden_files"

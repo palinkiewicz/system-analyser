@@ -27,8 +27,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,7 +48,6 @@ import kotlinx.coroutines.launch
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.HomeLayoutRepository
 import pl.dakil.appanalyser.data.PinnedNotificationsRepository
-import pl.dakil.appanalyser.data.SettingsRepository
 import pl.dakil.appanalyser.domain.HomeWidget
 import pl.dakil.appanalyser.domain.HomeWidgetType
 import pl.dakil.appanalyser.domain.SensorInfo
@@ -112,11 +109,7 @@ sealed class Screen(val route: String) {
     object SettingsFileSystem : Screen("settings/file_system")
 }
 
-/**
- * The bottom-bar destinations; every other route is a pushed screen without the bar. File system
- * is always a tab root — the experimental flag only decides whether its item is rendered, so
- * transitions and bar visibility stay correct while the user is standing on it.
- */
+/** The bottom-bar destinations; every other route is a pushed screen without the bar. */
 private val tabRoutes = setOf(
     Screen.Home.route,
     Screen.DeviceInfo.route,
@@ -152,20 +145,7 @@ fun AppNavigation(
     val currentRoute = currentBackStackEntry?.destination?.route
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val settings = SettingsRepository.get(LocalContext.current)
-    val fileSystemEnabled by settings.fileSystemEnabled.collectAsState()
     val haptics = rememberHaptics()
-
-    // Turning the experimental feature off while standing on its tab would strand the user on a
-    // screen with no way back to it in the bar.
-    LaunchedEffect(fileSystemEnabled, currentRoute) {
-        if (!fileSystemEnabled && currentRoute?.startsWith("files") == true) {
-            navController.navigate(Screen.Home.route) {
-                popUpTo(navController.graph.findStartDestination().id)
-                launchSingleTop = true
-            }
-        }
-    }
 
     // Above the NavHost rather than inside the Files tab, so a tap on the share notification can
     // bring it back over whichever screen is open.
@@ -195,9 +175,7 @@ fun AppNavigation(
                     fadeOut(MaterialTheme.motionScheme.fastEffectsSpec()),
             ) {
                 ShortNavigationBar {
-                    bottomNavItems.filter {
-                        it.screen != Screen.FileSystem || fileSystemEnabled
-                    }.forEach { item ->
+                    bottomNavItems.forEach { item ->
                         val selected = currentRoute == item.screen.route
                         ShortNavigationBarItem(
                             selected = selected,
@@ -319,12 +297,7 @@ fun AppNavigation(
 
                 DeviceInfoScreen(
                     initialTab = backStackEntry.arguments?.getInt("tab") ?: -1,
-                    // Only offered while the File system feature (and so the analyser) exists.
-                    onAnalyseStorage = if (fileSystemEnabled) {
-                        { navController.navigate(Screen.DiskUsage.createRoute()) }
-                    } else {
-                        null
-                    },
+                    onAnalyseStorage = { navController.navigate(Screen.DiskUsage.createRoute()) },
                     onAddToHome = { type, sensor ->
                         HomeLayoutRepository.get(context).addWidget(
                             HomeWidget(
