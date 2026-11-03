@@ -14,10 +14,10 @@
     <string name="home_empty_hint">Przytrzymaj kartę na ekranie Urządzenie, aby dodać ją tutaj</string>
     <string name="home_remove_widget">Usuń kartę</string>
     <string name="home_sensor_unavailable">Czujnik niedostępny na tym urządzeniu</string>
-    <string name="home_greeting_morning">Dzień dobry</string>
-    <string name="home_greeting_afternoon">Miłego popołudnia</string>
-    <string name="home_greeting_evening">Dobry wieczór</string>
-    <string name="home_greeting_night">Dobrej nocy</string>
+    <string name="home_greeting_morning">Dzień dobry, root</string>
+    <string name="home_greeting_afternoon">Witaj, root</string>
+    <string name="home_greeting_evening">Dobry wieczór, root</string>
+    <string name="home_greeting_night">Nie śpisz, root?</string>
     <string name="home_empty_title">Nic tu jeszcze nie ma</string>
     <string name="home_browse_cards">Przeglądaj karty urządzenia</string>
     <string name="home_add_cards">Dodaj karty</string>

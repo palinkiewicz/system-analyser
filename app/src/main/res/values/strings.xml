@@ -14,10 +14,10 @@
     <string name="home_empty_hint">Long-press a card on the Device screen to add it here</string>
     <string name="home_remove_widget">Remove card</string>
     <string name="home_sensor_unavailable">Sensor unavailable on this device</string>
-    <string name="home_greeting_morning">Good morning</string>
-    <string name="home_greeting_afternoon">Good afternoon</string>
-    <string name="home_greeting_evening">Good evening</string>
-    <string name="home_greeting_night">Good night</string>
+    <string name="home_greeting_morning">Morning, root</string>
+    <string name="home_greeting_afternoon">Afternoon, root</string>
+    <string name="home_greeting_evening">Evening, root</string>
+    <string name="home_greeting_night">Up late, root?</string>
     <string name="home_empty_title">Nothing here yet</string>
     <string name="home_browse_cards">Browse device cards</string>
     <string name="home_add_cards">Add cards</string>
