@@ -42,6 +42,7 @@ import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.domain.DiskUsageItem
 import pl.dakil.appanalyser.domain.FileEntry
 import pl.dakil.appanalyser.ui.components.filesystem.EntryIcon
+import pl.dakil.appanalyser.ui.components.filesystem.iconForFolder
 import pl.dakil.appanalyser.ui.designsystem.ShapedIcon
 import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbols
 import pl.dakil.appanalyser.ui.designsystem.rememberHaptics
@@ -109,7 +110,7 @@ fun DiskUsageRow(
                             contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         item.isDirectory -> ShapedIcon(
-                            AppSymbols.Folder,
+                            iconForFolder(item.path),
                             size = LEADING_SIZE,
                             iconSize = 22.dp,
                             containerColor = color,

@@ -29,6 +29,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import pl.dakil.appanalyser.domain.FileEntry
+import pl.dakil.appanalyser.domain.StandardFolder
 import pl.dakil.appanalyser.ui.designsystem.ShapedIcon
 import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbol
 import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbols
@@ -54,8 +55,28 @@ private val TEXT_EXTENSIONS = setOf("txt", "md", "log", "csv", "ini", "conf", "p
 /** Extensions the built-in editor opens directly rather than handing to another app. */
 val EDITABLE_EXTENSIONS: Set<String> = CODE_EXTENSIONS + TEXT_EXTENSIONS
 
+/** A folder's glyph: what a standard folder holds, otherwise a plain folder. */
+fun iconForFolder(path: String): AppSymbol = when (StandardFolder.of(path)) {
+    StandardFolder.ALARMS -> AppSymbols.Alarm
+    StandardFolder.ANDROID -> AppSymbols.Android
+    StandardFolder.AUDIOBOOKS -> AppSymbols.AutoStories
+    StandardFolder.CAMERA -> AppSymbols.CameraRoll
+    StandardFolder.DCIM -> AppSymbols.PhotoCamera
+    StandardFolder.DOCUMENTS -> AppSymbols.Description
+    StandardFolder.DOWNLOAD -> AppSymbols.Download
+    StandardFolder.MOVIES -> AppSymbols.Movie
+    StandardFolder.MUSIC -> AppSymbols.MusicNote
+    StandardFolder.NOTIFICATIONS -> AppSymbols.Notifications
+    StandardFolder.PICTURES -> AppSymbols.PhotoLibrary
+    StandardFolder.PODCASTS -> AppSymbols.Podcasts
+    StandardFolder.RECORDINGS -> AppSymbols.Mic
+    StandardFolder.RINGTONES -> AppSymbols.PhoneInTalk
+    StandardFolder.SCREENSHOTS -> AppSymbols.Screenshot
+    null -> AppSymbols.Folder
+}
+
 fun iconForEntry(entry: FileEntry): AppSymbol = when {
-    entry.isDirectory -> AppSymbols.Folder
+    entry.isDirectory -> iconForFolder(entry.path)
     entry.extension in IMAGE_EXTENSIONS -> AppSymbols.Image
     entry.extension in VIDEO_EXTENSIONS -> AppSymbols.VideoFile
     entry.extension in AUDIO_EXTENSIONS -> AppSymbols.AudioFile

@@ -2,6 +2,7 @@
 # Regenerate with: python3 -I tools/fetch-icons.py
 add
 add_home
+alarm
 android
 apk_document
 apps
@@ -10,12 +11,14 @@ arrow_downward
 arrow_drop_down
 arrow_upward
 audio_file
+auto_stories
 battery_charging_full
 battery_full
 bedtime
 bolt
 brush
 calendar_today
+camera_roll
 category
 check
 check_circle
@@ -30,8 +33,8 @@ create_new_folder
 dark_mode
 dashboard
 data_object
-deployed_code
 delete
+deployed_code
 description
 developer_board
 display_settings
@@ -64,7 +67,10 @@ lock
 match_case
 memory
 memory_alt
+mic
 more_vert
+movie
+music_note
 note_add
 notifications
 notifications_active
@@ -73,13 +79,18 @@ open_in_new
 palette
 person
 phone_android
+phone_in_talk
+photo_camera
+photo_library
 picture_as_pdf
+podcasts
 qr_code_2
 redo
 refresh
 save
 schedule
 science
+screenshot
 sd_card
 sdk
 search
@@ -106,8 +117,8 @@ undo
 update
 verified
 vertical_split
-video_file
 vibration
+video_file
 visibility
 warning
 widgets
