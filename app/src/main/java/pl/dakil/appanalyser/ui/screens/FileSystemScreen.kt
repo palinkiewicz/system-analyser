@@ -42,7 +42,6 @@ import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.ToggleFloatingActionButton
 import androidx.compose.material3.ToggleFloatingActionButtonDefaults
 import androidx.compose.material3.TopAppBar
@@ -411,10 +410,15 @@ fun FileSystemScreen(
                     .padding(bottom = Spacing.l, start = Spacing.gutter, end = Spacing.gutter),
             ) {
                 val clip = clipboard
+                // The toolbar balances its padding off the first touch target's offset, so it must
+                // lead with a button — a leading label pushed that offset out and the bar grew tall.
                 HorizontalFloatingToolbar(
                     expanded = true,
                     colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
                 ) {
+                    IconButton(onClick = { viewModel.clearClipboard() }) {
+                        AppIcon(AppSymbols.Close, contentDescription = stringResource(R.string.files_cancel))
+                    }
                     Text(
                         text = pluralStringResource(
                             if (clip?.operation == ClipboardOperation.MOVE) {
@@ -429,13 +433,10 @@ fun FileSystemScreen(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier
-                            .padding(horizontal = Spacing.m)
+                            .padding(start = Spacing.xs, end = Spacing.m)
                             .align(Alignment.CenterVertically)
                             .weight(1f, fill = false),
                     )
-                    TextButton(onClick = { viewModel.clearClipboard() }) {
-                        Text(stringResource(R.string.files_cancel))
-                    }
                     FilledTonalButton(
                         onClick = {
                             haptics.confirm()
