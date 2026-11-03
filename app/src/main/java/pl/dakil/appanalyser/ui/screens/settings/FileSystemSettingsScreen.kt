@@ -18,6 +18,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.SettingsRepository
+import pl.dakil.appanalyser.domain.FileDropAction
 import pl.dakil.appanalyser.domain.ShareAccessMode
 import pl.dakil.appanalyser.ui.designsystem.SegmentedGroup
 import pl.dakil.appanalyser.ui.designsystem.ShapedIcon
@@ -52,6 +53,7 @@ fun FileSystemSettingsScreen(
     val enabled by viewModel.fileSystemEnabled.collectAsState()
     val showHidden by viewModel.showHiddenFiles.collectAsState()
     val confirmDeletion by viewModel.confirmFileDeletion.collectAsState()
+    val dropAction by viewModel.fileDropAction.collectAsState()
     val monospace by viewModel.editorMonospace.collectAsState()
     val wordWrap by viewModel.editorWordWrap.collectAsState()
     val highlighting by viewModel.editorSyntaxHighlighting.collectAsState()
@@ -85,6 +87,18 @@ fun FileSystemSettingsScreen(
                 summary = stringResource(R.string.settings_confirm_deletion_description),
                 checked = confirmDeletion,
                 onCheckedChange = { viewModel.setConfirmFileDeletion(it) },
+                enabled = enabled
+            )
+        }
+
+        SectionHeader(stringResource(R.string.settings_file_system_dual_pane))
+        SegmentedGroup {
+            SelectRow(
+                title = stringResource(R.string.settings_file_drop_action),
+                summary = stringResource(R.string.settings_file_drop_action_description),
+                selectedLabel = dropAction.label(),
+                options = FileDropAction.entries.map { it to it.label() },
+                onSelect = { viewModel.setFileDropAction(it) },
                 enabled = enabled
             )
         }

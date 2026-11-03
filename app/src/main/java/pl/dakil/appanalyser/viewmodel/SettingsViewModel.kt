@@ -7,6 +7,7 @@ import pl.dakil.appanalyser.data.AppColorTheme
 import pl.dakil.appanalyser.data.DarkThemeOption
 import pl.dakil.appanalyser.data.PinnedNotificationsRepository
 import pl.dakil.appanalyser.data.SettingsRepository
+import pl.dakil.appanalyser.domain.FileDropAction
 import pl.dakil.appanalyser.domain.PinnedCard
 import pl.dakil.appanalyser.domain.ShareAccessMode
 import pl.dakil.appanalyser.domain.TemperatureUnit
@@ -30,6 +31,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     val fileSystemEnabled: StateFlow<Boolean> = settings.fileSystemEnabled
     val showHiddenFiles: StateFlow<Boolean> = settings.showHiddenFiles
     val confirmFileDeletion: StateFlow<Boolean> = settings.confirmFileDeletion
+    val fileDropAction: StateFlow<FileDropAction> = settings.fileDropAction
     val editorMonospace: StateFlow<Boolean> = settings.editorMonospace
     val editorWordWrap: StateFlow<Boolean> = settings.editorWordWrap
     val editorSyntaxHighlighting: StateFlow<Boolean> = settings.editorSyntaxHighlighting
@@ -51,6 +53,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setFileSystemEnabled(enabled: Boolean) = settings.setFileSystemEnabled(enabled)
     fun setShowHiddenFiles(enabled: Boolean) = settings.setShowHiddenFiles(enabled)
     fun setConfirmFileDeletion(enabled: Boolean) = settings.setConfirmFileDeletion(enabled)
+    fun setFileDropAction(action: FileDropAction) = settings.setFileDropAction(action)
     fun setEditorMonospace(enabled: Boolean) = settings.setEditorMonospace(enabled)
     fun setEditorWordWrap(enabled: Boolean) = settings.setEditorWordWrap(enabled)
     fun setEditorSyntaxHighlighting(enabled: Boolean) = settings.setEditorSyntaxHighlighting(enabled)

@@ -7,23 +7,33 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.FilledTonalButton
@@ -33,6 +43,7 @@ import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialShapes
@@ -49,6 +60,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,26 +68,43 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import java.io.File
+import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.NetworkInfoProvider
 import pl.dakil.appanalyser.data.ShareServerRepository
 import pl.dakil.appanalyser.domain.ClipboardOperation
+import pl.dakil.appanalyser.domain.FileDropAction
 import pl.dakil.appanalyser.domain.FileEntry
 import pl.dakil.appanalyser.domain.FileSortOrder
+import pl.dakil.appanalyser.domain.PaneId
 import pl.dakil.appanalyser.domain.ScanFreshness
 import pl.dakil.appanalyser.domain.ShareState
 import pl.dakil.appanalyser.domain.StorageRoot
@@ -84,13 +113,20 @@ import pl.dakil.appanalyser.ui.components.canPostNotifications
 import pl.dakil.appanalyser.ui.components.filesystem.AllFilesAccessGate
 import pl.dakil.appanalyser.ui.components.filesystem.Breadcrumbs
 import pl.dakil.appanalyser.ui.components.filesystem.DeleteConfirmDialog
+import pl.dakil.appanalyser.ui.components.filesystem.DropTarget
+import pl.dakil.appanalyser.ui.components.filesystem.DualPaneLayout
 import pl.dakil.appanalyser.ui.components.filesystem.EDITABLE_EXTENSIONS
+import pl.dakil.appanalyser.ui.components.filesystem.FileDragGhost
+import pl.dakil.appanalyser.ui.components.filesystem.FileDragHandler
+import pl.dakil.appanalyser.ui.components.filesystem.FileDragPayload
+import pl.dakil.appanalyser.ui.components.filesystem.FileDragState
 import pl.dakil.appanalyser.ui.components.filesystem.FileRow
 import pl.dakil.appanalyser.ui.components.filesystem.NameInputDialog
 import pl.dakil.appanalyser.ui.components.filesystem.NoNetworkDialog
 import pl.dakil.appanalyser.ui.components.filesystem.PropertiesDialog
 import pl.dakil.appanalyser.ui.components.filesystem.ScanFolderDialog
 import pl.dakil.appanalyser.ui.components.filesystem.ShareMethodSheet
+import pl.dakil.appanalyser.ui.components.filesystem.fileDragSource
 import pl.dakil.appanalyser.ui.components.filesystem.openFile
 import pl.dakil.appanalyser.ui.components.filesystem.openHotspotSettings
 import pl.dakil.appanalyser.ui.components.filesystem.shareFile
@@ -105,13 +141,24 @@ import pl.dakil.appanalyser.ui.designsystem.EmptyState
 import pl.dakil.appanalyser.ui.designsystem.ShapedIcon
 import pl.dakil.appanalyser.ui.designsystem.UsageBar
 import pl.dakil.appanalyser.ui.designsystem.appTopBarColors
+import pl.dakil.appanalyser.ui.designsystem.icon.AnimatedAppIcon
 import pl.dakil.appanalyser.ui.designsystem.icon.AppIcon
 import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbol
 import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbols
 import pl.dakil.appanalyser.ui.designsystem.rememberHaptics
 import pl.dakil.appanalyser.ui.designsystem.segmentedItemColors
 import pl.dakil.appanalyser.ui.theme.Spacing
+import pl.dakil.appanalyser.viewmodel.FilePane
 import pl.dakil.appanalyser.viewmodel.FileSystemViewModel
+
+/** Room under a list for the FAB or a floating toolbar over its last rows. */
+private val FLOATING_BAR_CLEARANCE = 112.dp
+
+/** How close to a pane's top or bottom edge carried items start scrolling it. */
+private val AUTO_SCROLL_EDGE = 56.dp
+
+/** A drop waiting for the user to pick Move or Copy, with where the finger lifted. */
+private data class PendingDrop(val payload: FileDragPayload, val target: DropTarget, val at: Offset)
 
 @Composable
 fun FileSystemScreen(
@@ -130,14 +177,21 @@ fun FileSystemScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     val hasAccess by viewModel.hasAccess.collectAsState()
-    val currentPath by viewModel.currentPath.collectAsState()
-    val entries by viewModel.entries.collectAsState()
     val roots by viewModel.roots.collectAsState()
-    val selection by viewModel.selection.collectAsState()
     val clipboard by viewModel.clipboard.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
     val isBusy by viewModel.isBusy.collectAsState()
     val confirmDeletion by viewModel.confirmDeletion.collectAsState()
+    val dual by viewModel.dualPane.collectAsState()
+    val paneSplit by viewModel.paneSplit.collectAsState()
+    val dropAction by viewModel.dropAction.collectAsState()
+
+    // Every folder-level action — the bars, the FAB, paste, back — follows the active pane. In
+    // single pane mode that is always the primary one.
+    val activeId by viewModel.activePaneId.collectAsState()
+    val active = viewModel.pane(activeId)
+    val currentPath by active.currentPath.collectAsState()
+    val selection by active.selection.collectAsState()
+    val otherPath by viewModel.pane(activeId.other).currentPath.collectAsState()
 
     // Re-checked on entry and on every resume, because the All files access grant happens in a
     // system settings page that reports no result back to us.
@@ -159,7 +213,8 @@ fun FileSystemScreen(
     var handledInitialPath by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(initialPath, hasAccess) {
         if (!handledInitialPath && hasAccess && initialPath != null) {
-            viewModel.open(initialPath)
+            viewModel.setActivePane(PaneId.PRIMARY)
+            viewModel.primary.open(initialPath)
             handledInitialPath = true
         }
     }
@@ -177,6 +232,7 @@ fun FileSystemScreen(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var propertiesTarget by remember { mutableStateOf<FileEntry?>(null) }
     var scanPrompt by remember { mutableStateOf<Pair<String, ScanFreshness>?>(null) }
+    var pendingDrop by remember { mutableStateOf<PendingDrop?>(null) }
 
     // Inside a folder the analyser opens on that folder. A current scan shows straight away;
     // otherwise the user is asked first, and only that folder is scanned — never the whole volume.
@@ -187,6 +243,23 @@ fun FileSystemScreen(
             else -> scanPrompt = path to freshness
         }
     }
+
+    fun openEntry(entry: FileEntry) {
+        if (entry.extension in EDITABLE_EXTENSIONS) {
+            onOpenEditor(entry.path)
+        } else {
+            openFile(
+                context = context,
+                uri = viewModel.contentUri(entry.path),
+                mimeType = viewModel.mimeType(entry.path),
+            ) {
+                scope.launch { snackbarHostState.showSnackbar(openFailedMessage) }
+            }
+        }
+    }
+
+    // Volumes read better by their label than by the last segment of their mount path ("0").
+    fun folderLabel(path: String) = roots.firstOrNull { it.path == path }?.label ?: File(path).name
 
     // Wi-Fi sharing state. The path is captured when the sheet opens, because starting the server
     // clears the selection.
@@ -225,7 +298,7 @@ fun FileSystemScreen(
     }
 
     BackHandler(enabled = selection.isNotEmpty() || currentPath != null) {
-        if (selection.isNotEmpty()) viewModel.clearSelection() else viewModel.navigateUp()
+        if (selection.isNotEmpty()) active.clearSelection() else active.navigateUp()
     }
 
     if (!hasAccess) {
@@ -237,6 +310,60 @@ fun FileSystemScreen(
     val inFolder = currentPath != null
     val selecting = selection.isNotEmpty()
 
+    // Side by side in landscape and on anything tablet-wide, stacked on a portrait phone.
+    val windowSize = LocalWindowInfo.current.containerSize
+    val density = LocalDensity.current
+    val sideBySide = windowSize.width > windowSize.height ||
+        with(density) { windowSize.width.toDp() } >= 600.dp
+
+    // The drag itself is tracked by the state; what a drag *means* is decided here, where the
+    // selection, the haptics and the drop setting live.
+    val dragState = remember { FileDragState() }
+    SideEffect {
+        dragState.handler = object : FileDragHandler {
+            override fun onLongPress(pane: PaneId, entry: FileEntry): Boolean {
+                haptics.longPress()
+                viewModel.setActivePane(pane)
+                val browser = viewModel.pane(pane)
+                val wasSelected = entry.path in browser.selection.value
+                if (!wasSelected) browser.select(entry.path)
+                return wasSelected
+            }
+
+            override fun payloadFor(pane: PaneId, entry: FileEntry): FileDragPayload {
+                val selected = viewModel.pane(pane).selection.value
+                // The picked-up row leads, so the ghost shows what the finger is actually on.
+                val paths = listOf(entry.path) + (selected - entry.path)
+                return FileDragPayload(source = pane, paths = paths, lead = entry)
+            }
+
+            override fun onReleasedInPlace(pane: PaneId, entry: FileEntry, wasSelected: Boolean) {
+                if (wasSelected) viewModel.pane(pane).toggleSelection(entry.path)
+            }
+
+            override fun onHoverChanged(target: DropTarget?) {
+                if (target != null) haptics.tick()
+            }
+
+            override fun onDrop(payload: FileDragPayload, target: DropTarget?, pointer: Offset) {
+                if (target == null) {
+                    haptics.reject()
+                    return
+                }
+                val operation = when (dropAction) {
+                    FileDropAction.MOVE -> ClipboardOperation.MOVE
+                    FileDropAction.COPY -> ClipboardOperation.COPY
+                    FileDropAction.ASK -> {
+                        pendingDrop = PendingDrop(payload, target, pointer - dragState.overlayOrigin)
+                        return
+                    }
+                }
+                haptics.confirm()
+                viewModel.transfer(payload.paths, target.destination, operation, payload.source)
+            }
+        }
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -245,17 +372,25 @@ fun FileSystemScreen(
                 if (isSelecting) {
                     SelectionTopBar(
                         count = selection.size,
-                        onClose = { viewModel.clearSelection() },
-                        onSelectAll = { viewModel.selectAll() },
+                        onClose = { active.clearSelection() },
+                        onSelectAll = { active.selectAll() },
                     )
                 } else {
                     BrowserTopBar(
-                        title = currentPath?.let { File(it).name }
+                        // Each pane carries its own location in dual mode, so the bar stays put.
+                        title = currentPath?.takeUnless { dual }?.let { File(it).name }
                             ?: stringResource(R.string.nav_files),
-                        canNavigateUp = inFolder,
+                        canNavigateUp = inFolder && !dual,
                         inFolder = inFolder,
+                        dual = dual,
+                        sideBySide = sideBySide,
+                        otherPaneReady = otherPath != null,
                         viewModel = viewModel,
-                        onNavigateUp = { viewModel.navigateUp() },
+                        onNavigateUp = { active.navigateUp() },
+                        onToggleDual = {
+                            haptics.toggle(!dual)
+                            viewModel.setDualPane(!dual)
+                        },
                         onOpenDiskUsage = { openDiskUsage() },
                         onProperties = {
                             currentPath?.let { path ->
@@ -295,85 +430,65 @@ fun FileSystemScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
+                .padding(padding)
+                .onGloballyPositioned { dragState.overlayOrigin = it.positionInRoot() },
             contentAlignment = Alignment.TopCenter,
         ) {
-            Column(
-                modifier = Modifier
-                    .widthIn(max = Spacing.maxContentWidth)
-                    .fillMaxSize(),
-            ) {
-                currentPath?.let { path ->
-                    Breadcrumbs(
-                        path = path,
-                        roots = roots.map { it.path to it.label },
-                        onSegmentClick = { viewModel.open(it) },
-                    )
-                }
+            val primaryList = rememberLazyListState()
+            val secondaryList = rememberLazyListState()
 
-                Box(Modifier.weight(1f)) {
-                    when {
-                        isLoading || isBusy -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-                            LoadingIndicator(Modifier.size(64.dp))
-                        }
-                        currentPath == null -> StorageRootList(
-                            roots = roots,
-                            onOpen = { viewModel.open(it) },
-                        )
-                        entries.isEmpty() -> Box(
-                            Modifier
-                                .fillMaxSize()
-                                .verticalScroll(rememberScrollState()),
-                            Alignment.Center,
-                        ) {
-                            EmptyState(
-                                symbol = AppSymbols.FolderOpen,
-                                title = stringResource(R.string.files_empty_folder),
-                                polygon = MaterialShapes.Cookie9Sided,
-                            )
-                        }
-                        else -> LazyColumn(
-                            contentPadding = PaddingValues(
-                                start = Spacing.gutter,
-                                end = Spacing.gutter,
-                                top = Spacing.xs,
-                                // Room for the FAB or a floating toolbar over the last rows.
-                                bottom = 112.dp,
-                            ),
-                            verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap),
-                        ) {
-                            itemsIndexed(entries, key = { _, entry -> entry.path }) { index, entry ->
-                                FileRow(
-                                    entry = entry,
-                                    selected = entry.path in selection,
-                                    selectionMode = selecting,
-                                    index = index,
-                                    count = entries.size,
-                                    modifier = Modifier.animateItem(),
-                                    onClick = {
-                                        when {
-                                            selection.isNotEmpty() -> viewModel.toggleSelection(entry.path)
-                                            entry.isDirectory -> viewModel.open(entry.path)
-                                            entry.extension in EDITABLE_EXTENSIONS ->
-                                                onOpenEditor(entry.path)
-                                            else -> openFile(
-                                                context = context,
-                                                uri = viewModel.contentUri(entry.path),
-                                                mimeType = viewModel.mimeType(entry.path),
-                                            ) {
-                                                scope.launch {
-                                                    snackbarHostState.showSnackbar(openFailedMessage)
-                                                }
-                                            }
-                                        }
-                                    },
-                                    onLongClick = { viewModel.toggleSelection(entry.path) },
-                                )
-                            }
-                        }
-                    }
-                }
+            @Composable
+            fun Pane(pane: FilePane, listState: LazyListState, bottomPadding: Dp, outerPadding: PaddingValues) {
+                FileBrowserPane(
+                    pane = pane,
+                    roots = roots,
+                    isBusy = isBusy,
+                    dual = dual,
+                    active = activeId == pane.id,
+                    dragState = dragState,
+                    listState = listState,
+                    bottomPadding = bottomPadding,
+                    outerPadding = outerPadding,
+                    onActivate = { viewModel.setActivePane(pane.id) },
+                    onOpenEntry = { openEntry(it) },
+                )
             }
+
+            DualPaneLayout(
+                dual = dual,
+                horizontal = sideBySide,
+                split = paneSplit,
+                onSplitChange = { viewModel.setPaneSplit(it) },
+                modifier = Modifier
+                    // Two panes use the whole width; a single list keeps its readable maximum.
+                    .then(if (dual) Modifier else Modifier.widthIn(max = Spacing.maxContentWidth))
+                    .fillMaxSize(),
+                primary = {
+                    Pane(
+                        pane = viewModel.primary,
+                        listState = primaryList,
+                        // Stacked, only the bottom pane runs under the floating bars.
+                        bottomPadding = if (dual && !sideBySide) Spacing.s else FLOATING_BAR_CLEARANCE,
+                        outerPadding = when {
+                            !dual -> PaddingValues()
+                            sideBySide -> PaddingValues(start = Spacing.s, bottom = Spacing.s)
+                            else -> PaddingValues(horizontal = Spacing.s)
+                        },
+                    )
+                },
+                secondary = {
+                    Pane(
+                        pane = viewModel.secondary,
+                        listState = secondaryList,
+                        bottomPadding = FLOATING_BAR_CLEARANCE,
+                        outerPadding = if (sideBySide) {
+                            PaddingValues(end = Spacing.s, bottom = Spacing.s)
+                        } else {
+                            PaddingValues(start = Spacing.s, end = Spacing.s, bottom = Spacing.s)
+                        },
+                    )
+                },
+            )
 
             // Selection actions float over the list's bottom edge (five of them didn't fit the
             // top bar); the paste bar takes the same spot once something is on the clipboard.
@@ -387,8 +502,18 @@ fun FileSystemScreen(
             ) {
                 SelectionToolbar(
                     single = selection.size == 1,
+                    dual = dual,
+                    otherPaneReady = otherPath != null,
                     onCopy = { viewModel.copySelection() },
                     onCut = { viewModel.cutSelection() },
+                    onCopyToOther = {
+                        haptics.confirm()
+                        viewModel.copySelectionToOther()
+                    },
+                    onMoveToOther = {
+                        haptics.confirm()
+                        viewModel.moveSelectionToOther()
+                    },
                     onRename = { renameTarget = selection.first() },
                     onShare = { shareTarget = selection.firstOrNull() },
                     onDelete = {
@@ -445,6 +570,52 @@ fun FileSystemScreen(
                     ) {
                         AppIcon(AppSymbols.ContentPaste, contentDescription = null, modifier = Modifier.size(18.dp))
                         Text(stringResource(R.string.files_paste), modifier = Modifier.padding(start = Spacing.s))
+                    }
+                }
+            }
+
+            // Above both panes and the bars, so carried items are never drawn underneath anything.
+            FileDragGhost(
+                state = dragState,
+                folderLabel = { folderLabel(it) },
+                modifier = Modifier.align(Alignment.TopStart),
+            )
+
+            pendingDrop?.let { drop ->
+                // A zero-size anchor where the finger lifted, so the menu opens right there.
+                Box(
+                    Modifier
+                        .align(Alignment.TopStart)
+                        .offset { IntOffset(drop.at.x.roundToInt(), drop.at.y.roundToInt()) }
+                ) {
+                    AppMenu(expanded = true, onDismissRequest = { pendingDrop = null }) {
+                        AppMenuGroup {
+                            AppMenuLabel(stringResource(R.string.files_drop_into, folderLabel(drop.target.destination)))
+                            AppMenuItem(
+                                text = stringResource(R.string.files_drop_move_here),
+                                symbol = AppSymbols.DriveFileMove,
+                                onClick = {
+                                    pendingDrop = null
+                                    haptics.confirm()
+                                    viewModel.transfer(
+                                        drop.payload.paths, drop.target.destination,
+                                        ClipboardOperation.MOVE, drop.payload.source,
+                                    )
+                                },
+                            )
+                            AppMenuItem(
+                                text = stringResource(R.string.files_drop_copy_here),
+                                symbol = AppSymbols.FileCopy,
+                                onClick = {
+                                    pendingDrop = null
+                                    haptics.confirm()
+                                    viewModel.transfer(
+                                        drop.payload.paths, drop.target.destination,
+                                        ClipboardOperation.COPY, drop.payload.source,
+                                    )
+                                },
+                            )
+                        }
                     }
                 }
             }
@@ -506,10 +677,10 @@ fun FileSystemScreen(
             onSendToApp = {
                 shareFile(context, viewModel.contentUri(target), viewModel.mimeType(target))
                 shareTarget = null
-                viewModel.clearSelection()
+                active.clearSelection()
             },
             onShareOverWifi = {
-                viewModel.clearSelection()
+                active.clearSelection()
                 if (context.canPostNotifications()) {
                     startWifiShare(target)
                 } else {
@@ -570,6 +741,226 @@ fun FileSystemScreen(
 }
 
 // ---------------------------------------------------------------------------
+// Panes
+// ---------------------------------------------------------------------------
+
+/**
+ * One browser: its location header, then the volume list, a folder's rows, or an empty/loading
+ * state. In single pane mode it is drawn exactly as the plain browser always was; in dual mode it
+ * sits in its own rounded frame, outlined while it is the active pane or a drop target, and gets an
+ * up button of its own. Either way its rows can be dragged onto a folder (or the other pane).
+ */
+@Composable
+private fun FileBrowserPane(
+    pane: FilePane,
+    roots: List<StorageRoot>,
+    isBusy: Boolean,
+    dual: Boolean,
+    active: Boolean,
+    dragState: FileDragState,
+    listState: LazyListState,
+    bottomPadding: Dp,
+    outerPadding: PaddingValues,
+    onActivate: () -> Unit,
+    onOpenEntry: (FileEntry) -> Unit,
+) {
+    val currentPath by pane.currentPath.collectAsState()
+    val entries by pane.entries.collectAsState()
+    val selection by pane.selection.collectAsState()
+    val isLoading by pane.isLoading.collectAsState()
+    val selecting = selection.isNotEmpty()
+
+    // Published for hit-testing: the other pane at large drops into this folder.
+    SideEffect { dragState.setPaneFolder(pane.id, currentPath) }
+    DisposableEffect(dragState, pane.id) { onDispose { dragState.removePane(pane.id) } }
+
+    val hover = dragState.hover
+    val paneTargeted = hover != null && hover.pane == pane.id && !hover.folderRow
+    val scheme = MaterialTheme.colorScheme
+    val effects = MaterialTheme.motionScheme.fastEffectsSpec<Color>()
+    // The active pane is only a quiet hint, a tone off the background; the vivid primary is kept
+    // for a pane that is about to receive a drop.
+    val outline by animateColorAsState(
+        when {
+            !dual -> Color.Transparent
+            paneTargeted -> scheme.primary
+            active -> scheme.outlineVariant
+            else -> Color.Transparent
+        },
+        effects,
+        label = "paneOutline",
+    )
+    val container by animateColorAsState(
+        when {
+            !dual -> scheme.surface
+            paneTargeted -> scheme.primaryContainer
+            else -> scheme.surfaceContainerLow
+        },
+        effects,
+        label = "paneContainer",
+    )
+    val outlineWidth by animateDpAsState(
+        if (paneTargeted) 3.dp else 2.dp,
+        MaterialTheme.motionScheme.fastSpatialSpec(),
+        label = "paneOutlineWidth",
+    )
+
+    // Carried items scroll whichever pane they hover near its edges, their own included — the
+    // dragged row pins itself in the list, so scrolling it out of view doesn't end the drag.
+    val edge = with(LocalDensity.current) { AUTO_SCROLL_EDGE.toPx() }
+    val carrying = dragState.payload != null
+    LaunchedEffect(carrying) {
+        if (!carrying) return@LaunchedEffect
+        while (true) {
+            withFrameNanos { }
+            val bounds = dragState.paneBounds(pane.id) ?: continue
+            val pointer = dragState.pointer
+            if (pointer.x !in bounds.left..bounds.right) continue
+            val speed = when {
+                pointer.y in bounds.top..(bounds.top + edge) -> -(1f - (pointer.y - bounds.top) / edge)
+                pointer.y in (bounds.bottom - edge)..bounds.bottom -> 1f - (bounds.bottom - pointer.y) / edge
+                else -> 0f
+            }
+            if (speed != 0f) listState.scrollBy(speed * MAX_AUTO_SCROLL_PER_FRAME)
+        }
+    }
+
+    val shape = MaterialTheme.shapes.extraLarge
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(outerPadding)
+            .onGloballyPositioned { dragState.placePane(pane.id, it.boundsInRoot()) }
+            .then(
+                if (dual) {
+                    Modifier
+                        .clip(shape)
+                        .background(container)
+                        .border(outlineWidth, outline, shape)
+                        // Any touch makes this the active pane; nothing is consumed, so the row,
+                        // breadcrumb or button underneath still gets the tap.
+                        .pointerInput(pane.id) {
+                            awaitEachGesture {
+                                awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                                onActivate()
+                            }
+                        }
+                } else {
+                    Modifier
+                }
+            ),
+    ) {
+        PaneHeader(
+            path = currentPath,
+            roots = roots,
+            dual = dual,
+            onNavigateUp = { pane.navigateUp() },
+            onOpen = { pane.open(it) },
+        )
+
+        Box(Modifier.weight(1f)) {
+            when {
+                isLoading || isBusy -> Box(Modifier.fillMaxSize(), Alignment.Center) {
+                    LoadingIndicator(Modifier.size(64.dp))
+                }
+                currentPath == null -> StorageRootList(
+                    roots = roots,
+                    horizontalPadding = if (dual) Spacing.s else Spacing.gutter,
+                    onOpen = { pane.open(it) },
+                )
+                entries.isEmpty() -> Box(
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState()),
+                    Alignment.Center,
+                ) {
+                    EmptyState(
+                        symbol = AppSymbols.FolderOpen,
+                        title = stringResource(R.string.files_empty_folder),
+                        polygon = MaterialShapes.Cookie9Sided,
+                    )
+                }
+                else -> LazyColumn(
+                    state = listState,
+                    contentPadding = PaddingValues(
+                        start = if (dual) Spacing.s else Spacing.gutter,
+                        end = if (dual) Spacing.s else Spacing.gutter,
+                        top = Spacing.xs,
+                        bottom = bottomPadding,
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap),
+                ) {
+                    itemsIndexed(entries, key = { _, entry -> entry.path }) { index, entry ->
+                        val carried = dragState.payload?.let { it.source == pane.id && entry.path in it.paths } == true
+                        val dropHere = hover != null && hover.folderRow &&
+                            hover.pane == pane.id && hover.destination == entry.path
+                        FileRow(
+                            entry = entry,
+                            selected = entry.path in selection,
+                            selectionMode = selecting,
+                            index = index,
+                            count = entries.size,
+                            modifier = Modifier
+                                .animateItem()
+                                .alpha(if (carried) CARRIED_ALPHA else 1f)
+                                .fileDragSource(dragState, pane.id, entry),
+                            longPressExternal = true,
+                            dropHighlighted = dropHere,
+                            onClick = {
+                                when {
+                                    selecting -> pane.toggleSelection(entry.path)
+                                    entry.isDirectory -> pane.open(entry.path)
+                                    else -> onOpenEntry(entry)
+                                }
+                            },
+                            onLongClick = { pane.toggleSelection(entry.path) },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Pixels per frame at the very edge of a pane while carried items auto-scroll it. */
+private const val MAX_AUTO_SCROLL_PER_FRAME = 24f
+
+/** Rows being carried stay in place, faded, so the user can see what they picked up. */
+private const val CARRIED_ALPHA = 0.4f
+
+/**
+ * The pane's location: breadcrumbs, as in the single pane browser. In dual mode the top bar's back
+ * arrow only belongs to the active pane, so each pane leads with an up button of its own.
+ */
+@Composable
+private fun PaneHeader(
+    path: String?,
+    roots: List<StorageRoot>,
+    dual: Boolean,
+    onNavigateUp: () -> Unit,
+    onOpen: (String) -> Unit,
+) {
+    if (path == null) return
+    val crumbs = @Composable {
+        Breadcrumbs(
+            path = path,
+            roots = roots.map { it.path to it.label },
+            onSegmentClick = onOpen,
+        )
+    }
+    if (!dual) {
+        crumbs()
+        return
+    }
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = Spacing.xs)) {
+        IconButton(onClick = onNavigateUp, shapes = IconButtonDefaults.shapes()) {
+            AppIcon(AppSymbols.ArrowUpward, contentDescription = stringResource(R.string.files_parent_folder))
+        }
+        Box(Modifier.weight(1f)) { crumbs() }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Bars
 // ---------------------------------------------------------------------------
 
@@ -578,8 +969,12 @@ private fun BrowserTopBar(
     title: String,
     canNavigateUp: Boolean,
     inFolder: Boolean,
+    dual: Boolean,
+    sideBySide: Boolean,
+    otherPaneReady: Boolean,
     viewModel: FileSystemViewModel,
     onNavigateUp: () -> Unit,
+    onToggleDual: () -> Unit,
     onOpenDiskUsage: () -> Unit,
     onProperties: () -> Unit,
 ) {
@@ -599,16 +994,33 @@ private fun BrowserTopBar(
             if (canNavigateUp) BackButton(onNavigateUp)
         },
         actions = {
+            // The one-tap switch between single and dual pane; its glyph shows the split it makes.
+            IconToggleButton(
+                checked = dual,
+                onCheckedChange = { onToggleDual() },
+                shapes = IconButtonDefaults.toggleableShapes(),
+            ) {
+                AnimatedAppIcon(
+                    if (sideBySide) AppSymbols.VerticalSplit else AppSymbols.Splitscreen,
+                    contentDescription = stringResource(
+                        if (dual) R.string.files_single_view else R.string.files_split_view
+                    ),
+                    filled = dual,
+                )
+            }
             IconButton(onClick = onOpenDiskUsage, shapes = IconButtonDefaults.shapes()) {
                 AppIcon(AppSymbols.DonutLarge, contentDescription = stringResource(R.string.disk_usage_title))
             }
-            if (inFolder) {
+            // In dual mode the menu also carries the pane actions, so it stays even on the volume
+            // chooser; the folder-only entries are what drop out there.
+            if (inFolder || dual) {
+                val groups = if (dual) 4 else 3
                 Box {
                     IconButton(onClick = { menuExpanded = true }, shapes = IconButtonDefaults.shapes()) {
                         AppIcon(AppSymbols.Sort, contentDescription = stringResource(R.string.files_more_options))
                     }
                     AppMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-                        AppMenuGroup(index = 0, count = 3) {
+                        AppMenuGroup(index = 0, count = groups) {
                             AppMenuLabel(stringResource(R.string.files_sort_by))
                             FileSortOrder.entries.forEach { order ->
                                 AppMenuChoiceItem(
@@ -621,7 +1033,7 @@ private fun BrowserTopBar(
                                 )
                             }
                         }
-                        AppMenuGroup(index = 1, count = 3) {
+                        AppMenuGroup(index = 1, count = groups) {
                             AppMenuCheckItem(
                                 text = stringResource(R.string.files_sort_descending),
                                 checked = descending,
@@ -635,23 +1047,47 @@ private fun BrowserTopBar(
                                 symbol = AppSymbols.Visibility,
                             )
                         }
-                        AppMenuGroup(index = 2, count = 3) {
+                        AppMenuGroup(index = 2, count = groups) {
                             AppMenuItem(
                                 text = stringResource(R.string.files_select_all),
                                 symbol = AppSymbols.SelectAll,
+                                enabled = inFolder,
                                 onClick = {
-                                    viewModel.selectAll()
+                                    viewModel.activePane.selectAll()
                                     menuExpanded = false
                                 },
                             )
                             AppMenuItem(
                                 text = stringResource(R.string.files_properties),
                                 symbol = AppSymbols.Info,
+                                enabled = inFolder,
                                 onClick = {
                                     onProperties()
                                     menuExpanded = false
                                 },
                             )
+                        }
+                        if (dual) {
+                            AppMenuGroup(index = 3, count = groups) {
+                                AppMenuItem(
+                                    text = stringResource(R.string.files_swap_panes),
+                                    symbol = if (sideBySide) AppSymbols.SwapHoriz else AppSymbols.SwapVert,
+                                    onClick = {
+                                        haptics.confirm()
+                                        viewModel.swapPanes()
+                                        menuExpanded = false
+                                    },
+                                )
+                                AppMenuItem(
+                                    text = stringResource(R.string.files_sync_other_pane),
+                                    symbol = AppSymbols.SyncAlt,
+                                    enabled = inFolder,
+                                    onClick = {
+                                        viewModel.syncOtherPane()
+                                        menuExpanded = false
+                                    },
+                                )
+                            }
                         }
                     }
                 }
@@ -696,22 +1132,36 @@ private fun SelectionTopBar(
     )
 }
 
-/** The actions for the current selection, on a vibrant floating toolbar. */
+/**
+ * The actions for the current selection, on a vibrant floating toolbar. In dual mode it leads with
+ * Total Commander's copy/move to the other pane, and the clipboard's copy and cut move into an
+ * overflow menu to keep the bar within a phone's width.
+ */
 @Composable
 private fun SelectionToolbar(
     single: Boolean,
+    dual: Boolean,
+    otherPaneReady: Boolean,
     onCopy: () -> Unit,
     onCut: () -> Unit,
+    onCopyToOther: () -> Unit,
+    onMoveToOther: () -> Unit,
     onRename: () -> Unit,
     onShare: () -> Unit,
     onDelete: () -> Unit,
 ) {
+    var overflowExpanded by remember { mutableStateOf(false) }
     HorizontalFloatingToolbar(
         expanded = true,
         colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
     ) {
-        ToolbarAction(AppSymbols.ContentCopy, stringResource(R.string.files_copy), onCopy)
-        ToolbarAction(AppSymbols.ContentCut, stringResource(R.string.files_cut), onCut)
+        if (dual) {
+            ToolbarAction(AppSymbols.FileCopy, stringResource(R.string.files_copy_to_other), onCopyToOther, otherPaneReady)
+            ToolbarAction(AppSymbols.DriveFileMove, stringResource(R.string.files_move_to_other), onMoveToOther, otherPaneReady)
+        } else {
+            ToolbarAction(AppSymbols.ContentCopy, stringResource(R.string.files_copy), onCopy)
+            ToolbarAction(AppSymbols.ContentCut, stringResource(R.string.files_cut), onCut)
+        }
         AnimatedVisibility(visible = single) {
             Row {
                 ToolbarAction(AppSymbols.DriveFileRenameOutline, stringResource(R.string.files_rename), onRename)
@@ -719,12 +1169,37 @@ private fun SelectionToolbar(
             }
         }
         ToolbarAction(AppSymbols.Delete, stringResource(R.string.files_delete), onDelete)
+        if (dual) {
+            Box {
+                ToolbarAction(AppSymbols.MoreVert, stringResource(R.string.files_more_options), { overflowExpanded = true })
+                AppMenu(expanded = overflowExpanded, onDismissRequest = { overflowExpanded = false }) {
+                    AppMenuGroup {
+                        AppMenuItem(
+                            text = stringResource(R.string.files_copy),
+                            symbol = AppSymbols.ContentCopy,
+                            onClick = {
+                                overflowExpanded = false
+                                onCopy()
+                            },
+                        )
+                        AppMenuItem(
+                            text = stringResource(R.string.files_cut),
+                            symbol = AppSymbols.ContentCut,
+                            onClick = {
+                                overflowExpanded = false
+                                onCut()
+                            },
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
 @Composable
-private fun ToolbarAction(symbol: AppSymbol, label: String, onClick: () -> Unit) {
-    IconButton(onClick = onClick, shapes = IconButtonDefaults.shapes()) {
+private fun ToolbarAction(symbol: AppSymbol, label: String, onClick: () -> Unit, enabled: Boolean = true) {
+    IconButton(onClick = onClick, enabled = enabled, shapes = IconButtonDefaults.shapes()) {
         AppIcon(symbol, contentDescription = label)
     }
 }
@@ -775,11 +1250,12 @@ private fun CreateMenu(
 @Composable
 private fun StorageRootList(
     roots: List<StorageRoot>,
+    horizontalPadding: Dp,
     onOpen: (String) -> Unit,
 ) {
     val context = LocalContext.current
     LazyColumn(
-        contentPadding = PaddingValues(horizontal = Spacing.gutter, vertical = Spacing.s),
+        contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = Spacing.s),
         verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap),
     ) {
         itemsIndexed(roots, key = { _, root -> root.path }) { index, root ->

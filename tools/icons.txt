@@ -38,9 +38,11 @@ display_settings
 donut_large
 download
 draft
+drive_file_move
 drive_file_rename_outline
 error
 expand_more
+file_copy
 find_replace
 fit_screen
 folder
@@ -89,8 +91,12 @@ share
 smartphone
 sort
 speed
+splitscreen
 stop_circle
 storage
+swap_horiz
+swap_vert
+sync_alt
 text_fields
 thermostat
 timer
@@ -99,6 +105,7 @@ tune
 undo
 update
 verified
+vertical_split
 video_file
 vibration
 visibility

@@ -14,14 +14,17 @@ import pl.dakil.appanalyser.data.FileSystemRepository
 import pl.dakil.appanalyser.data.SettingsRepository
 import pl.dakil.appanalyser.domain.ClipboardOperation
 import pl.dakil.appanalyser.domain.FileClipboard
-import pl.dakil.appanalyser.domain.FileEntry
+import pl.dakil.appanalyser.domain.FileDropAction
 import pl.dakil.appanalyser.domain.FileSortOrder
+import pl.dakil.appanalyser.domain.PaneId
 import pl.dakil.appanalyser.domain.StorageRoot
-import java.io.File
 
 /**
- * State for the File system browser: where we are, what's in it, what's selected and what's on the
- * clipboard. Scoped to the tab's back stack entry, so the current folder survives tab switches.
+ * State for the File system browser: its one or two [FilePane]s, which of them is active, and what's
+ * on the clipboard. Scoped to the tab's back stack entry, so both panes survive tab switches.
+ *
+ * Folder-level actions (create, paste, delete, rename, the selection bars) always act on the active
+ * pane; in single pane mode that is the primary one.
  */
 class FileSystemViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -29,24 +32,22 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
     private val settings = SettingsRepository.get(application)
     private val diskUsage = DiskUsageRepository.get(application)
 
-    /** Null while sitting on the volume chooser at the top level. */
-    private val _currentPath = MutableStateFlow<String?>(null)
-    val currentPath: StateFlow<String?> = _currentPath
-
-    private val _entries = MutableStateFlow<List<FileEntry>>(emptyList())
-    val entries: StateFlow<List<FileEntry>> = _entries
-
     private val _roots = MutableStateFlow<List<StorageRoot>>(emptyList())
     val roots: StateFlow<List<StorageRoot>> = _roots
 
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading
+    val primary = FilePane(PaneId.PRIMARY, viewModelScope, repository, settings, _roots)
+    val secondary = FilePane(PaneId.SECONDARY, viewModelScope, repository, settings, _roots)
+    private val panes get() = listOf(primary, secondary)
+
+    private val _activePaneId = MutableStateFlow(PaneId.PRIMARY)
+    val activePaneId: StateFlow<PaneId> = _activePaneId
+
+    val activePane: FilePane get() = pane(_activePaneId.value)
+
+    fun pane(id: PaneId): FilePane = if (id == PaneId.PRIMARY) primary else secondary
 
     private val _isBusy = MutableStateFlow(false)
     val isBusy: StateFlow<Boolean> = _isBusy
-
-    private val _selection = MutableStateFlow<Set<String>>(emptySet())
-    val selection: StateFlow<Set<String>> = _selection
 
     private val _clipboard = MutableStateFlow<FileClipboard?>(null)
     val clipboard: StateFlow<FileClipboard?> = _clipboard
@@ -66,8 +67,11 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
     val sortDescending: StateFlow<Boolean> = settings.fileSortDescending
     val showHidden: StateFlow<Boolean> = settings.showHiddenFiles
     val confirmDeletion: StateFlow<Boolean> = settings.confirmFileDeletion
+    val dualPane: StateFlow<Boolean> = settings.filesDualPane
+    val paneSplit: StateFlow<Float> = settings.filesPaneSplit
+    val dropAction: StateFlow<FileDropAction> = settings.fileDropAction
 
-    /** Re-checks the permission and loads whatever the current location is. */
+    /** Re-checks the permission and loads whatever the current locations are. */
     fun refreshAccess() {
         val granted = repository.hasAccess()
         val changed = _hasAccess.value != granted
@@ -75,87 +79,103 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
         if (granted && (changed || _roots.value.isEmpty())) {
             viewModelScope.launch {
                 _roots.value = repository.storageRoots()
-                refresh()
+                refreshAll()
             }
         }
     }
 
+    private fun refreshAll() = panes.forEach { it.refresh() }
+
     /**
      * Every mutation lands here afterwards with the paths it touched; the disk usage scans covering
-     * them can't know what changed, so they are flagged for the analyser to offer a rescan.
+     * them can't know what changed, so they are flagged for the analyser to offer a rescan. Both
+     * panes re-list, since either of them may be showing a touched folder.
      */
     private fun refreshAfterChange(changed: Collection<String>) {
         diskUsage.markStale(changed)
-        refresh()
+        refreshAll()
     }
 
-    fun refresh() {
-        val path = _currentPath.value ?: return
+    // -----------------------------------------------------------------------
+    // Dual pane
+    // -----------------------------------------------------------------------
+
+    fun setDualPane(enabled: Boolean) {
+        if (enabled == dualPane.value) return
+        if (enabled) {
+            // A first split starts both panes in the same folder, as Total Commander does.
+            if (secondary.currentPath.value == null) primary.currentPath.value?.let { secondary.open(it) }
+        } else {
+            // Collapsing keeps the folder the user was working in, not whatever sat on top.
+            if (_activePaneId.value == PaneId.SECONDARY) primary.swapWith(secondary)
+            _activePaneId.value = PaneId.PRIMARY
+            secondary.clearSelection()
+        }
+        settings.setFilesDualPane(enabled)
+    }
+
+    fun setActivePane(id: PaneId) {
+        _activePaneId.value = id
+    }
+
+    fun setPaneSplit(fraction: Float) = settings.setFilesPaneSplit(fraction)
+
+    /** Trades the two panes' locations; the active highlight stays on the same side. */
+    fun swapPanes() = primary.swapWith(secondary)
+
+    /** Opens the active pane's folder in the other pane too (Total Commander's "="). */
+    fun syncOtherPane() {
+        val path = activePane.currentPath.value ?: return
+        pane(activePane.id.other).open(path)
+    }
+
+    fun copySelectionToOther() = selectionToOther(ClipboardOperation.COPY)
+
+    fun moveSelectionToOther() = selectionToOther(ClipboardOperation.MOVE)
+
+    private fun selectionToOther(operation: ClipboardOperation) {
+        val source = activePane
+        val destination = pane(source.id.other).currentPath.value ?: return
+        transfer(source.selection.value.toList(), destination, operation, source.id)
+    }
+
+    /**
+     * Copies or moves [paths] into [destination] — a drop, or one of the "to other pane" actions.
+     * The [source] pane's selection is spent once the transfer starts.
+     */
+    fun transfer(paths: List<String>, destination: String, operation: ClipboardOperation, source: PaneId) {
+        if (paths.isEmpty()) return
+        pane(source).clearSelection()
         viewModelScope.launch {
-            _isLoading.value = true
-            _entries.value = repository.list(
-                path = path,
-                showHidden = showHidden.value,
-                sort = sortOrder.value,
-                descending = sortDescending.value,
+            _isBusy.value = true
+            val ok = when (operation) {
+                ClipboardOperation.COPY -> repository.copy(paths, destination)
+                ClipboardOperation.MOVE -> repository.move(paths, destination)
+            }
+            _isBusy.value = false
+            _messages.tryEmit(
+                when (operation) {
+                    ClipboardOperation.COPY -> if (ok) R.string.files_copy_success else R.string.files_copy_failed
+                    ClipboardOperation.MOVE -> if (ok) R.string.files_move_success else R.string.files_move_failed
+                }
             )
-            // Drop selection entries that no longer exist after a delete or move.
-            val present = _entries.value.mapTo(mutableSetOf()) { it.path }
-            _selection.value = _selection.value.intersect(present)
-            _isLoading.value = false
+            refreshAfterChange(paths + destination)
         }
-    }
-
-    fun open(path: String) {
-        _currentPath.value = path
-        _selection.value = emptySet()
-        refresh()
-    }
-
-    /** Steps out of the current folder, stopping at the volume chooser. Returns false at the top. */
-    fun navigateUp(): Boolean {
-        val path = _currentPath.value ?: return false
-        if (_roots.value.any { it.path == path }) {
-            _currentPath.value = null
-            _entries.value = emptyList()
-            _selection.value = emptySet()
-            return true
-        }
-        val parent = File(path).parentFile?.absolutePath ?: return false
-        open(parent)
-        return true
-    }
-
-    // -----------------------------------------------------------------------
-    // Selection
-    // -----------------------------------------------------------------------
-
-    fun toggleSelection(path: String) {
-        _selection.value = _selection.value.let { if (path in it) it - path else it + path }
-    }
-
-    fun selectAll() {
-        _selection.value = _entries.value.mapTo(mutableSetOf()) { it.path }
-    }
-
-    fun clearSelection() {
-        _selection.value = emptySet()
     }
 
     // -----------------------------------------------------------------------
     // Clipboard
     // -----------------------------------------------------------------------
 
-    fun copySelection() {
-        if (_selection.value.isEmpty()) return
-        _clipboard.value = FileClipboard(_selection.value.toList(), ClipboardOperation.COPY)
-        clearSelection()
-    }
+    fun copySelection() = stage(ClipboardOperation.COPY)
 
-    fun cutSelection() {
-        if (_selection.value.isEmpty()) return
-        _clipboard.value = FileClipboard(_selection.value.toList(), ClipboardOperation.MOVE)
-        clearSelection()
+    fun cutSelection() = stage(ClipboardOperation.MOVE)
+
+    private fun stage(operation: ClipboardOperation) {
+        val pane = activePane
+        if (pane.selection.value.isEmpty()) return
+        _clipboard.value = FileClipboard(pane.selection.value.toList(), operation)
+        pane.clearSelection()
     }
 
     fun clearClipboard() {
@@ -164,7 +184,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
 
     fun paste() {
         val clip = _clipboard.value ?: return
-        val destination = _currentPath.value ?: return
+        val destination = activePane.currentPath.value ?: return
         viewModelScope.launch {
             _isBusy.value = true
             val ok = when (clip.operation) {
@@ -183,7 +203,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
     // -----------------------------------------------------------------------
 
     fun createFolder(name: String) {
-        val parent = _currentPath.value ?: return
+        val parent = activePane.currentPath.value ?: return
         viewModelScope.launch {
             val ok = repository.createFolder(parent, name)
             _messages.tryEmit(if (ok) R.string.files_create_success else R.string.files_create_failed)
@@ -192,7 +212,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun createFile(name: String) {
-        val parent = _currentPath.value ?: return
+        val parent = activePane.currentPath.value ?: return
         viewModelScope.launch {
             val ok = repository.createFile(parent, name)
             _messages.tryEmit(if (ok) R.string.files_create_success else R.string.files_create_failed)
@@ -201,23 +221,25 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun rename(path: String, newName: String) {
+        val pane = activePane
         viewModelScope.launch {
             val ok = repository.rename(path, newName)
             _messages.tryEmit(if (ok) R.string.files_rename_success else R.string.files_rename_failed)
-            clearSelection()
+            pane.clearSelection()
             refreshAfterChange(listOf(path))
         }
     }
 
     fun deleteSelection() {
-        val paths = _selection.value.toList()
+        val pane = activePane
+        val paths = pane.selection.value.toList()
         if (paths.isEmpty()) return
         viewModelScope.launch {
             _isBusy.value = true
             val ok = repository.delete(paths)
             _isBusy.value = false
             _messages.tryEmit(if (ok) R.string.files_delete_success else R.string.files_delete_failed)
-            clearSelection()
+            pane.clearSelection()
             refreshAfterChange(paths)
         }
     }
@@ -228,17 +250,17 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
 
     fun setSortOrder(order: FileSortOrder) {
         settings.setFileSortOrder(order)
-        refresh()
+        refreshAll()
     }
 
     fun setSortDescending(descending: Boolean) {
         settings.setFileSortDescending(descending)
-        refresh()
+        refreshAll()
     }
 
     fun setShowHidden(enabled: Boolean) {
         settings.setShowHiddenFiles(enabled)
-        refresh()
+        refreshAll()
     }
 
     // -----------------------------------------------------------------------

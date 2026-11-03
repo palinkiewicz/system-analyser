@@ -30,6 +30,7 @@ import kotlin.math.roundToInt
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.AppColorTheme
 import pl.dakil.appanalyser.data.DarkThemeOption
+import pl.dakil.appanalyser.domain.FileDropAction
 import pl.dakil.appanalyser.domain.ShareAccessMode
 import pl.dakil.appanalyser.domain.TemperatureUnit
 import pl.dakil.appanalyser.ui.designsystem.AppMenu
@@ -317,6 +318,15 @@ fun DarkThemeOption.label(): String = stringResource(
         DarkThemeOption.FOLLOW_SYSTEM -> R.string.settings_dark_follow_system
         DarkThemeOption.LIGHT -> R.string.settings_dark_light
         DarkThemeOption.DARK -> R.string.settings_dark_dark
+    }
+)
+
+@Composable
+fun FileDropAction.label(): String = stringResource(
+    when (this) {
+        FileDropAction.ASK -> R.string.settings_file_drop_ask
+        FileDropAction.MOVE -> R.string.settings_file_drop_move
+        FileDropAction.COPY -> R.string.settings_file_drop_copy
     }
 )
 

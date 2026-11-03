@@ -23,6 +23,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.onLongClick
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -96,6 +98,10 @@ fun EntryIcon(entry: FileEntry, modifier: Modifier = Modifier, size: Dp = LEADIN
  * One directory child as a segmented tile: [index] and [count] place it in its list so the first
  * and last tiles carry the group's big corners. A selected tile fills and rounds; in selection mode
  * the type badge flips to a checkbox.
+ *
+ * With [longPressExternal] the long press is left to a gesture handler on [modifier] (the file
+ * drag), which would otherwise race this tile's own long-click; [onLongClick] then only serves
+ * accessibility. [dropHighlighted] marks a folder that carried items would be dropped into.
  */
 @Composable
 fun FileRow(
@@ -107,21 +113,36 @@ fun FileRow(
     modifier: Modifier = Modifier,
     index: Int = 0,
     count: Int = 1,
+    longPressExternal: Boolean = false,
+    dropHighlighted: Boolean = false,
 ) {
     val context = LocalContext.current
     val haptics = rememberHaptics()
     val entryAlpha = if (entry.isHidden) HIDDEN_ALPHA else 1f
     val swapSpec = MaterialTheme.motionScheme.fastSpatialSpec<Float>()
     SegmentedListItem(
-        selected = selected,
+        selected = selected || dropHighlighted,
         onClick = onClick,
-        onLongClick = {
-            if (!selectionMode) haptics.longPress()
-            onLongClick()
+        onLongClick = if (longPressExternal) {
+            null
+        } else {
+            {
+                if (!selectionMode) haptics.longPress()
+                onLongClick()
+            }
         },
         shapes = ListItemDefaults.segmentedShapes(index, count),
         colors = segmentedItemColors(),
-        modifier = modifier,
+        modifier = if (longPressExternal) {
+            modifier.semantics {
+                onLongClick {
+                    onLongClick()
+                    true
+                }
+            }
+        } else {
+            modifier
+        },
         leadingContent = {
             // Both leading states share one fixed slot: the checkbox's 48.dp minimum touch target
             // would otherwise make every row taller the moment selection mode starts.

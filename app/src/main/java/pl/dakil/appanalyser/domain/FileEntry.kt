@@ -18,6 +18,16 @@ enum class FileSortOrder { NAME, SIZE, DATE, TYPE }
 
 enum class ClipboardOperation { COPY, MOVE }
 
+/** The two browsers of dual pane mode; [PRIMARY] is also the only one in single pane mode. */
+enum class PaneId {
+    PRIMARY, SECONDARY;
+
+    val other: PaneId get() = if (this == PRIMARY) SECONDARY else PRIMARY
+}
+
+/** What a drag-and-drop between panes does: asks each time, or always moves or copies. */
+enum class FileDropAction { ASK, MOVE, COPY }
+
 /** Files staged by Copy/Cut, waiting for a Paste in some other directory. */
 data class FileClipboard(
     val paths: List<String>,

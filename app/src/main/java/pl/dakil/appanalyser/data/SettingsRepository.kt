@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import pl.dakil.appanalyser.domain.DiskChartType
+import pl.dakil.appanalyser.domain.FileDropAction
 import pl.dakil.appanalyser.domain.FileSortOrder
 import pl.dakil.appanalyser.domain.ShareAccessMode
 import pl.dakil.appanalyser.domain.TemperatureUnit
@@ -80,6 +81,22 @@ class SettingsRepository private constructor(context: Context) {
 
     private val _confirmFileDeletion = MutableStateFlow(prefs.getBoolean(KEY_CONFIRM_FILE_DELETION, true))
     val confirmFileDeletion: StateFlow<Boolean> = _confirmFileDeletion.asStateFlow()
+
+    /** Total Commander-style two-browser layout of the Files tab, toggled from its top bar. */
+    private val _filesDualPane = MutableStateFlow(prefs.getBoolean(KEY_FILES_DUAL_PANE, false))
+    val filesDualPane: StateFlow<Boolean> = _filesDualPane.asStateFlow()
+
+    /** The primary pane's share of the dual pane split, moved by dragging the divider. */
+    private val _filesPaneSplit = MutableStateFlow(
+        prefs.getFloat(KEY_FILES_PANE_SPLIT, DEFAULT_PANE_SPLIT).coerceIn(MIN_PANE_SPLIT, MAX_PANE_SPLIT)
+    )
+    val filesPaneSplit: StateFlow<Float> = _filesPaneSplit.asStateFlow()
+
+    private val _fileDropAction = MutableStateFlow(
+        runCatching { FileDropAction.valueOf(prefs.getString(KEY_FILE_DROP_ACTION, null)!!) }
+            .getOrDefault(FileDropAction.ASK)
+    )
+    val fileDropAction: StateFlow<FileDropAction> = _fileDropAction.asStateFlow()
 
     private val _editorMonospace = MutableStateFlow(prefs.getBoolean(KEY_EDITOR_MONOSPACE, true))
     val editorMonospace: StateFlow<Boolean> = _editorMonospace.asStateFlow()
@@ -192,6 +209,22 @@ class SettingsRepository private constructor(context: Context) {
         _confirmFileDeletion.value = enabled
     }
 
+    fun setFilesDualPane(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_FILES_DUAL_PANE, enabled).apply()
+        _filesDualPane.value = enabled
+    }
+
+    fun setFilesPaneSplit(fraction: Float) {
+        val clamped = fraction.coerceIn(MIN_PANE_SPLIT, MAX_PANE_SPLIT)
+        prefs.edit().putFloat(KEY_FILES_PANE_SPLIT, clamped).apply()
+        _filesPaneSplit.value = clamped
+    }
+
+    fun setFileDropAction(action: FileDropAction) {
+        prefs.edit().putString(KEY_FILE_DROP_ACTION, action.name).apply()
+        _fileDropAction.value = action
+    }
+
     fun setEditorMonospace(enabled: Boolean) {
         prefs.edit().putBoolean(KEY_EDITOR_MONOSPACE, enabled).apply()
         _editorMonospace.value = enabled
@@ -243,6 +276,9 @@ class SettingsRepository private constructor(context: Context) {
         private const val KEY_FILE_SORT_DESCENDING = "file_sort_descending"
         private const val KEY_SHOW_HIDDEN_FILES = "show_hidden_files"
         private const val KEY_CONFIRM_FILE_DELETION = "confirm_file_deletion"
+        private const val KEY_FILES_DUAL_PANE = "files_dual_pane"
+        private const val KEY_FILES_PANE_SPLIT = "files_pane_split"
+        private const val KEY_FILE_DROP_ACTION = "file_drop_action"
         private const val KEY_EDITOR_MONOSPACE = "editor_monospace"
         private const val KEY_EDITOR_WORD_WRAP = "editor_word_wrap"
         private const val KEY_EDITOR_SYNTAX_HIGHLIGHTING = "editor_syntax_highlighting"
@@ -258,6 +294,10 @@ class SettingsRepository private constructor(context: Context) {
         /** Options offered for the share idle timeout, in minutes; 0 is "never". */
         val SHARE_IDLE_TIMEOUT_OPTIONS = listOf(0, 15, 30, 60)
         const val DEFAULT_SHARE_IDLE_TIMEOUT = 30
+
+        const val MIN_PANE_SPLIT = 0.2f
+        const val MAX_PANE_SPLIT = 0.8f
+        const val DEFAULT_PANE_SPLIT = 0.5f
 
         const val MIN_HOME_COLUMNS = 1
         const val MAX_HOME_COLUMNS = 5
