@@ -37,6 +37,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.AppColorTheme
 import pl.dakil.appanalyser.data.DarkThemeOption
+import pl.dakil.appanalyser.data.StartTab
 import pl.dakil.appanalyser.ui.designsystem.ConnectedToggleRow
 import pl.dakil.appanalyser.ui.designsystem.MorphShape
 import pl.dakil.appanalyser.ui.designsystem.SegmentedGroup
@@ -60,6 +61,7 @@ fun AppearanceSettingsScreen(
     val darkThemeOption by viewModel.darkThemeOption.collectAsState()
     val pureBlack by viewModel.pureBlack.collectAsState()
     val hapticsEnabled by viewModel.hapticsEnabled.collectAsState()
+    val startTab by viewModel.startTab.collectAsState()
     val haptics = rememberHaptics()
 
     SettingsSubscreen(stringResource(R.string.settings_appearance), onNavigateBack) {
@@ -106,6 +108,25 @@ fun AppearanceSettingsScreen(
                 enabled = darkThemeOption != DarkThemeOption.LIGHT
             )
         }
+
+        SectionHeader(stringResource(R.string.settings_start_screen))
+        // The same glyphs and names as the bottom bar, so the choice reads as "open on this tab".
+        ConnectedToggleRow(
+            options = listOf(
+                ToggleOption(StartTab.HOME, stringResource(R.string.nav_home), AppSymbols.Home),
+                ToggleOption(StartTab.DEVICE, stringResource(R.string.nav_device), AppSymbols.PhoneAndroid),
+                ToggleOption(StartTab.APPS, stringResource(R.string.nav_apps), AppSymbols.Apps),
+                ToggleOption(StartTab.FILES, stringResource(R.string.nav_files), AppSymbols.Folder),
+            ),
+            selected = startTab,
+            onSelect = { viewModel.setStartTab(it) },
+        )
+        Text(
+            text = stringResource(R.string.settings_start_screen_description),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = Spacing.l, vertical = Spacing.xs),
+        )
 
         SectionHeader(stringResource(R.string.settings_feel))
         SegmentedGroup {

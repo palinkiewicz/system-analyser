@@ -48,6 +48,8 @@ import kotlinx.coroutines.launch
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.HomeLayoutRepository
 import pl.dakil.appanalyser.data.PinnedNotificationsRepository
+import pl.dakil.appanalyser.data.SettingsRepository
+import pl.dakil.appanalyser.data.StartTab
 import pl.dakil.appanalyser.domain.HomeWidget
 import pl.dakil.appanalyser.domain.HomeWidgetType
 import pl.dakil.appanalyser.domain.SensorInfo
@@ -134,6 +136,14 @@ private val bottomNavItems = listOf(
 
 private fun NavBackStackEntry.isTabRoot() = destination.route in tabRoutes
 
+private val StartTab.route: String
+    get() = when (this) {
+        StartTab.HOME -> Screen.Home.route
+        StartTab.DEVICE -> Screen.DeviceInfo.route
+        StartTab.APPS -> Screen.AppList.route
+        StartTab.FILES -> Screen.FileSystem.route
+    }
+
 @Composable
 fun AppNavigation(
     viewModel: AppAnalyzerViewModel,
@@ -146,6 +156,10 @@ fun AppNavigation(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val haptics = rememberHaptics()
+    val context = LocalContext.current
+    // Read once: swapping the start destination of a live graph would reset the back stack under
+    // the user, so a change in Settings applies from the next launch.
+    val startRoute = remember { SettingsRepository.get(context).startTab.value.route }
 
     // Above the NavHost rather than inside the Files tab, so a tap on the share notification can
     // bring it back over whichever screen is open.
@@ -206,7 +220,7 @@ fun AppNavigation(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Home.route,
+            startDestination = startRoute,
             // Paint the container with the screen background so no white window flashes through the
             // cross-fade while both screens are partially transparent.
             modifier = Modifier

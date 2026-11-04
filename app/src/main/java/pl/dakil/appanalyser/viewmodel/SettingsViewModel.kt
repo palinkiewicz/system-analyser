@@ -7,6 +7,7 @@ import pl.dakil.appanalyser.data.AppColorTheme
 import pl.dakil.appanalyser.data.DarkThemeOption
 import pl.dakil.appanalyser.data.PinnedNotificationsRepository
 import pl.dakil.appanalyser.data.SettingsRepository
+import pl.dakil.appanalyser.data.StartTab
 import pl.dakil.appanalyser.domain.FileDropAction
 import pl.dakil.appanalyser.domain.PinnedCard
 import pl.dakil.appanalyser.domain.ShareAccessMode
@@ -25,6 +26,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     val darkThemeOption: StateFlow<DarkThemeOption> = settings.darkThemeOption
     val pureBlack: StateFlow<Boolean> = settings.pureBlack
     val hapticsEnabled: StateFlow<Boolean> = settings.hapticsEnabled
+    val startTab: StateFlow<StartTab> = settings.startTab
     val homeColumns: StateFlow<Int> = settings.homeColumns
     val notificationIntervalSeconds: StateFlow<Int> = settings.notificationIntervalSeconds
     val pinnedCards: StateFlow<List<PinnedCard>> = pinnedNotifications.pinned
@@ -45,6 +47,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setDarkThemeOption(option: DarkThemeOption) = settings.setDarkThemeOption(option)
     fun setPureBlack(enabled: Boolean) = settings.setPureBlack(enabled)
     fun setHapticsEnabled(enabled: Boolean) = settings.setHapticsEnabled(enabled)
+    fun setStartTab(tab: StartTab) = settings.setStartTab(tab)
     fun setHomeColumns(columns: Int) = settings.setHomeColumns(columns)
     fun setNotificationIntervalSeconds(seconds: Int) =
         settings.setNotificationIntervalSeconds(seconds)

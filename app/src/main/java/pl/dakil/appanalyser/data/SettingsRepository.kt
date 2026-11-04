@@ -14,6 +14,9 @@ enum class AppColorTheme { DAKILS_ANALYSER, DYNAMIC, OCEAN, LAVENDER, SUNSET, RO
 
 enum class DarkThemeOption { FOLLOW_SYSTEM, LIGHT, DARK }
 
+/** The bottom-bar tab the app opens on at launch. */
+enum class StartTab { HOME, DEVICE, APPS, FILES }
+
 /**
  * App-wide user settings, persisted in SharedPreferences and exposed as reactive state so any
  * screen observing them updates immediately when a value changes.
@@ -50,6 +53,13 @@ class SettingsRepository private constructor(context: Context) {
 
     private val _hapticsEnabled = MutableStateFlow(prefs.getBoolean(KEY_HAPTICS_ENABLED, true))
     val hapticsEnabled: StateFlow<Boolean> = _hapticsEnabled.asStateFlow()
+
+    /** Read once when the navigation graph is built, so a change applies from the next launch. */
+    private val _startTab = MutableStateFlow(
+        runCatching { StartTab.valueOf(prefs.getString(KEY_START_TAB, null)!!) }
+            .getOrDefault(StartTab.HOME)
+    )
+    val startTab: StateFlow<StartTab> = _startTab.asStateFlow()
 
     private val _homeColumns = MutableStateFlow(
         prefs.getInt(KEY_HOME_COLUMNS, DEFAULT_HOME_COLUMNS).coerceIn(MIN_HOME_COLUMNS, MAX_HOME_COLUMNS)
@@ -168,6 +178,11 @@ class SettingsRepository private constructor(context: Context) {
         _hapticsEnabled.value = enabled
     }
 
+    fun setStartTab(tab: StartTab) {
+        prefs.edit().putString(KEY_START_TAB, tab.name).apply()
+        _startTab.value = tab
+    }
+
     fun setHomeColumns(columns: Int) {
         val clamped = columns.coerceIn(MIN_HOME_COLUMNS, MAX_HOME_COLUMNS)
         prefs.edit().putInt(KEY_HOME_COLUMNS, clamped).apply()
@@ -260,6 +275,7 @@ class SettingsRepository private constructor(context: Context) {
         private const val KEY_DARK_THEME_OPTION = "dark_theme_option"
         private const val KEY_PURE_BLACK = "pure_black"
         private const val KEY_HAPTICS_ENABLED = "haptics_enabled"
+        private const val KEY_START_TAB = "start_tab"
         private const val KEY_HOME_COLUMNS = "home_columns"
         private const val KEY_NOTIFICATION_INTERVAL = "notification_interval_seconds"
         private const val KEY_FILE_SORT_ORDER = "file_sort_order"
