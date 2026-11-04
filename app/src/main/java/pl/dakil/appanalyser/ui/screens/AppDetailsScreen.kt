@@ -85,10 +85,12 @@ import pl.dakil.appanalyser.ui.designsystem.RollingNumber
 import pl.dakil.appanalyser.ui.designsystem.ShapedIcon
 import pl.dakil.appanalyser.ui.designsystem.UsageBar
 import pl.dakil.appanalyser.ui.designsystem.appTopBarColors
+import pl.dakil.appanalyser.ui.designsystem.decorativeMotion
 import pl.dakil.appanalyser.ui.designsystem.entrance
 import pl.dakil.appanalyser.ui.designsystem.icon.AppIcon
 import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbols
 import pl.dakil.appanalyser.ui.designsystem.pressScale
+import pl.dakil.appanalyser.ui.theme.LocalMotionPreferences
 import pl.dakil.appanalyser.ui.theme.Spacing
 import pl.dakil.appanalyser.viewmodel.AppAnalyzerViewModel
 
@@ -402,7 +404,8 @@ fun AppDetailsContent(
 /** The app's icon on a cookie that settles into place, its name, package and quick facts. */
 @Composable
 private fun Hero(details: AppDetails) {
-    val rotation = remember { Animatable(-60f) }
+    val decorative = decorativeMotion
+    val rotation = remember { Animatable(if (decorative) -60f else 0f) }
     val spec = MaterialTheme.motionScheme.slowSpatialSpec<Float>()
     LaunchedEffect(Unit) { rotation.animateTo(0f, spec) }
     val cookie = remember { PolygonShape(MaterialShapes.Cookie12Sided) }
@@ -497,10 +500,17 @@ fun FrameworkCard(
     val container = if (top) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer
     val content = if (top) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
 
-    // Counts up from zero the first time the card appears.
-    val shown = remember { Animatable(0f) }
+    // Counts up from zero the first time the card appears, unless animated numbers are off.
+    val animatedNumbers = LocalMotionPreferences.current.animatedNumbers
+    val shown = remember { Animatable(if (animatedNumbers) 0f else framework.probability.toFloat()) }
     val countSpec = MaterialTheme.motionScheme.slowEffectsSpec<Float>()
-    LaunchedEffect(framework.probability) { shown.animateTo(framework.probability.toFloat(), countSpec) }
+    LaunchedEffect(framework.probability, animatedNumbers) {
+        if (animatedNumbers) {
+            shown.animateTo(framework.probability.toFloat(), countSpec)
+        } else {
+            shown.snapTo(framework.probability.toFloat())
+        }
+    }
 
     Surface(
         onClick = onClick,

@@ -110,6 +110,14 @@
     <string name="settings_feel">Wrażenia</string>
     <string name="settings_haptics">Reakcje haptyczne</string>
     <string name="settings_haptics_description">Delikatne wibracje przy przełączaniu, przeciąganiu i potwierdzaniu</string>
+    <string name="settings_animated_numbers">Animowane liczby</string>
+    <string name="settings_animated_numbers_description">Zmieniające się cyfry przewijają się jak w liczniku</string>
+    <string name="settings_decorative_animations">Animacje ozdobne</string>
+    <string name="settings_decorative_animations_description">Obroty, przemiany kształtów i wsuwające się karty. Przejścia między ekranami zostają</string>
+    <string name="settings_progress_style">Paski postępu</string>
+    <string name="settings_progress_style_description">Jak rysowane są paski użycia i postępu</string>
+    <string name="settings_progress_style_wavy">Faliste</string>
+    <string name="settings_progress_style_straight">Proste</string>
     <string name="settings_home_columns">Kolumny</string>
     <string name="settings_home_columns_description">Liczba kolumn siatki na ekranie głównym</string>
     <string name="settings_notifications_interval">Częstotliwość odświeżania</string>

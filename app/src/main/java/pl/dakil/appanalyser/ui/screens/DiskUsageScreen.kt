@@ -41,7 +41,6 @@ import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
@@ -105,6 +104,7 @@ import pl.dakil.appanalyser.ui.components.filesystem.ShareMethodSheet
 import pl.dakil.appanalyser.ui.components.filesystem.openFile
 import pl.dakil.appanalyser.ui.components.filesystem.openHotspotSettings
 import pl.dakil.appanalyser.ui.components.filesystem.shareFile
+import pl.dakil.appanalyser.ui.designsystem.AppLinearProgress
 import pl.dakil.appanalyser.ui.designsystem.BackButton
 import pl.dakil.appanalyser.ui.designsystem.ConnectedToggleRow
 import pl.dakil.appanalyser.ui.designsystem.EmptyState
@@ -630,7 +630,7 @@ private fun AnalysisContent(
     }
 
     Column(Modifier.fillMaxSize()) {
-        AnimatedVisibility(visible = isBusy) { LinearWavyProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = Spacing.gutter)) }
+        AnimatedVisibility(visible = isBusy) { AppLinearProgress(Modifier.fillMaxWidth().padding(horizontal = Spacing.gutter)) }
 
         BoxWithConstraints(Modifier.weight(1f)) {
             val wide = maxWidth > maxHeight && maxWidth >= 600.dp

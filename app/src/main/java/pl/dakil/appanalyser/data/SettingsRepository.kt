@@ -16,6 +16,9 @@ enum class AppColorTheme { DAKILS_ANALYSER, DYNAMIC, OCEAN, LAVENDER, SUNSET, RO
 
 enum class DarkThemeOption { FOLLOW_SYSTEM, LIGHT, DARK }
 
+/** How the app draws progress and usage bars. */
+enum class ProgressStyle { WAVY, STRAIGHT }
+
 /** The bottom-bar tab the app opens on at launch. */
 enum class StartTab { HOME, DEVICE, APPS, FILES }
 
@@ -55,6 +58,20 @@ class SettingsRepository private constructor(context: Context) {
 
     private val _hapticsEnabled = MutableStateFlow(prefs.getBoolean(KEY_HAPTICS_ENABLED, true))
     val hapticsEnabled: StateFlow<Boolean> = _hapticsEnabled.asStateFlow()
+
+    /** Live numbers roll their changing digits; off, they just change. */
+    private val _animatedNumbers = MutableStateFlow(prefs.getBoolean(KEY_ANIMATED_NUMBERS, true))
+    val animatedNumbers: StateFlow<Boolean> = _animatedNumbers.asStateFlow()
+
+    /** Spins, shape morphs and cascades as content appears; screen transitions are not affected. */
+    private val _decorativeAnimations = MutableStateFlow(prefs.getBoolean(KEY_DECORATIVE_ANIMATIONS, true))
+    val decorativeAnimations: StateFlow<Boolean> = _decorativeAnimations.asStateFlow()
+
+    private val _progressStyle = MutableStateFlow(
+        runCatching { ProgressStyle.valueOf(prefs.getString(KEY_PROGRESS_STYLE, null)!!) }
+            .getOrDefault(ProgressStyle.WAVY)
+    )
+    val progressStyle: StateFlow<ProgressStyle> = _progressStyle.asStateFlow()
 
     /** Read once when the navigation graph is built, so a change applies from the next launch. */
     private val _startTab = MutableStateFlow(
@@ -196,6 +213,21 @@ class SettingsRepository private constructor(context: Context) {
         _hapticsEnabled.value = enabled
     }
 
+    fun setAnimatedNumbers(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_ANIMATED_NUMBERS, enabled).apply()
+        _animatedNumbers.value = enabled
+    }
+
+    fun setDecorativeAnimations(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_DECORATIVE_ANIMATIONS, enabled).apply()
+        _decorativeAnimations.value = enabled
+    }
+
+    fun setProgressStyle(style: ProgressStyle) {
+        prefs.edit().putString(KEY_PROGRESS_STYLE, style.name).apply()
+        _progressStyle.value = style
+    }
+
     fun setStartTab(tab: StartTab) {
         prefs.edit().putString(KEY_START_TAB, tab.name).apply()
         _startTab.value = tab
@@ -309,6 +341,9 @@ class SettingsRepository private constructor(context: Context) {
         private const val KEY_PURE_BLACK = "pure_black"
         private const val KEY_HAPTICS_ENABLED = "haptics_enabled"
         private const val KEY_START_TAB = "start_tab"
+        private const val KEY_ANIMATED_NUMBERS = "animated_numbers"
+        private const val KEY_DECORATIVE_ANIMATIONS = "decorative_animations"
+        private const val KEY_PROGRESS_STYLE = "progress_style"
         private const val KEY_HOME_COLUMNS = "home_columns"
         private const val KEY_NOTIFICATION_INTERVAL = "notification_interval_seconds"
         private const val KEY_FILE_SORT_ORDER = "file_sort_order"

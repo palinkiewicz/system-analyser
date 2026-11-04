@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -29,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.domain.FileOperationKind
 import pl.dakil.appanalyser.domain.FileOperationProgress
+import pl.dakil.appanalyser.ui.designsystem.AppLinearProgress
 import pl.dakil.appanalyser.ui.designsystem.ShapedIcon
 import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbols
 import pl.dakil.appanalyser.ui.theme.Spacing
@@ -107,11 +107,11 @@ fun OperationProgressCard(
                 }
             }
             if (measuring) {
-                LinearWavyProgressIndicator(Modifier.fillMaxWidth().padding(top = Spacing.m, end = Spacing.s))
+                AppLinearProgress(Modifier.fillMaxWidth().padding(top = Spacing.m, end = Spacing.s))
             } else {
-                LinearWavyProgressIndicator(
-                    progress = { fraction },
+                AppLinearProgress(
                     modifier = Modifier.fillMaxWidth().padding(top = Spacing.m, end = Spacing.s),
+                    progress = { fraction },
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {

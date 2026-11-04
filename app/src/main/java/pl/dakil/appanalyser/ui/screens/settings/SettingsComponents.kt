@@ -30,6 +30,7 @@ import kotlin.math.roundToInt
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.AppColorTheme
 import pl.dakil.appanalyser.data.DarkThemeOption
+import pl.dakil.appanalyser.data.ProgressStyle
 import pl.dakil.appanalyser.data.StartTab
 import pl.dakil.appanalyser.domain.DualPaneStyle
 import pl.dakil.appanalyser.domain.FileCompactView
@@ -312,6 +313,14 @@ fun AppColorTheme.label(): String = stringResource(
         AppColorTheme.SUNSET -> R.string.theme_sunset
         AppColorTheme.ROSE -> R.string.theme_rose
         AppColorTheme.TEAL -> R.string.theme_teal
+    }
+)
+
+@Composable
+fun ProgressStyle.label(): String = stringResource(
+    when (this) {
+        ProgressStyle.WAVY -> R.string.settings_progress_style_wavy
+        ProgressStyle.STRAIGHT -> R.string.settings_progress_style_straight
     }
 )
 

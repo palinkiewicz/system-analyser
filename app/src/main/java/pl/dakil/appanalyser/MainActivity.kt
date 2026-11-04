@@ -16,6 +16,7 @@ import pl.dakil.appanalyser.navigation.AppNavigation
 import pl.dakil.appanalyser.service.PinnedNotificationsManager
 import pl.dakil.appanalyser.service.ShareServerService
 import pl.dakil.appanalyser.ui.theme.AppAnalyserTheme
+import pl.dakil.appanalyser.ui.theme.MotionPreferences
 import pl.dakil.appanalyser.viewmodel.AppAnalyzerViewModel
 
 class MainActivity : ComponentActivity() {
@@ -37,11 +38,15 @@ class MainActivity : ComponentActivity() {
             val darkThemeOption by settings.darkThemeOption.collectAsState()
             val pureBlack by settings.pureBlack.collectAsState()
             val hapticsEnabled by settings.hapticsEnabled.collectAsState()
+            val animatedNumbers by settings.animatedNumbers.collectAsState()
+            val decorative by settings.decorativeAnimations.collectAsState()
+            val progressStyle by settings.progressStyle.collectAsState()
             AppAnalyserTheme(
                 colorTheme = colorTheme,
                 darkThemeOption = darkThemeOption,
                 pureBlack = pureBlack,
                 hapticsEnabled = hapticsEnabled,
+                motion = MotionPreferences(animatedNumbers, decorative, progressStyle),
             ) {
                 val viewModel: AppAnalyzerViewModel = viewModel()
                 AppNavigation(

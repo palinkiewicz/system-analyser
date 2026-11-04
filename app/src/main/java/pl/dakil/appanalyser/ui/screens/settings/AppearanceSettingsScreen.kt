@@ -37,12 +37,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.AppColorTheme
 import pl.dakil.appanalyser.data.DarkThemeOption
+import pl.dakil.appanalyser.data.ProgressStyle
 import pl.dakil.appanalyser.data.StartTab
 import pl.dakil.appanalyser.ui.designsystem.ConnectedToggleRow
 import pl.dakil.appanalyser.ui.designsystem.MorphShape
 import pl.dakil.appanalyser.ui.designsystem.SegmentedGroup
-import pl.dakil.appanalyser.ui.designsystem.bleedHorizontally
 import pl.dakil.appanalyser.ui.designsystem.ToggleOption
+import pl.dakil.appanalyser.ui.designsystem.bleedHorizontally
+import pl.dakil.appanalyser.ui.designsystem.decorativeMotion
+import pl.dakil.appanalyser.ui.designsystem.decorativeSpec
 import pl.dakil.appanalyser.ui.designsystem.icon.AppIcon
 import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbols
 import pl.dakil.appanalyser.ui.designsystem.pressScale
@@ -62,6 +65,9 @@ fun AppearanceSettingsScreen(
     val pureBlack by viewModel.pureBlack.collectAsState()
     val hapticsEnabled by viewModel.hapticsEnabled.collectAsState()
     val startTab by viewModel.startTab.collectAsState()
+    val animatedNumbers by viewModel.animatedNumbers.collectAsState()
+    val decorativeAnimations by viewModel.decorativeAnimations.collectAsState()
+    val progressStyle by viewModel.progressStyle.collectAsState()
     val haptics = rememberHaptics()
 
     SettingsSubscreen(stringResource(R.string.settings_appearance), onNavigateBack) {
@@ -128,6 +134,25 @@ fun AppearanceSettingsScreen(
                 checked = hapticsEnabled,
                 onCheckedChange = { viewModel.setHapticsEnabled(it) }
             )
+            SwitchRow(
+                title = stringResource(R.string.settings_animated_numbers),
+                summary = stringResource(R.string.settings_animated_numbers_description),
+                checked = animatedNumbers,
+                onCheckedChange = { viewModel.setAnimatedNumbers(it) }
+            )
+            SwitchRow(
+                title = stringResource(R.string.settings_decorative_animations),
+                summary = stringResource(R.string.settings_decorative_animations_description),
+                checked = decorativeAnimations,
+                onCheckedChange = { viewModel.setDecorativeAnimations(it) }
+            )
+            SelectRow(
+                title = stringResource(R.string.settings_progress_style),
+                summary = stringResource(R.string.settings_progress_style_description),
+                selectedLabel = progressStyle.label(),
+                options = ProgressStyle.entries.map { it to it.label() },
+                onSelect = { viewModel.setProgressStyle(it) }
+            )
         }
     }
 }
@@ -147,10 +172,12 @@ private fun ThemeColorSwatch(
     val morph = remember { Morph(MaterialShapes.Circle, MaterialShapes.Cookie9Sided) }
     val progress by animateFloatAsState(
         targetValue = if (isSelected) 1f else 0f,
-        animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
+        animationSpec = decorativeSpec(MaterialTheme.motionScheme.defaultSpatialSpec()),
         label = "swatchMorph",
     )
     val interactionSource = remember { MutableInteractionSource() }
+    // The spin is decoration; without it the selected swatch still shows as a cookie.
+    val spin = if (decorativeMotion) SWATCH_SPIN else 0f
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -168,7 +195,7 @@ private fun ThemeColorSwatch(
             modifier = Modifier
                 .size(72.dp)
                 .pressScale(interactionSource, pressedScale = 0.9f)
-                .graphicsLayer { rotationZ = progress * 40f }
+                .graphicsLayer { rotationZ = progress * spin }
                 .clip(MorphShape(morph, progress)),
             contentAlignment = Alignment.Center
         ) {
@@ -185,7 +212,7 @@ private fun ThemeColorSwatch(
                 modifier = Modifier
                     .graphicsLayer {
                         // Counter-rotate so the check stays upright while the cookie spins.
-                        rotationZ = -progress * 40f
+                        rotationZ = -progress * spin
                         scaleX = progress
                         scaleY = progress
                         alpha = progress.coerceIn(0f, 1f)
@@ -203,3 +230,6 @@ private fun ThemeColorSwatch(
         )
     }
 }
+
+
+private const val SWATCH_SPIN = 40f

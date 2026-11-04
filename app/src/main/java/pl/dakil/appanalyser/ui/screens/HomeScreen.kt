@@ -77,6 +77,8 @@ import pl.dakil.appanalyser.ui.components.homegrid.rememberWidgetGridState
 import pl.dakil.appanalyser.ui.designsystem.CollapsingScaffold
 import pl.dakil.appanalyser.ui.designsystem.EmptyState
 import pl.dakil.appanalyser.ui.designsystem.MorphShape
+import pl.dakil.appanalyser.ui.designsystem.decorativeMotion
+import pl.dakil.appanalyser.ui.designsystem.decorativeSpec
 import pl.dakil.appanalyser.ui.designsystem.icon.AppIcon
 import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbols
 import pl.dakil.appanalyser.ui.designsystem.pressScale
@@ -336,9 +338,11 @@ private fun TrashTarget(
         )
         val progress by animateFloatAsState(
             targetValue = if (hovered) 1f else 0f,
-            animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+            animationSpec = decorativeSpec(MaterialTheme.motionScheme.fastSpatialSpec()),
             label = "trashMorph"
         )
+        // Without decorative motion the target still swells and turns red when hovered, untilted.
+        val tilt = if (decorativeMotion) 30f else 0f
         val morph = remember { Morph(MaterialShapes.Circle, MaterialShapes.SoftBurst) }
         Surface(
             shape = MorphShape(morph, progress),
@@ -350,7 +354,7 @@ private fun TrashTarget(
                     val scale = 1f + 0.15f * progress
                     scaleX = scale
                     scaleY = scale
-                    rotationZ = 30f * progress
+                    rotationZ = tilt * progress
                 }
                 .onGloballyPositioned { onPositioned(it.boundsInRoot()) }
         ) {
@@ -362,7 +366,7 @@ private fun TrashTarget(
                     filled = hovered,
                     modifier = Modifier
                         .size(28.dp)
-                        .graphicsLayer { rotationZ = -30f * progress }
+                        .graphicsLayer { rotationZ = -tilt * progress }
                 )
             }
         }

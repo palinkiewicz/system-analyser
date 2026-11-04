@@ -17,12 +17,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import pl.dakil.appanalyser.ui.theme.LocalMotionPreferences
 import pl.dakil.appanalyser.ui.theme.tabular
 
 /**
  * Text whose digits roll vertically when they change, odometer-style: up when a digit grows, down
  * when it shrinks. Meant for live values that update at most about once a second; characters are
  * keyed from the end so units and the last digits stay put while the number grows a digit.
+ * With animated numbers off in Appearance it is plain text that simply changes.
  */
 @Composable
 fun RollingNumber(
@@ -31,9 +33,13 @@ fun RollingNumber(
     style: TextStyle = LocalTextStyle.current,
     color: Color = Color.Unspecified,
 ) {
+    val tabularStyle = style.tabular()
+    if (!LocalMotionPreferences.current.animatedNumbers) {
+        Text(text, modifier = modifier, style = tabularStyle, color = color, maxLines = 1)
+        return
+    }
     val spatial = MaterialTheme.motionScheme.fastSpatialSpec<androidx.compose.ui.unit.IntOffset>()
     val effects = MaterialTheme.motionScheme.fastEffectsSpec<Float>()
-    val tabularStyle = style.tabular()
     Row(modifier) {
         text.forEachIndexed { index, char ->
             key(text.length - index) {

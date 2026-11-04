@@ -32,6 +32,7 @@ import pl.dakil.appanalyser.BuildConfig
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.ui.designsystem.SegmentedGroup
 import pl.dakil.appanalyser.ui.designsystem.ShapedIcon
+import pl.dakil.appanalyser.ui.designsystem.decorativeMotion
 import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbols
 import pl.dakil.appanalyser.ui.screens.settings.NavigationRow
 import pl.dakil.appanalyser.ui.screens.settings.SectionHeader
@@ -118,8 +119,10 @@ fun SettingsScreen(
 /** The app's "business card": its glyph in a cookie that settles into place, name and tagline. */
 @Composable
 private fun Header() {
-    // A small flourish: the cookie settles into place each time the tab is opened.
-    val rotation = remember { Animatable(-45f) }
+    // A small flourish: the cookie settles into place each time the tab is opened (decorative, so
+    // it simply sits still with decorative motion off).
+    val decorative = decorativeMotion
+    val rotation = remember { Animatable(if (decorative) -45f else 0f) }
     val spring = MaterialTheme.motionScheme.slowSpatialSpec<Float>()
     LaunchedEffect(Unit) { rotation.animateTo(0f, spring) }
     Column(

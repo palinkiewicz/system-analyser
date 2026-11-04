@@ -55,6 +55,8 @@ import pl.dakil.appanalyser.ui.designsystem.MorphShape
 import pl.dakil.appanalyser.ui.designsystem.RollingNumber
 import pl.dakil.appanalyser.ui.designsystem.ShapedIcon
 import pl.dakil.appanalyser.ui.designsystem.UsageBar
+import pl.dakil.appanalyser.ui.designsystem.decorativeMotion
+import pl.dakil.appanalyser.ui.designsystem.decorativeSpec
 import pl.dakil.appanalyser.ui.designsystem.icon.AppIcon
 import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbol
 import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbols
@@ -530,9 +532,10 @@ private fun ChargeBadge(charging: Boolean) {
     val morph = remember { Morph(MaterialShapes.Cookie9Sided, MaterialShapes.Sunny) }
     val progress by animateFloatAsState(
         targetValue = if (charging) 1f else 0f,
-        animationSpec = MaterialTheme.motionScheme.slowSpatialSpec(),
+        animationSpec = decorativeSpec(MaterialTheme.motionScheme.slowSpatialSpec()),
         label = "chargeMorph",
     )
+    val spin = if (decorativeMotion) 90f else 0f
     val container = if (charging) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer
     val content = if (charging) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
     Box(Modifier.size(64.dp), contentAlignment = Alignment.Center) {
@@ -541,7 +544,7 @@ private fun ChargeBadge(charging: Boolean) {
             shape = MorphShape(morph, progress),
             modifier = Modifier
                 .matchParentSize()
-                .graphicsLayer { rotationZ = progress * 90f },
+                .graphicsLayer { rotationZ = progress * spin },
         ) {}
         AppIcon(
             if (charging) AppSymbols.Bolt else AppSymbols.BatteryFull,

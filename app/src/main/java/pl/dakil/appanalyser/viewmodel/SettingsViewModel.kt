@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.StateFlow
 import pl.dakil.appanalyser.data.AppColorTheme
 import pl.dakil.appanalyser.data.DarkThemeOption
 import pl.dakil.appanalyser.data.PinnedNotificationsRepository
+import pl.dakil.appanalyser.data.ProgressStyle
 import pl.dakil.appanalyser.data.SettingsRepository
 import pl.dakil.appanalyser.data.StartTab
 import pl.dakil.appanalyser.domain.DualPaneStyle
@@ -29,6 +30,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     val pureBlack: StateFlow<Boolean> = settings.pureBlack
     val hapticsEnabled: StateFlow<Boolean> = settings.hapticsEnabled
     val startTab: StateFlow<StartTab> = settings.startTab
+    val animatedNumbers: StateFlow<Boolean> = settings.animatedNumbers
+    val decorativeAnimations: StateFlow<Boolean> = settings.decorativeAnimations
+    val progressStyle: StateFlow<ProgressStyle> = settings.progressStyle
     val homeColumns: StateFlow<Int> = settings.homeColumns
     val notificationIntervalSeconds: StateFlow<Int> = settings.notificationIntervalSeconds
     val pinnedCards: StateFlow<List<PinnedCard>> = pinnedNotifications.pinned
@@ -53,6 +57,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setPureBlack(enabled: Boolean) = settings.setPureBlack(enabled)
     fun setHapticsEnabled(enabled: Boolean) = settings.setHapticsEnabled(enabled)
     fun setStartTab(tab: StartTab) = settings.setStartTab(tab)
+    fun setAnimatedNumbers(enabled: Boolean) = settings.setAnimatedNumbers(enabled)
+    fun setDecorativeAnimations(enabled: Boolean) = settings.setDecorativeAnimations(enabled)
+    fun setProgressStyle(style: ProgressStyle) = settings.setProgressStyle(style)
     fun setHomeColumns(columns: Int) = settings.setHomeColumns(columns)
     fun setNotificationIntervalSeconds(seconds: Int) =
         settings.setNotificationIntervalSeconds(seconds)

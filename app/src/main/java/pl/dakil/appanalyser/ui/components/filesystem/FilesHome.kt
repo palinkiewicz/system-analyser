@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
@@ -42,7 +43,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -55,6 +55,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.Morph
+import java.io.File
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.domain.FileEntry
 import pl.dakil.appanalyser.domain.FileFavorite
@@ -67,6 +68,8 @@ import pl.dakil.appanalyser.ui.designsystem.AppMenuLabel
 import pl.dakil.appanalyser.ui.designsystem.MorphShape
 import pl.dakil.appanalyser.ui.designsystem.ShapedIcon
 import pl.dakil.appanalyser.ui.designsystem.UsageBar
+import pl.dakil.appanalyser.ui.designsystem.decorativeMotion
+import pl.dakil.appanalyser.ui.designsystem.decorativeSpec
 import pl.dakil.appanalyser.ui.designsystem.entrance
 import pl.dakil.appanalyser.ui.designsystem.icon.AppIcon
 import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbols
@@ -74,7 +77,6 @@ import pl.dakil.appanalyser.ui.designsystem.pressScale
 import pl.dakil.appanalyser.ui.designsystem.rememberHaptics
 import pl.dakil.appanalyser.ui.designsystem.segmentedItemColors
 import pl.dakil.appanalyser.ui.theme.Spacing
-import java.io.File
 
 /** A favourite's colours: its badge container and what is drawn on it. */
 @Immutable
@@ -419,10 +421,11 @@ private fun ColorSwatch(entry: FileEntry, tint: FavoriteTint, label: String, sel
     val morph = remember { Morph(MaterialShapes.Circle, MaterialShapes.Cookie9Sided) }
     val progress by animateFloatAsState(
         if (selected) 1f else 0f,
-        MaterialTheme.motionScheme.defaultSpatialSpec(),
+        decorativeSpec(MaterialTheme.motionScheme.defaultSpatialSpec()),
         label = "swatchMorph",
     )
     val interactionSource = remember { MutableInteractionSource() }
+    val spin = if (decorativeMotion) 40f else 0f
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -435,7 +438,7 @@ private fun ColorSwatch(entry: FileEntry, tint: FavoriteTint, label: String, sel
             modifier = Modifier
                 .size(56.dp)
                 .pressScale(interactionSource, pressedScale = 0.9f)
-                .graphicsLayer { rotationZ = progress * 40f }
+                .graphicsLayer { rotationZ = progress * spin }
                 .background(tint.container, MorphShape(morph, progress)),
         ) {
             AppIcon(
@@ -444,7 +447,7 @@ private fun ColorSwatch(entry: FileEntry, tint: FavoriteTint, label: String, sel
                 tint = tint.content,
                 filled = true,
                 modifier = Modifier
-                    .graphicsLayer { rotationZ = -progress * 40f }
+                    .graphicsLayer { rotationZ = -progress * spin }
                     .size(24.dp),
             )
         }

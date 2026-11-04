@@ -13,6 +13,7 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
@@ -24,9 +25,24 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import pl.dakil.appanalyser.data.AppColorTheme
 import pl.dakil.appanalyser.data.DarkThemeOption
+import pl.dakil.appanalyser.data.ProgressStyle
 
 /** Whether the resolved app theme is dark, which can differ from the system setting. */
 val LocalDarkTheme = staticCompositionLocalOf { false }
+
+/**
+ * The user's motion preferences from Appearance: whether live numbers roll ([animatedNumbers]),
+ * whether the decorative motion plays — spins, shape morphs, cascades — ([decorative]) and how
+ * progress bars are drawn. Screen transitions don't depend on any of it.
+ */
+@Immutable
+data class MotionPreferences(
+    val animatedNumbers: Boolean = true,
+    val decorative: Boolean = true,
+    val progressStyle: ProgressStyle = ProgressStyle.WAVY,
+)
+
+val LocalMotionPreferences = staticCompositionLocalOf { MotionPreferences() }
 
 // Pure black variant for OLED screens, applied on top of any dark scheme.
 private fun ColorScheme.toPureBlack() = copy(
@@ -75,6 +91,7 @@ fun AppAnalyserTheme(
     darkThemeOption: DarkThemeOption = DarkThemeOption.FOLLOW_SYSTEM,
     pureBlack: Boolean = false,
     hapticsEnabled: Boolean = true,
+    motion: MotionPreferences = MotionPreferences(),
     content: @Composable () -> Unit
 ) {
     val darkTheme = when (darkThemeOption) {
@@ -105,6 +122,7 @@ fun AppAnalyserTheme(
     CompositionLocalProvider(
         LocalDarkTheme provides darkTheme,
         LocalHapticFeedback provides haptics,
+        LocalMotionPreferences provides motion,
     ) {
         MaterialExpressiveTheme(
             colorScheme = animateColorScheme(colorScheme),

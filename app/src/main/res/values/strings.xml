@@ -106,6 +106,14 @@
     <string name="settings_feel">Feel</string>
     <string name="settings_haptics">Haptic feedback</string>
     <string name="settings_haptics_description">Subtle vibrations when you switch, drag or confirm something</string>
+    <string name="settings_animated_numbers">Animated numbers</string>
+    <string name="settings_animated_numbers_description">Changing digits roll into place, odometer-style</string>
+    <string name="settings_decorative_animations">Decorative animations</string>
+    <string name="settings_decorative_animations_description">Spins, shape morphs and cards sliding in. Screen transitions stay</string>
+    <string name="settings_progress_style">Progress bars</string>
+    <string name="settings_progress_style_description">How usage and progress bars are drawn</string>
+    <string name="settings_progress_style_wavy">Wavy</string>
+    <string name="settings_progress_style_straight">Straight</string>
     <string name="settings_home_columns">Columns</string>
     <string name="settings_home_columns_description">Number of columns on the home screen grid</string>
     <string name="settings_notifications_interval">Update interval</string>
