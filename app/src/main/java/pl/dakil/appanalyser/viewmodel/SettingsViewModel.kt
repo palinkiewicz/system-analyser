@@ -33,6 +33,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     val showHiddenFiles: StateFlow<Boolean> = settings.showHiddenFiles
     val confirmFileDeletion: StateFlow<Boolean> = settings.confirmFileDeletion
     val fileDropAction: StateFlow<FileDropAction> = settings.fileDropAction
+    val confirmFileTransfer: StateFlow<Boolean> = settings.confirmFileTransfer
     val editorMonospace: StateFlow<Boolean> = settings.editorMonospace
     val editorWordWrap: StateFlow<Boolean> = settings.editorWordWrap
     val editorSyntaxHighlighting: StateFlow<Boolean> = settings.editorSyntaxHighlighting
@@ -55,6 +56,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setShowHiddenFiles(enabled: Boolean) = settings.setShowHiddenFiles(enabled)
     fun setConfirmFileDeletion(enabled: Boolean) = settings.setConfirmFileDeletion(enabled)
     fun setFileDropAction(action: FileDropAction) = settings.setFileDropAction(action)
+    fun setConfirmFileTransfer(enabled: Boolean) = settings.setConfirmFileTransfer(enabled)
     fun setEditorMonospace(enabled: Boolean) = settings.setEditorMonospace(enabled)
     fun setEditorWordWrap(enabled: Boolean) = settings.setEditorWordWrap(enabled)
     fun setEditorSyntaxHighlighting(enabled: Boolean) = settings.setEditorSyntaxHighlighting(enabled)

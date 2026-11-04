@@ -130,6 +130,7 @@ import pl.dakil.appanalyser.ui.components.filesystem.OperationProgressCard
 import pl.dakil.appanalyser.ui.components.filesystem.PropertiesDialog
 import pl.dakil.appanalyser.ui.components.filesystem.ScanFolderDialog
 import pl.dakil.appanalyser.ui.components.filesystem.ShareMethodSheet
+import pl.dakil.appanalyser.ui.components.filesystem.TransferConfirmDialog
 import pl.dakil.appanalyser.ui.components.filesystem.fileDragSource
 import pl.dakil.appanalyser.ui.components.filesystem.openFile
 import pl.dakil.appanalyser.ui.components.filesystem.openHotspotSettings
@@ -164,6 +165,14 @@ private val AUTO_SCROLL_EDGE = 56.dp
 /** A drop waiting for the user to pick Move or Copy, with where the finger lifted. */
 private data class PendingDrop(val payload: FileDragPayload, val target: DropTarget, val at: Offset)
 
+/** A copy or move waiting on the optional confirmation; [source] is null for a paste. */
+private data class PendingTransfer(
+    val paths: List<String>,
+    val destination: String,
+    val operation: ClipboardOperation,
+    val source: PaneId?,
+)
+
 @Composable
 fun FileSystemScreen(
     onOpenEditor: (String) -> Unit,
@@ -189,6 +198,7 @@ fun FileSystemScreen(
     val dual by viewModel.dualPane.collectAsState()
     val paneSplit by viewModel.paneSplit.collectAsState()
     val dropAction by viewModel.dropAction.collectAsState()
+    val confirmTransfer by viewModel.confirmTransfer.collectAsState()
 
     // Every folder-level action — the bars, the FAB, paste, back — follows the active pane. In
     // single pane mode that is always the primary one.
@@ -229,6 +239,7 @@ fun FileSystemScreen(
         viewModel.messages.collect { snackbarHostState.showSnackbar(resources.getString(it)) }
     }
     val openFailedMessage = stringResource(R.string.files_open_failed)
+    val haptics = rememberHaptics()
 
     var fabMenuExpanded by remember { mutableStateOf(false) }
     var createFolder by remember { mutableStateOf(false) }
@@ -238,6 +249,7 @@ fun FileSystemScreen(
     var propertiesTarget by remember { mutableStateOf<FileEntry?>(null) }
     var scanPrompt by remember { mutableStateOf<Pair<String, ScanFreshness>?>(null) }
     var pendingDrop by remember { mutableStateOf<PendingDrop?>(null) }
+    var pendingTransfer by remember { mutableStateOf<PendingTransfer?>(null) }
 
     // Inside a folder the analyser opens on that folder. A current scan shows straight away;
     // otherwise the user is asked first, and only that folder is scanned — never the whole volume.
@@ -260,6 +272,25 @@ fun FileSystemScreen(
             ) {
                 scope.launch { snackbarHostState.showSnackbar(openFailedMessage) }
             }
+        }
+    }
+
+    fun runTransfer(transfer: PendingTransfer) {
+        if (transfer.source == null) {
+            viewModel.paste(transfer.operation)
+        } else {
+            viewModel.transfer(transfer.paths, transfer.destination, transfer.operation, transfer.source)
+        }
+    }
+
+    // Every copy and move — drops, the to-other-pane actions and paste — comes through here, so the
+    // optional confirmation covers all of them alike.
+    fun requestTransfer(transfer: PendingTransfer) {
+        if (confirmTransfer) {
+            pendingTransfer = transfer
+        } else {
+            haptics.confirm()
+            runTransfer(transfer)
         }
     }
 
@@ -311,7 +342,6 @@ fun FileSystemScreen(
         return
     }
 
-    val haptics = rememberHaptics()
     val inFolder = currentPath != null
     val selecting = selection.isNotEmpty()
 
@@ -364,8 +394,7 @@ fun FileSystemScreen(
                         return
                     }
                 }
-                haptics.confirm()
-                viewModel.transfer(payload.paths, target.destination, operation, payload.source)
+                requestTransfer(PendingTransfer(payload.paths, target.destination, operation, payload.source))
             }
         }
     }
@@ -506,12 +535,14 @@ fun FileSystemScreen(
                     onCopy = { viewModel.copySelection() },
                     onCut = { viewModel.cutSelection() },
                     onCopyToOther = {
-                        haptics.confirm()
-                        viewModel.copySelectionToOther()
+                        otherPath?.let {
+                            requestTransfer(PendingTransfer(selection.toList(), it, ClipboardOperation.COPY, activeId))
+                        }
                     },
                     onMoveToOther = {
-                        haptics.confirm()
-                        viewModel.moveSelectionToOther()
+                        otherPath?.let {
+                            requestTransfer(PendingTransfer(selection.toList(), it, ClipboardOperation.MOVE, activeId))
+                        }
                     },
                     onRename = { renameTarget = selection.first() },
                     onShare = { shareTarget = selection.firstOrNull() },
@@ -563,8 +594,10 @@ fun FileSystemScreen(
                     )
                     FilledTonalButton(
                         onClick = {
-                            haptics.confirm()
-                            viewModel.paste()
+                            val path = currentPath
+                            if (clip != null && path != null) {
+                                requestTransfer(PendingTransfer(clip.paths, path, clip.operation, source = null))
+                            }
                         },
                     ) {
                         AppIcon(AppSymbols.ContentPaste, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -624,10 +657,11 @@ fun FileSystemScreen(
                                 symbol = AppSymbols.DriveFileMove,
                                 onClick = {
                                     pendingDrop = null
-                                    haptics.confirm()
-                                    viewModel.transfer(
-                                        drop.payload.paths, drop.target.destination,
-                                        ClipboardOperation.MOVE, drop.payload.source,
+                                    requestTransfer(
+                                        PendingTransfer(
+                                            drop.payload.paths, drop.target.destination,
+                                            ClipboardOperation.MOVE, drop.payload.source,
+                                        )
                                     )
                                 },
                             )
@@ -636,10 +670,11 @@ fun FileSystemScreen(
                                 symbol = AppSymbols.FileCopy,
                                 onClick = {
                                     pendingDrop = null
-                                    haptics.confirm()
-                                    viewModel.transfer(
-                                        drop.payload.paths, drop.target.destination,
-                                        ClipboardOperation.COPY, drop.payload.source,
+                                    requestTransfer(
+                                        PendingTransfer(
+                                            drop.payload.paths, drop.target.destination,
+                                            ClipboardOperation.COPY, drop.payload.source,
+                                        )
                                     )
                                 },
                             )
@@ -684,6 +719,20 @@ fun FileSystemScreen(
                 renameTarget = null
             },
             onDismiss = { renameTarget = null },
+        )
+    }
+
+    pendingTransfer?.let { transfer ->
+        TransferConfirmDialog(
+            paths = transfer.paths,
+            destination = transfer.destination,
+            operation = transfer.operation,
+            folderLabel = { folderLabel(it) },
+            onConfirm = { operation ->
+                pendingTransfer = null
+                runTransfer(transfer.copy(operation = operation))
+            },
+            onDismiss = { pendingTransfer = null },
         )
     }
 

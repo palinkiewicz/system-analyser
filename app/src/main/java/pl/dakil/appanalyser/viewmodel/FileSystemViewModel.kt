@@ -77,6 +77,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
     val dualPane: StateFlow<Boolean> = settings.filesDualPane
     val paneSplit: StateFlow<Float> = settings.filesPaneSplit
     val dropAction: StateFlow<FileDropAction> = settings.fileDropAction
+    val confirmTransfer: StateFlow<Boolean> = settings.confirmFileTransfer
 
     /** Re-checks the permission and loads whatever the current locations are. */
     fun refreshAccess() {
@@ -134,16 +135,6 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
     fun syncOtherPane() {
         val path = activePane.currentPath.value ?: return
         pane(activePane.id.other).open(path)
-    }
-
-    fun copySelectionToOther() = selectionToOther(ClipboardOperation.COPY)
-
-    fun moveSelectionToOther() = selectionToOther(ClipboardOperation.MOVE)
-
-    private fun selectionToOther(operation: ClipboardOperation) {
-        val source = activePane
-        val destination = pane(source.id.other).currentPath.value ?: return
-        transfer(source.selection.value.toList(), destination, operation, source.id)
     }
 
     /**
@@ -210,8 +201,9 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
         _clipboard.value = null
     }
 
-    fun paste() {
-        val clip = _clipboard.value ?: return
+    /** Pastes the clipboard into the active pane; [operation] overrides the staged one. */
+    fun paste(operation: ClipboardOperation? = null) {
+        val clip = _clipboard.value?.let { if (operation != null) it.copy(operation = operation) else it } ?: return
         val destination = activePane.currentPath.value ?: return
         if (isBusy) return
         _clipboard.value = null

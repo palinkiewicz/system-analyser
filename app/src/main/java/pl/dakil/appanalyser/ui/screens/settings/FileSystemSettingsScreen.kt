@@ -37,6 +37,7 @@ fun FileSystemSettingsScreen(
     val showHidden by viewModel.showHiddenFiles.collectAsState()
     val confirmDeletion by viewModel.confirmFileDeletion.collectAsState()
     val dropAction by viewModel.fileDropAction.collectAsState()
+    val confirmTransfer by viewModel.confirmFileTransfer.collectAsState()
     val monospace by viewModel.editorMonospace.collectAsState()
     val wordWrap by viewModel.editorWordWrap.collectAsState()
     val highlighting by viewModel.editorSyntaxHighlighting.collectAsState()
@@ -61,7 +62,7 @@ fun FileSystemSettingsScreen(
             )
         }
 
-        SectionHeader(stringResource(R.string.settings_file_system_dual_pane))
+        SectionHeader(stringResource(R.string.settings_file_system_transfers))
         SegmentedGroup {
             SelectRow(
                 title = stringResource(R.string.settings_file_drop_action),
@@ -69,6 +70,12 @@ fun FileSystemSettingsScreen(
                 selectedLabel = dropAction.label(),
                 options = FileDropAction.entries.map { it to it.label() },
                 onSelect = { viewModel.setFileDropAction(it) }
+            )
+            SwitchRow(
+                title = stringResource(R.string.settings_confirm_transfer),
+                summary = stringResource(R.string.settings_confirm_transfer_description),
+                checked = confirmTransfer,
+                onCheckedChange = { viewModel.setConfirmFileTransfer(it) }
             )
         }
 

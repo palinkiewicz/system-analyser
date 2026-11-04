@@ -41,7 +41,9 @@
     <string name="settings_show_hidden_files_description">Wyświetlaj pliki i foldery, których nazwa zaczyna się od kropki</string>
     <string name="settings_confirm_deletion">Potwierdzaj usuwanie</string>
     <string name="settings_confirm_deletion_description">Pytaj o potwierdzenie przed usunięciem plików</string>
-    <string name="settings_file_system_dual_pane">Dwa panele</string>
+    <string name="settings_file_system_transfers">Kopiowanie i przenoszenie</string>
+    <string name="settings_confirm_transfer">Potwierdzaj kopiowanie i przenoszenie</string>
+    <string name="settings_confirm_transfer_description">Zapytaj jeszcze raz i pokaż, dokąd trafią elementy</string>
     <string name="settings_file_drop_action">Po upuszczeniu plików</string>
     <string name="settings_file_drop_action_description">Co robi przeciągnięcie elementów na drugi panel lub folder</string>
     <string name="settings_file_drop_ask">Pytaj</string>
@@ -408,6 +410,24 @@
     <string name="files_move_to_other">Przenieś do drugiego panelu</string>
     <string name="files_parent_folder">Folder nadrzędny</string>
     <string name="files_resize_panes">Zmień rozmiar paneli</string>
+    <string name="files_move">Przenieś</string>
+    <string name="files_transfer_copy_one">Skopiować „%1$s”?</string>
+    <string name="files_transfer_move_one">Przenieść „%1$s”?</string>
+    <plurals name="files_transfer_copy_x">
+        <item quantity="one">Skopiować %1$d element?</item>
+        <item quantity="few">Skopiować %1$d elementy?</item>
+        <item quantity="many">Skopiować %1$d elementów?</item>
+        <item quantity="other">Skopiować %1$d elementu?</item>
+    </plurals>
+    <plurals name="files_transfer_move_x">
+        <item quantity="one">Przenieść %1$d element?</item>
+        <item quantity="few">Przenieść %1$d elementy?</item>
+        <item quantity="many">Przenieść %1$d elementów?</item>
+        <item quantity="other">Przenieść %1$d elementu?</item>
+    </plurals>
+    <string name="files_transfer_from">Skąd</string>
+    <string name="files_transfer_to">Dokąd</string>
+    <string name="files_transfer_several_folders">Kilka folderów</string>
     <string name="files_drop_into">Do „%1$s”</string>
     <string name="files_drop_move_here">Przenieś tutaj</string>
     <string name="files_drop_copy_here">Kopiuj tutaj</string>
