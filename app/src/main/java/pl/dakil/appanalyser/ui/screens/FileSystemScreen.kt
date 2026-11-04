@@ -17,6 +17,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -44,6 +45,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FloatingActionButtonMenu
@@ -445,7 +447,7 @@ fun FileSystemScreen(
             // The status bar strip stays, tinted like whichever bar is under it; the bar itself
             // folds away in stacked split screen, its height going to the panes.
             val stripColor by animateColorAsState(
-                if (selecting) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
+                if (selecting && !immersive) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
                 MaterialTheme.motionScheme.defaultEffectsSpec(),
                 label = "statusStrip",
             )
@@ -558,6 +560,7 @@ fun FileSystemScreen(
                     },
                     dual = dual,
                     compact = compact,
+                    selectionInHeader = immersive,
                     active = activeId == pane.id,
                     dragState = dragState,
                     bottomPadding = bottomPadding,
@@ -786,24 +789,6 @@ fun FileSystemScreen(
                 }
             }
 
-            // Without a top bar, a selection still needs its count and its way out: the selection bar
-            // slides down over the top pane's header instead of pushing the panes (and the row
-            // under the finger) down.
-            AnimatedVisibility(
-                visible = immersive && selecting,
-                enter = slideInVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) { -it } + fadeIn(),
-                exit = slideOutVertically(MaterialTheme.motionScheme.fastSpatialSpec()) { -it } + fadeOut(),
-                modifier = Modifier.align(Alignment.TopCenter),
-            ) {
-                Surface(shadowElevation = 3.dp) {
-                    SelectionTopBar(
-                        count = selection.size,
-                        onClose = { active.clearSelection() },
-                        onSelectAll = { active.selectAll() },
-                    )
-                }
-            }
-
             // Above both panes and the bars, so carried items are never drawn underneath anything.
             FileDragGhost(
                 state = dragState,
@@ -1017,6 +1002,8 @@ private fun FileBrowserPane(
     home: @Composable (horizontalPadding: Dp) -> Unit,
     dual: Boolean,
     compact: Boolean,
+    /** No top bar to carry the selection: the pane's own header turns into it. */
+    selectionInHeader: Boolean,
     active: Boolean,
     dragState: FileDragState,
     bottomPadding: Dp,
@@ -1127,6 +1114,9 @@ private fun FileBrowserPane(
             path = currentPath,
             roots = roots,
             dual = dual,
+            selectedCount = if (selectionInHeader) selection.size else 0,
+            onClearSelection = { pane.clearSelection() },
+            onSelectAll = { pane.selectAll() },
             onHome = { pane.goHome() },
             onNavigateUp = { pane.navigateUp() },
             onOpen = { pane.open(it) },
@@ -1225,11 +1215,76 @@ private fun PaneHeader(
     path: String?,
     roots: List<StorageRoot>,
     dual: Boolean,
+    /** Above zero, the header shows this pane's selection instead of its location. */
+    selectedCount: Int,
+    onClearSelection: () -> Unit,
+    onSelectAll: () -> Unit,
     onHome: () -> Unit,
     onNavigateUp: () -> Unit,
     onOpen: (String) -> Unit,
 ) {
     if (path == null) return
+    // Same height either way, so swapping never moves the rows (or the one under the finger).
+    val effectsIn = MaterialTheme.motionScheme.defaultEffectsSpec<Float>()
+    val spatialIn = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
+    val effectsOut = MaterialTheme.motionScheme.fastEffectsSpec<Float>()
+    AnimatedContent(
+        targetState = selectedCount > 0,
+        transitionSpec = {
+            (fadeIn(effectsIn) + scaleIn(spatialIn, initialScale = 0.92f)) togetherWith fadeOut(effectsOut)
+        },
+        label = "paneHeader",
+    ) { selecting ->
+        if (selecting) {
+            PaneSelectionHeader(selectedCount, onClearSelection, onSelectAll)
+        } else {
+            PaneLocationHeader(path, roots, dual, onHome, onNavigateUp, onOpen)
+        }
+    }
+}
+
+/**
+ * A pane's selection where its location usually is, for stacked split screen, which has no top
+ * bar: the way out, the count and select all, on a pill tinted like the selection top bar.
+ */
+@Composable
+private fun PaneSelectionHeader(count: Int, onClear: () -> Unit, onSelectAll: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.xs)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.secondaryContainer),
+    ) {
+        val content = MaterialTheme.colorScheme.onSecondaryContainer
+        IconButton(onClick = onClear, shapes = IconButtonDefaults.shapes()) {
+            AppIcon(AppSymbols.Close, contentDescription = stringResource(R.string.files_cancel), tint = content)
+        }
+        AnimatedContent(targetState = count, label = "paneSelectionCount", modifier = Modifier.weight(1f)) {
+            Text(
+                text = pluralStringResource(R.plurals.files_selected_x, it, it),
+                style = MaterialTheme.typography.titleSmallEmphasized,
+                color = content,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        IconButton(onClick = onSelectAll, shapes = IconButtonDefaults.shapes()) {
+            AppIcon(AppSymbols.SelectAll, contentDescription = stringResource(R.string.files_select_all), tint = content)
+        }
+    }
+}
+
+@Composable
+private fun PaneLocationHeader(
+    path: String,
+    roots: List<StorageRoot>,
+    dual: Boolean,
+    onHome: () -> Unit,
+    onNavigateUp: () -> Unit,
+    onOpen: (String) -> Unit,
+) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = Spacing.xs)) {
         if (dual) {
             IconButton(onClick = onNavigateUp, shapes = IconButtonDefaults.shapes()) {
