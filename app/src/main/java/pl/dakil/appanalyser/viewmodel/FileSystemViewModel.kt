@@ -87,6 +87,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
     val sortOrder: StateFlow<FileSortOrder> = settings.fileSortOrder
     val sortDescending: StateFlow<Boolean> = settings.fileSortDescending
     val showHidden: StateFlow<Boolean> = settings.showHiddenFiles
+    val sortFolders: StateFlow<Boolean> = settings.sortFolders
     val confirmDeletion: StateFlow<Boolean> = settings.confirmFileDeletion
     val dualPane: StateFlow<Boolean> = settings.filesDualPane
     val paneSplit: StateFlow<Float> = settings.filesPaneSplit
@@ -346,6 +347,11 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
 
     fun setSortDescending(descending: Boolean) {
         settings.setFileSortDescending(descending)
+        refreshAll()
+    }
+
+    fun setSortFolders(enabled: Boolean) {
+        settings.setSortFolders(enabled)
         refreshAll()
     }
 

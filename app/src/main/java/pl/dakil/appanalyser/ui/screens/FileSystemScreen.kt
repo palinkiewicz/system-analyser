@@ -1418,6 +1418,7 @@ private fun BrowserMenu(
     val sortOrder by viewModel.sortOrder.collectAsState()
     val descending by viewModel.sortDescending.collectAsState()
     val showHidden by viewModel.showHidden.collectAsState()
+    val sortFolders by viewModel.sortFolders.collectAsState()
     val haptics = rememberHaptics()
     val groups = if (extraGroup != null) 4 else 3
     AppMenu(expanded = expanded, onDismissRequest = onDismiss) {
@@ -1440,6 +1441,13 @@ private fun BrowserMenu(
                 checked = descending,
                 onCheckedChange = { viewModel.setSortDescending(it) },
                 symbol = AppSymbols.ArrowDownward,
+            )
+            // Off, folders stay A→Z whatever the files are sorted by.
+            AppMenuCheckItem(
+                text = stringResource(R.string.files_sort_folders),
+                checked = sortFolders,
+                onCheckedChange = { viewModel.setSortFolders(it) },
+                symbol = AppSymbols.Folder,
             )
             AppMenuCheckItem(
                 text = stringResource(R.string.files_show_hidden),

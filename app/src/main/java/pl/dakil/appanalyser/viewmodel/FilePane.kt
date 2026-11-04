@@ -62,6 +62,7 @@ class FilePane(
                 showHidden = settings.showHiddenFiles.value,
                 sort = settings.fileSortOrder.value,
                 descending = settings.fileSortDescending.value,
+                sortFolders = settings.sortFolders.value,
             )
             // A navigation that landed while this listing ran owns the pane now.
             if (_currentPath.value != path) return@launch

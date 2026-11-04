@@ -15,6 +15,7 @@ import pl.dakil.appanalyser.domain.FileOperationProgress
 import pl.dakil.appanalyser.domain.FileSortOrder
 import pl.dakil.appanalyser.domain.StorageRoot
 import pl.dakil.appanalyser.domain.TextLoadResult
+import pl.dakil.appanalyser.domain.fileComparator
 import java.io.File
 
 /**
@@ -86,12 +87,13 @@ class FileSystemRepository(private val context: Context) {
     // Listing
     // -----------------------------------------------------------------------
 
-    /** Children of [path], directories first, then ordered by [sort]. Never recurses. */
+    /** Children of [path], ordered by [fileComparator]. Never recurses. */
     suspend fun list(
         path: String,
         showHidden: Boolean,
         sort: FileSortOrder,
         descending: Boolean,
+        sortFolders: Boolean = true,
     ): List<FileEntry> = withContext(Dispatchers.IO) {
         val children = runCatching { File(path).listFiles() }.getOrNull() ?: return@withContext emptyList()
         val entries = children.asSequence()
@@ -108,21 +110,7 @@ class FileSystemRepository(private val context: Context) {
             }
             .toList()
 
-        // Ties always fall back to the name, so a re-list of equal-sized files is stable.
-        val byName = Comparator<FileEntry> { a, b ->
-            String.CASE_INSENSITIVE_ORDER.compare(a.name, b.name)
-        }
-        val comparator: Comparator<FileEntry> = when (sort) {
-            FileSortOrder.NAME -> byName
-            FileSortOrder.SIZE -> compareBy<FileEntry> { it.sizeBytes }.then(byName)
-            FileSortOrder.DATE -> compareBy<FileEntry> { it.lastModified }.then(byName)
-            FileSortOrder.TYPE -> compareBy<FileEntry> { it.extension }.then(byName)
-        }
-        // Folders stay pinned to the top regardless of direction, like the system file manager.
-        entries.sortedWith(
-            compareByDescending<FileEntry> { it.isDirectory }
-                .then(if (descending) comparator.reversed() else comparator)
-        )
+        entries.sortedWith(fileComparator(sort, descending, sortFolders))
     }
 
     suspend fun exists(path: String): Boolean = withContext(Dispatchers.IO) { File(path).exists() }

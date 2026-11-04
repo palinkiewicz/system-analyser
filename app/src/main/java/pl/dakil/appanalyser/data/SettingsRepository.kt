@@ -101,6 +101,10 @@ class SettingsRepository private constructor(context: Context) {
     private val _fileSortDescending = MutableStateFlow(prefs.getBoolean(KEY_FILE_SORT_DESCENDING, false))
     val fileSortDescending: StateFlow<Boolean> = _fileSortDescending.asStateFlow()
 
+    /** Off, folders stay A→Z whatever the files are sorted by; toggled from the sort menu. */
+    private val _sortFolders = MutableStateFlow(prefs.getBoolean(KEY_SORT_FOLDERS, true))
+    val sortFolders: StateFlow<Boolean> = _sortFolders.asStateFlow()
+
     private val _showHiddenFiles = MutableStateFlow(prefs.getBoolean(KEY_SHOW_HIDDEN_FILES, false))
     val showHiddenFiles: StateFlow<Boolean> = _showHiddenFiles.asStateFlow()
 
@@ -255,6 +259,11 @@ class SettingsRepository private constructor(context: Context) {
         _fileSortDescending.value = descending
     }
 
+    fun setSortFolders(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_SORT_FOLDERS, enabled).apply()
+        _sortFolders.value = enabled
+    }
+
     fun setShowHiddenFiles(enabled: Boolean) {
         prefs.edit().putBoolean(KEY_SHOW_HIDDEN_FILES, enabled).apply()
         _showHiddenFiles.value = enabled
@@ -349,6 +358,7 @@ class SettingsRepository private constructor(context: Context) {
         private const val KEY_FILE_SORT_ORDER = "file_sort_order"
         private const val KEY_FILE_SORT_DESCENDING = "file_sort_descending"
         private const val KEY_SHOW_HIDDEN_FILES = "show_hidden_files"
+        private const val KEY_SORT_FOLDERS = "sort_folders"
         private const val KEY_CONFIRM_FILE_DELETION = "confirm_file_deletion"
         private const val KEY_FILE_COMPACT_VIEW = "file_compact_view"
         private const val KEY_FILES_DUAL_PANE = "files_dual_pane"

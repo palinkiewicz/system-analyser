@@ -361,6 +361,7 @@
     <string name="files_sort_date">Date</string>
     <string name="files_sort_type">Type</string>
     <string name="files_sort_descending">Descending</string>
+    <string name="files_sort_folders">Sort folders</string>
     <string name="files_show_hidden">Show hidden files</string>
     <string name="files_select">Select</string>
     <string name="files_select_all">Select all</string>
