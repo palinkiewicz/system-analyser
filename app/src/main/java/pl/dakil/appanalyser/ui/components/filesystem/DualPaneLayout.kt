@@ -74,8 +74,12 @@ import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbol
 import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbols
 import pl.dakil.appanalyser.ui.designsystem.rememberHaptics
 
-/** Thickness of the divider's touch strip between the panes. */
+/**
+ * Thickness of the divider's touch strip between the panes. Stacked panes get a taller one: there
+ * the divider is also the way to the actions the folded-away top bar used to offer.
+ */
 private val DIVIDER_THICKNESS = 16.dp
+private val STACKED_DIVIDER_THICKNESS = 24.dp
 
 /** Within this distance of an even split the divider snaps to it. */
 private const val SNAP_BAND = 0.03f
@@ -226,11 +230,12 @@ fun DualPaneLayout(
             }
         },
     ) { measurables, constraints ->
+        val thickness = if (horizontal) DIVIDER_THICKNESS else STACKED_DIVIDER_THICKNESS
         val total = if (horizontal) constraints.maxWidth else constraints.maxHeight
         val cross = if (horizontal) constraints.maxHeight else constraints.maxWidth
-        val divider = (DIVIDER_THICKNESS.toPx() * progress).roundToInt()
+        val divider = (thickness.toPx() * progress).roundToInt()
         val available = (total - divider).coerceAtLeast(0)
-        length.pixels = (total - DIVIDER_THICKNESS.toPx()).coerceAtLeast(0f)
+        length.pixels = (total - thickness.toPx()).coerceAtLeast(0f)
         val primarySize = (available * (1f - progress * (1f - shownSplit))).roundToInt()
         val secondarySize = (available - primarySize).coerceAtLeast(0)
 
@@ -242,7 +247,7 @@ fun DualPaneLayout(
 
         val primaryPlaceable = measurables[0].measure(fixed(primarySize))
         // The divider is measured at full thickness and slid in; only its slot grows with progress.
-        val dividerPlaceable = measurables.getOrNull(1)?.measure(fixed(DIVIDER_THICKNESS.roundToPx()))
+        val dividerPlaceable = measurables.getOrNull(1)?.measure(fixed(thickness.roundToPx()))
         val secondaryPlaceable = measurables.getOrNull(2)?.measure(fixed(secondarySize))
 
         layout(constraints.maxWidth, constraints.maxHeight) {
@@ -252,7 +257,7 @@ fun DualPaneLayout(
                 if (horizontal) it.place(offset, 0) else it.place(0, offset)
             }
             // Placed last so it draws above both panes: the release chip overhangs its strip.
-            val dividerOffset = primarySize - (DIVIDER_THICKNESS.roundToPx() - divider) / 2
+            val dividerOffset = primarySize - (thickness.roundToPx() - divider) / 2
             dividerPlaceable?.let {
                 if (horizontal) it.place(dividerOffset, 0) else it.place(0, dividerOffset)
             }
@@ -269,6 +274,17 @@ class PaneActions(
     val onClose: () -> Unit,
     /** The divider was dragged away and let go: leave dual pane mode showing [keep]'s folder. */
     val onCollapse: (keep: PaneId) -> Unit,
+    /** Set while the top bar is folded away: its actions, carried by the toolbar instead. */
+    val extras: PaneToolbarExtras? = null,
+)
+
+/**
+ * The top bar's actions for the divider toolbar to carry while that bar is hidden. [menu] draws the
+ * browser menu (anchored by the toolbar); its last group gets an "Even split" that calls back.
+ */
+class PaneToolbarExtras(
+    val onOpenDiskUsage: () -> Unit,
+    val menu: @Composable (expanded: Boolean, onDismiss: () -> Unit, onEvenSplit: () -> Unit) -> Unit,
 )
 
 /**
@@ -460,14 +476,44 @@ private fun PaneToolbar(
             actions.onMirror(PaneId.SECONDARY)
             onDone()
         }
-        PaneToolbarButton(
-            symbol = if (horizontal) AppSymbols.VerticalSplit else AppSymbols.Splitscreen,
-            label = stringResource(R.string.files_even_split),
-            horizontal = horizontal,
-        ) {
-            haptics.confirm()
-            onReset()
-            onDone()
+        val extras = actions.extras
+        if (extras == null) {
+            PaneToolbarButton(
+                symbol = if (horizontal) AppSymbols.VerticalSplit else AppSymbols.Splitscreen,
+                label = stringResource(R.string.files_even_split),
+                horizontal = horizontal,
+            ) {
+                haptics.confirm()
+                onReset()
+                onDone()
+            }
+        } else {
+            // Standing in for the hidden top bar; the even split moves into the menu so the bar
+            // still fits a narrow phone.
+            PaneToolbarButton(
+                symbol = AppSymbols.DonutLarge,
+                label = stringResource(R.string.disk_usage_title),
+                horizontal = horizontal,
+            ) {
+                onDone()
+                extras.onOpenDiskUsage()
+            }
+            var menuOpen by remember { mutableStateOf(false) }
+            Box {
+                PaneToolbarButton(
+                    symbol = AppSymbols.Sort,
+                    label = stringResource(R.string.files_more_options),
+                    horizontal = horizontal,
+                ) { menuOpen = true }
+                extras.menu(
+                    menuOpen,
+                    {
+                        menuOpen = false
+                        onDone()
+                    },
+                    onReset,
+                )
+            }
         }
         PaneToolbarButton(
             symbol = AppSymbols.CloseFullscreen,

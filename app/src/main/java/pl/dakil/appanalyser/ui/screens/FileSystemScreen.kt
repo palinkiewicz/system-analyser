@@ -9,10 +9,12 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
@@ -23,13 +25,21 @@ import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -51,6 +61,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleFloatingActionButton
 import androidx.compose.material3.ToggleFloatingActionButtonDefaults
@@ -122,20 +133,20 @@ import pl.dakil.appanalyser.ui.components.filesystem.DeleteConfirmDialog
 import pl.dakil.appanalyser.ui.components.filesystem.DropTarget
 import pl.dakil.appanalyser.ui.components.filesystem.DualPaneLayout
 import pl.dakil.appanalyser.ui.components.filesystem.EDITABLE_EXTENSIONS
+import pl.dakil.appanalyser.ui.components.filesystem.FavoriteActions
+import pl.dakil.appanalyser.ui.components.filesystem.FavoriteColorSheet
+import pl.dakil.appanalyser.ui.components.filesystem.FavoritePalette
 import pl.dakil.appanalyser.ui.components.filesystem.FileDragGhost
 import pl.dakil.appanalyser.ui.components.filesystem.FileDragHandler
 import pl.dakil.appanalyser.ui.components.filesystem.FileDragPayload
 import pl.dakil.appanalyser.ui.components.filesystem.FileDragState
-import pl.dakil.appanalyser.ui.components.filesystem.FavoriteActions
-import pl.dakil.appanalyser.ui.components.filesystem.FavoriteColorSheet
-import pl.dakil.appanalyser.ui.components.filesystem.FavoritePalette
 import pl.dakil.appanalyser.ui.components.filesystem.FileRow
 import pl.dakil.appanalyser.ui.components.filesystem.FilesHome
-import pl.dakil.appanalyser.ui.components.filesystem.rememberFavoritePalette
 import pl.dakil.appanalyser.ui.components.filesystem.NameInputDialog
 import pl.dakil.appanalyser.ui.components.filesystem.NoNetworkDialog
 import pl.dakil.appanalyser.ui.components.filesystem.OperationProgressCard
 import pl.dakil.appanalyser.ui.components.filesystem.PaneActions
+import pl.dakil.appanalyser.ui.components.filesystem.PaneToolbarExtras
 import pl.dakil.appanalyser.ui.components.filesystem.PropertiesDialog
 import pl.dakil.appanalyser.ui.components.filesystem.ScanFolderDialog
 import pl.dakil.appanalyser.ui.components.filesystem.ShareMethodSheet
@@ -144,6 +155,7 @@ import pl.dakil.appanalyser.ui.components.filesystem.TransferConfirmDialog
 import pl.dakil.appanalyser.ui.components.filesystem.fileDragSource
 import pl.dakil.appanalyser.ui.components.filesystem.openFile
 import pl.dakil.appanalyser.ui.components.filesystem.openHotspotSettings
+import pl.dakil.appanalyser.ui.components.filesystem.rememberFavoritePalette
 import pl.dakil.appanalyser.ui.components.filesystem.shareFile
 import pl.dakil.appanalyser.ui.designsystem.AppMenu
 import pl.dakil.appanalyser.ui.designsystem.AppMenuCheckItem
@@ -368,6 +380,9 @@ fun FileSystemScreen(
         with(density) { windowSize.width.toDp() } >= 600.dp
     // Swipe style only applies where the panes would otherwise be stacked; wide layouts have room.
     val paged = dual && dualStyle == DualPaneStyle.SWIPE && !sideBySide
+    // Stacked split screen gives the top bar's height to the panes: everything it offered is on the
+    // divider's toolbar, and each pane carries its own location.
+    val immersive = dual && !sideBySide && !paged
     // "In split view" means both panes on screen at once; a swiped pane gets the whole screen.
     val compact = when (compactSetting) {
         FileCompactView.ALWAYS -> true
@@ -427,6 +442,22 @@ fun FileSystemScreen(
         containerColor = MaterialTheme.colorScheme.surface,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
+            // The status bar strip stays, tinted like whichever bar is under it; the bar itself
+            // folds away in stacked split screen, its height going to the panes.
+            val stripColor by animateColorAsState(
+                if (selecting) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
+                MaterialTheme.motionScheme.defaultEffectsSpec(),
+                label = "statusStrip",
+            )
+            Column(Modifier.background(stripColor)) {
+                Spacer(Modifier.fillMaxWidth().windowInsetsTopHeight(WindowInsets.statusBars))
+                AnimatedVisibility(
+                    visible = !immersive,
+                    enter = expandVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) +
+                        fadeIn(MaterialTheme.motionScheme.defaultEffectsSpec()),
+                    exit = shrinkVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) +
+                        fadeOut(MaterialTheme.motionScheme.fastEffectsSpec()),
+                ) {
             AnimatedContent(targetState = selecting, label = "filesTopBar") { isSelecting ->
                 if (isSelecting) {
                     SelectionTopBar(
@@ -458,6 +489,8 @@ fun FileSystemScreen(
                         },
                         currentIsFavorite = currentPath?.let { path -> favorites.any { it.path == path } } == true,
                     )
+                }
+            }
                 }
             }
         },
@@ -544,6 +577,35 @@ fun FileSystemScreen(
                 onCollapse = {
                     haptics.toggle(false)
                     viewModel.collapseTo(it)
+                },
+                // With the top bar folded away, its disk usage button and menu move onto the toolbar.
+                extras = if (immersive) {
+                    PaneToolbarExtras(
+                        onOpenDiskUsage = { openDiskUsage() },
+                        menu = { expanded, onDismiss, onEvenSplit ->
+                            BrowserMenu(
+                                expanded = expanded,
+                                onDismiss = onDismiss,
+                                viewModel = viewModel,
+                                inFolder = inFolder,
+                                currentIsFavorite = currentPath?.let { path -> favorites.any { it.path == path } } == true,
+                                onProperties = { currentPath?.let { propertiesTarget = File(it).toEntry() } },
+                                extraGroup = {
+                                    AppMenuItem(
+                                        text = stringResource(R.string.files_even_split),
+                                        symbol = AppSymbols.Splitscreen,
+                                        onClick = {
+                                            haptics.confirm()
+                                            onEvenSplit()
+                                            onDismiss()
+                                        },
+                                    )
+                                },
+                            )
+                        },
+                    )
+                } else {
+                    null
                 },
             )
             if (paged) {
@@ -720,6 +782,24 @@ fun FileSystemScreen(
                             haptics.reject()
                             viewModel.cancelOperation()
                         },
+                    )
+                }
+            }
+
+            // Without a top bar, a selection still needs its count and its way out: the selection bar
+            // slides down over the top pane's header instead of pushing the panes (and the row
+            // under the finger) down.
+            AnimatedVisibility(
+                visible = immersive && selecting,
+                enter = slideInVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) { -it } + fadeIn(),
+                exit = slideOutVertically(MaterialTheme.motionScheme.fastSpatialSpec()) { -it } + fadeOut(),
+                modifier = Modifier.align(Alignment.TopCenter),
+            ) {
+                Surface(shadowElevation = 3.dp) {
+                    SelectionTopBar(
+                        count = selection.size,
+                        onClose = { active.clearSelection() },
+                        onSelectAll = { active.selectAll() },
                     )
                 }
             }
@@ -1189,9 +1269,6 @@ private fun BrowserTopBar(
     currentIsFavorite: Boolean,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
-    val sortOrder by viewModel.sortOrder.collectAsState()
-    val descending by viewModel.sortDescending.collectAsState()
-    val showHidden by viewModel.showHidden.collectAsState()
     val haptics = rememberHaptics()
 
     TopAppBar(
@@ -1224,72 +1301,19 @@ private fun BrowserTopBar(
             // In dual mode the menu also carries the pane actions, so it stays even on the volume
             // chooser; the folder-only entries are what drop out there.
             if (inFolder || dual) {
-                val groups = if (dual) 4 else 3
                 Box {
                     IconButton(onClick = { menuExpanded = true }, shapes = IconButtonDefaults.shapes()) {
                         AppIcon(AppSymbols.Sort, contentDescription = stringResource(R.string.files_more_options))
                     }
-                    AppMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-                        AppMenuGroup(index = 0, count = groups) {
-                            AppMenuLabel(stringResource(R.string.files_sort_by))
-                            FileSortOrder.entries.forEach { order ->
-                                AppMenuChoiceItem(
-                                    text = order.label(),
-                                    selected = order == sortOrder,
-                                    onClick = {
-                                        if (order != sortOrder) haptics.tick()
-                                        viewModel.setSortOrder(order)
-                                    },
-                                )
-                            }
-                        }
-                        AppMenuGroup(index = 1, count = groups) {
-                            AppMenuCheckItem(
-                                text = stringResource(R.string.files_sort_descending),
-                                checked = descending,
-                                onCheckedChange = { viewModel.setSortDescending(it) },
-                                symbol = AppSymbols.ArrowDownward,
-                            )
-                            AppMenuCheckItem(
-                                text = stringResource(R.string.files_show_hidden),
-                                checked = showHidden,
-                                onCheckedChange = { viewModel.setShowHidden(it) },
-                                symbol = AppSymbols.Visibility,
-                            )
-                        }
-                        AppMenuGroup(index = 2, count = groups) {
-                            AppMenuItem(
-                                text = stringResource(R.string.files_select_all),
-                                symbol = AppSymbols.SelectAll,
-                                enabled = inFolder,
-                                onClick = {
-                                    viewModel.activePane.selectAll()
-                                    menuExpanded = false
-                                },
-                            )
-                            AppMenuItem(
-                                text = stringResource(R.string.files_properties),
-                                symbol = AppSymbols.Info,
-                                enabled = inFolder,
-                                onClick = {
-                                    onProperties()
-                                    menuExpanded = false
-                                },
-                            )
-                            if (inFolder) {
-                                AppMenuCheckItem(
-                                    text = stringResource(R.string.files_favorite),
-                                    checked = currentIsFavorite,
-                                    onCheckedChange = {
-                                        viewModel.toggleCurrentFolderFavorite()
-                                        menuExpanded = false
-                                    },
-                                    symbol = AppSymbols.Star,
-                                )
-                            }
-                        }
-                        if (dual) {
-                            AppMenuGroup(index = 3, count = groups) {
+                    BrowserMenu(
+                        expanded = menuExpanded,
+                        onDismiss = { menuExpanded = false },
+                        viewModel = viewModel,
+                        inFolder = inFolder,
+                        currentIsFavorite = currentIsFavorite,
+                        onProperties = onProperties,
+                        extraGroup = if (dual) {
+                            {
                                 AppMenuItem(
                                     text = stringResource(R.string.files_swap_panes),
                                     symbol = if (sideBySide) AppSymbols.SwapHoriz else AppSymbols.SwapVert,
@@ -1309,14 +1333,107 @@ private fun BrowserTopBar(
                                     },
                                 )
                             }
-                        }
-                    }
+                        } else {
+                            null
+                        },
+                    )
                 }
             }
         },
         colors = appTopBarColors(),
+        windowInsets = TopBarHorizontalInsets,
     )
 }
+
+/**
+ * The browser's menu: sort order, hidden files, then the current folder's actions. Shared by the
+ * top bar and, while split screen hides that bar, the divider toolbar; each adds its own last
+ * group ([extraGroup]).
+ */
+@Composable
+private fun BrowserMenu(
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    viewModel: FileSystemViewModel,
+    inFolder: Boolean,
+    currentIsFavorite: Boolean,
+    onProperties: () -> Unit,
+    extraGroup: (@Composable ColumnScope.() -> Unit)?,
+) {
+    val sortOrder by viewModel.sortOrder.collectAsState()
+    val descending by viewModel.sortDescending.collectAsState()
+    val showHidden by viewModel.showHidden.collectAsState()
+    val haptics = rememberHaptics()
+    val groups = if (extraGroup != null) 4 else 3
+    AppMenu(expanded = expanded, onDismissRequest = onDismiss) {
+        AppMenuGroup(index = 0, count = groups) {
+            AppMenuLabel(stringResource(R.string.files_sort_by))
+            FileSortOrder.entries.forEach { order ->
+                AppMenuChoiceItem(
+                    text = order.label(),
+                    selected = order == sortOrder,
+                    onClick = {
+                        if (order != sortOrder) haptics.tick()
+                        viewModel.setSortOrder(order)
+                    },
+                )
+            }
+        }
+        AppMenuGroup(index = 1, count = groups) {
+            AppMenuCheckItem(
+                text = stringResource(R.string.files_sort_descending),
+                checked = descending,
+                onCheckedChange = { viewModel.setSortDescending(it) },
+                symbol = AppSymbols.ArrowDownward,
+            )
+            AppMenuCheckItem(
+                text = stringResource(R.string.files_show_hidden),
+                checked = showHidden,
+                onCheckedChange = { viewModel.setShowHidden(it) },
+                symbol = AppSymbols.Visibility,
+            )
+        }
+        AppMenuGroup(index = 2, count = groups) {
+            AppMenuItem(
+                text = stringResource(R.string.files_select_all),
+                symbol = AppSymbols.SelectAll,
+                enabled = inFolder,
+                onClick = {
+                    viewModel.activePane.selectAll()
+                    onDismiss()
+                },
+            )
+            AppMenuItem(
+                text = stringResource(R.string.files_properties),
+                symbol = AppSymbols.Info,
+                enabled = inFolder,
+                onClick = {
+                    onProperties()
+                    onDismiss()
+                },
+            )
+            if (inFolder) {
+                AppMenuCheckItem(
+                    text = stringResource(R.string.files_favorite),
+                    checked = currentIsFavorite,
+                    onCheckedChange = {
+                        viewModel.toggleCurrentFolderFavorite()
+                        onDismiss()
+                    },
+                    symbol = AppSymbols.Star,
+                )
+            }
+        }
+        if (extraGroup != null) AppMenuGroup(index = 3, count = groups, content = extraGroup)
+    }
+}
+
+/**
+ * The bars draw the status bar strip themselves (see the Scaffold's top bar slot), so they only
+ * keep the horizontal insets — a landscape display cutout.
+ */
+private val TopBarHorizontalInsets: WindowInsets
+    @Composable get() = TopAppBarDefaults.windowInsets.only(WindowInsetsSides.Horizontal)
 
 @Composable
 private fun SelectionTopBar(
@@ -1350,6 +1467,7 @@ private fun SelectionTopBar(
             navigationIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
             actionIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
         ),
+        windowInsets = TopBarHorizontalInsets,
     )
 }
 
