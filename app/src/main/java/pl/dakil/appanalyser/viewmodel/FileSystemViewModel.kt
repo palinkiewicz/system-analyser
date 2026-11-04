@@ -8,10 +8,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.DiskUsageRepository
+import pl.dakil.appanalyser.data.FavoritesRepository
 import pl.dakil.appanalyser.data.FileSystemRepository
 import pl.dakil.appanalyser.data.SettingsRepository
 import pl.dakil.appanalyser.domain.ClipboardOperation
@@ -19,10 +22,12 @@ import pl.dakil.appanalyser.domain.FileClipboard
 import pl.dakil.appanalyser.domain.DualPaneStyle
 import pl.dakil.appanalyser.domain.FileCompactView
 import pl.dakil.appanalyser.domain.FileDropAction
+import pl.dakil.appanalyser.domain.FileFavorite
 import pl.dakil.appanalyser.domain.FileOperationProgress
 import pl.dakil.appanalyser.domain.FileSortOrder
 import pl.dakil.appanalyser.domain.PaneId
 import pl.dakil.appanalyser.domain.StorageRoot
+import java.io.File
 
 /**
  * State for the File system browser: its one or two [FilePane]s, which of them is active, and what's
@@ -36,6 +41,13 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
     private val repository = FileSystemRepository(application)
     private val settings = SettingsRepository.get(application)
     private val diskUsage = DiskUsageRepository.get(application)
+    private val favoritesRepository = FavoritesRepository.get(application)
+
+    val favorites: StateFlow<List<FileFavorite>> = favoritesRepository.favorites
+
+    /** Favourites whose target was gone the last time the home was shown. */
+    private val _missingFavorites = MutableStateFlow<Set<String>>(emptySet())
+    val missingFavorites: StateFlow<Set<String>> = _missingFavorites
 
     private val _roots = MutableStateFlow<List<StorageRoot>>(emptyList())
     val roots: StateFlow<List<StorageRoot>> = _roots
@@ -255,6 +267,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
         val pane = activePane
         viewModelScope.launch {
             val ok = repository.rename(path, newName)
+            if (ok) File(path).parent?.let { favoritesRepository.onRenamed(path, "$it/$newName") }
             _messages.tryEmit(if (ok) R.string.files_rename_success else R.string.files_rename_failed)
             pane.clearSelection()
             refreshAfterChange(listOf(path))
@@ -270,6 +283,57 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
             if (repository.delete(paths, report)) R.string.files_delete_success else R.string.files_delete_failed
         }
     }
+
+    // -----------------------------------------------------------------------
+    // Favourites
+    // -----------------------------------------------------------------------
+
+    /** Re-checks which favourites still exist; called whenever a pane shows the home. */
+    fun checkFavorites() {
+        viewModelScope.launch {
+            val paths = favorites.value.map { it.path }
+            _missingFavorites.value = withContext(Dispatchers.IO) {
+                paths.filterNot { File(it).exists() }.toSet()
+            }
+        }
+    }
+
+    fun isFavorite(path: String) = favoritesRepository.isFavorite(path)
+
+    /** Stars or unstars the active pane's current folder. */
+    fun toggleCurrentFolderFavorite() {
+        val path = activePane.currentPath.value ?: return
+        if (favoritesRepository.isFavorite(path)) {
+            favoritesRepository.remove(listOf(path))
+            _messages.tryEmit(R.string.files_favorite_removed)
+        } else {
+            favoritesRepository.add(listOf(path to true))
+            _messages.tryEmit(R.string.files_favorite_added)
+        }
+    }
+
+    /**
+     * Stars the active pane's selection, or unstars it when every selected item is already a
+     * favourite (the toolbar offers whichever of the two applies).
+     */
+    fun toggleSelectionFavorite() {
+        val pane = activePane
+        val selected = pane.selection.value
+        if (selected.isEmpty()) return
+        if (selected.all { favoritesRepository.isFavorite(it) }) {
+            favoritesRepository.remove(selected)
+            _messages.tryEmit(R.string.files_favorite_removed)
+        } else {
+            val byPath = pane.entries.value.associateBy { it.path }
+            favoritesRepository.add(selected.map { it to (byPath[it]?.isDirectory ?: File(it).isDirectory) })
+            _messages.tryEmit(R.string.files_favorite_added)
+        }
+        pane.clearSelection()
+    }
+
+    fun removeFavorite(path: String) = favoritesRepository.remove(listOf(path))
+
+    fun setFavoriteColor(path: String, colorIndex: Int) = favoritesRepository.setColor(path, colorIndex)
 
     // -----------------------------------------------------------------------
     // Settings pass-through (the browser owns sort/hidden, the settings screen the rest)

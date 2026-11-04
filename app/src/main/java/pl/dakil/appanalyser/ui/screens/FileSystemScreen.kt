@@ -106,6 +106,7 @@ import pl.dakil.appanalyser.domain.DualPaneStyle
 import pl.dakil.appanalyser.domain.FileCompactView
 import pl.dakil.appanalyser.domain.FileDropAction
 import pl.dakil.appanalyser.domain.FileEntry
+import pl.dakil.appanalyser.domain.FileFavorite
 import pl.dakil.appanalyser.domain.FileOperationProgress
 import pl.dakil.appanalyser.domain.FileSortOrder
 import pl.dakil.appanalyser.domain.PaneId
@@ -125,7 +126,12 @@ import pl.dakil.appanalyser.ui.components.filesystem.FileDragGhost
 import pl.dakil.appanalyser.ui.components.filesystem.FileDragHandler
 import pl.dakil.appanalyser.ui.components.filesystem.FileDragPayload
 import pl.dakil.appanalyser.ui.components.filesystem.FileDragState
+import pl.dakil.appanalyser.ui.components.filesystem.FavoriteActions
+import pl.dakil.appanalyser.ui.components.filesystem.FavoriteColorSheet
+import pl.dakil.appanalyser.ui.components.filesystem.FavoritePalette
 import pl.dakil.appanalyser.ui.components.filesystem.FileRow
+import pl.dakil.appanalyser.ui.components.filesystem.FilesHome
+import pl.dakil.appanalyser.ui.components.filesystem.rememberFavoritePalette
 import pl.dakil.appanalyser.ui.components.filesystem.NameInputDialog
 import pl.dakil.appanalyser.ui.components.filesystem.NoNetworkDialog
 import pl.dakil.appanalyser.ui.components.filesystem.OperationProgressCard
@@ -205,6 +211,9 @@ fun FileSystemScreen(
     val confirmTransfer by viewModel.confirmTransfer.collectAsState()
     val compactSetting by viewModel.compactView.collectAsState()
     val dualStyle by viewModel.dualPaneStyle.collectAsState()
+    val favorites by viewModel.favorites.collectAsState()
+    val missingFavorites by viewModel.missingFavorites.collectAsState()
+    val favoriteColors = remember(favorites) { favorites.associate { it.path to it.colorIndex } }
 
     // Every folder-level action — the bars, the FAB, paste, back — follows the active pane. In
     // single pane mode that is always the primary one.
@@ -256,6 +265,7 @@ fun FileSystemScreen(
     var scanPrompt by remember { mutableStateOf<Pair<String, ScanFreshness>?>(null) }
     var pendingDrop by remember { mutableStateOf<PendingDrop?>(null) }
     var pendingTransfer by remember { mutableStateOf<PendingTransfer?>(null) }
+    var colorTarget by remember { mutableStateOf<FileFavorite?>(null) }
 
     // Inside a folder the analyser opens on that folder. A current scan shows straight away;
     // otherwise the user is asked first, and only that folder is scanned — never the whole volume.
@@ -446,6 +456,7 @@ fun FileSystemScreen(
                                 propertiesTarget = File(path).toEntry()
                             }
                         },
+                        currentIsFavorite = currentPath?.let { path -> favorites.any { it.path == path } } == true,
                     )
                 }
             }
@@ -483,11 +494,35 @@ fun FileSystemScreen(
                 .onGloballyPositioned { dragState.overlayOrigin = it.positionInRoot() },
             contentAlignment = Alignment.TopCenter,
         ) {
+            val favoritePalette = rememberFavoritePalette()
+
             @Composable
             fun Pane(pane: FilePane, bottomPadding: Dp, outerPadding: PaddingValues) {
                 FileBrowserPane(
                     pane = pane,
                     roots = roots,
+                    favoriteColors = favoriteColors,
+                    favoritePalette = favoritePalette,
+                    home = { horizontalPadding ->
+                        FilesHome(
+                            roots = roots,
+                            favorites = favorites,
+                            missing = missingFavorites,
+                            palette = favoritePalette,
+                            horizontalPadding = horizontalPadding,
+                            bottomPadding = bottomPadding,
+                            onOpenRoot = { pane.open(it) },
+                            actions = FavoriteActions(
+                                onOpen = { favorite ->
+                                    if (favorite.isDirectory) pane.open(favorite.path) else openEntry(File(favorite.path).toEntry())
+                                },
+                                onShowInFolder = { favorite -> File(favorite.path).parent?.let { pane.open(it) } },
+                                onColor = { colorTarget = it },
+                                onRemove = { viewModel.removeFavorite(it.path) },
+                            ),
+                            onShown = { viewModel.checkFavorites() },
+                        )
+                    },
                     dual = dual,
                     compact = compact,
                     active = activeId == pane.id,
@@ -595,6 +630,11 @@ fun FileSystemScreen(
                     },
                     onRename = { renameTarget = selection.first() },
                     onShare = { shareTarget = selection.firstOrNull() },
+                    allFavorites = selection.all { path -> favorites.any { it.path == path } },
+                    onToggleFavorite = {
+                        haptics.confirm()
+                        viewModel.toggleSelectionFavorite()
+                    },
                     onDelete = {
                         if (confirmDeletion) {
                             showDeleteConfirm = true
@@ -771,6 +811,17 @@ fun FileSystemScreen(
         )
     }
 
+    colorTarget?.let { target ->
+        // Read live, so the sheet shows the pick straight away.
+        val favorite = favorites.firstOrNull { it.path == target.path } ?: target
+        FavoriteColorSheet(
+            favorite = favorite,
+            palette = rememberFavoritePalette(),
+            onPick = { viewModel.setFavoriteColor(favorite.path, it) },
+            onDismiss = { colorTarget = null },
+        )
+    }
+
     pendingTransfer?.let { transfer ->
         TransferConfirmDialog(
             paths = transfer.paths,
@@ -880,6 +931,10 @@ fun FileSystemScreen(
 private fun FileBrowserPane(
     pane: FilePane,
     roots: List<StorageRoot>,
+    favoriteColors: Map<String, Int>,
+    favoritePalette: FavoritePalette,
+    /** The Files home, shown while the pane sits above every volume. */
+    home: @Composable (horizontalPadding: Dp) -> Unit,
     dual: Boolean,
     compact: Boolean,
     active: Boolean,
@@ -992,6 +1047,7 @@ private fun FileBrowserPane(
             path = currentPath,
             roots = roots,
             dual = dual,
+            onHome = { pane.goHome() },
             onNavigateUp = { pane.navigateUp() },
             onOpen = { pane.open(it) },
         )
@@ -1007,11 +1063,7 @@ private fun FileBrowserPane(
                 isLoading -> Box(Modifier.fillMaxSize(), Alignment.Center) {
                     LoadingIndicator(Modifier.size(64.dp))
                 }
-                currentPath == null -> StorageRootList(
-                    roots = roots,
-                    horizontalPadding = if (dual) Spacing.s else Spacing.gutter,
-                    onOpen = { pane.open(it) },
-                )
+                currentPath == null -> home(if (dual) Spacing.s else Spacing.gutter)
                 entries.isEmpty() -> Box(
                     Modifier
                         .fillMaxSize()
@@ -1059,6 +1111,7 @@ private fun FileBrowserPane(
                             },
                             onLongClick = { pane.toggleSelection(entry.path) },
                             compact = compact,
+                            favorite = favoriteColors[entry.path]?.let { favoritePalette.tint(it) },
                             onIconClick = {
                                 onActivate()
                                 pane.toggleSelection(entry.path)
@@ -1083,34 +1136,36 @@ private const val MAX_AUTO_SCROLL_PER_FRAME = 24f
 private const val CARRIED_ALPHA = 0.4f
 
 /**
- * The pane's location: breadcrumbs, as in the single pane browser. In dual mode the top bar's back
- * arrow only belongs to the active pane, so each pane leads with an up button of its own.
+ * The pane's location: a Home button back to the volumes and favourites, then the breadcrumbs. In
+ * dual mode the top bar's back arrow only belongs to the active pane, so each pane also leads with
+ * an up button of its own, the Home button right beside it.
  */
 @Composable
 private fun PaneHeader(
     path: String?,
     roots: List<StorageRoot>,
     dual: Boolean,
+    onHome: () -> Unit,
     onNavigateUp: () -> Unit,
     onOpen: (String) -> Unit,
 ) {
     if (path == null) return
-    val crumbs = @Composable {
-        Breadcrumbs(
-            path = path,
-            roots = roots.map { it.path to it.label },
-            onSegmentClick = onOpen,
-        )
-    }
-    if (!dual) {
-        crumbs()
-        return
-    }
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = Spacing.xs)) {
-        IconButton(onClick = onNavigateUp, shapes = IconButtonDefaults.shapes()) {
-            AppIcon(AppSymbols.ArrowUpward, contentDescription = stringResource(R.string.files_parent_folder))
+        if (dual) {
+            IconButton(onClick = onNavigateUp, shapes = IconButtonDefaults.shapes()) {
+                AppIcon(AppSymbols.ArrowUpward, contentDescription = stringResource(R.string.files_parent_folder))
+            }
         }
-        Box(Modifier.weight(1f)) { crumbs() }
+        IconButton(onClick = onHome, shapes = IconButtonDefaults.shapes()) {
+            AppIcon(AppSymbols.Home, contentDescription = stringResource(R.string.files_home))
+        }
+        Box(Modifier.weight(1f)) {
+            Breadcrumbs(
+                path = path,
+                roots = roots.map { it.path to it.label },
+                onSegmentClick = onOpen,
+            )
+        }
     }
 }
 
@@ -1131,6 +1186,7 @@ private fun BrowserTopBar(
     onToggleDual: () -> Unit,
     onOpenDiskUsage: () -> Unit,
     onProperties: () -> Unit,
+    currentIsFavorite: Boolean,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     val sortOrder by viewModel.sortOrder.collectAsState()
@@ -1220,6 +1276,17 @@ private fun BrowserTopBar(
                                     menuExpanded = false
                                 },
                             )
+                            if (inFolder) {
+                                AppMenuCheckItem(
+                                    text = stringResource(R.string.files_favorite),
+                                    checked = currentIsFavorite,
+                                    onCheckedChange = {
+                                        viewModel.toggleCurrentFolderFavorite()
+                                        menuExpanded = false
+                                    },
+                                    symbol = AppSymbols.Star,
+                                )
+                            }
                         }
                         if (dual) {
                             AppMenuGroup(index = 3, count = groups) {
@@ -1303,6 +1370,8 @@ private fun SelectionToolbar(
     onRename: () -> Unit,
     onShare: () -> Unit,
     onDelete: () -> Unit,
+    allFavorites: Boolean,
+    onToggleFavorite: () -> Unit,
 ) {
     var overflowExpanded by remember { mutableStateOf(false) }
     HorizontalFloatingToolbar(
@@ -1323,11 +1392,24 @@ private fun SelectionToolbar(
             }
         }
         ToolbarAction(AppSymbols.Delete, stringResource(R.string.files_delete), onDelete)
-        if (dual) {
-            Box {
-                ToolbarAction(AppSymbols.MoreVert, stringResource(R.string.files_more_options), { overflowExpanded = true })
-                AppMenu(expanded = overflowExpanded, onDismissRequest = { overflowExpanded = false }) {
-                    AppMenuGroup {
+        Box {
+            ToolbarAction(AppSymbols.MoreVert, stringResource(R.string.files_more_options), { overflowExpanded = true })
+            AppMenu(expanded = overflowExpanded, onDismissRequest = { overflowExpanded = false }) {
+                val groups = if (dual) 2 else 1
+                AppMenuGroup(index = 0, count = groups) {
+                    AppMenuItem(
+                        text = stringResource(
+                            if (allFavorites) R.string.files_remove_favorites else R.string.files_add_favorites
+                        ),
+                        symbol = AppSymbols.Star,
+                        onClick = {
+                            overflowExpanded = false
+                            onToggleFavorite()
+                        },
+                    )
+                }
+                if (dual) {
+                    AppMenuGroup(index = 1, count = groups) {
                         AppMenuItem(
                             text = stringResource(R.string.files_copy),
                             symbol = AppSymbols.ContentCopy,
@@ -1399,58 +1481,6 @@ private fun CreateMenu(
 // ---------------------------------------------------------------------------
 // Pieces
 // ---------------------------------------------------------------------------
-
-/** The volumes to start from, as tiles showing how full each one is. */
-@Composable
-private fun StorageRootList(
-    roots: List<StorageRoot>,
-    horizontalPadding: Dp,
-    onOpen: (String) -> Unit,
-) {
-    val context = LocalContext.current
-    LazyColumn(
-        contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = Spacing.s),
-        verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap),
-    ) {
-        itemsIndexed(roots, key = { _, root -> root.path }) { index, root ->
-            SegmentedListItem(
-                onClick = { onOpen(root.path) },
-                shapes = ListItemDefaults.segmentedShapes(index, roots.size),
-                colors = segmentedItemColors(),
-                leadingContent = {
-                    ShapedIcon(
-                        if (root.isRemovable) AppSymbols.SdCard else AppSymbols.Smartphone,
-                        polygon = if (root.isRemovable) MaterialShapes.Cookie6Sided else MaterialShapes.Cookie9Sided,
-                        size = 48.dp,
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    )
-                },
-                supportingContent = {
-                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
-                        Text(root.path, maxLines = 1, overflow = TextOverflow.MiddleEllipsis)
-                        if (root.totalBytes > 0) {
-                            UsageBar(root.usedBytes.toFloat() / root.totalBytes)
-                            Text(
-                                stringResource(
-                                    R.string.disk_usage_used_of,
-                                    Formatter.formatShortFileSize(context, root.usedBytes),
-                                    Formatter.formatShortFileSize(context, root.totalBytes),
-                                ),
-                                style = MaterialTheme.typography.labelMedium,
-                            )
-                        }
-                    }
-                },
-                trailingContent = {
-                    AppIcon(AppSymbols.ChevronRight, contentDescription = null)
-                },
-            ) {
-                Text(root.label, style = MaterialTheme.typography.titleMedium)
-            }
-        }
-    }
-}
 
 @Composable
 private fun FileSortOrder.label(): String = stringResource(

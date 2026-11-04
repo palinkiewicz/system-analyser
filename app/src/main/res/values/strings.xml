@@ -456,6 +456,22 @@
         <item quantity="other">%1$d of %2$d files</item>
     </plurals>
     <string name="files_operation_cancelled">Cancelled</string>
+    <string name="files_home">Home</string>
+    <string name="files_storage_section">Storage</string>
+    <string name="files_favorites_section">Favorites</string>
+    <string name="files_favorite">Favorite</string>
+    <string name="files_add_favorites">Add to favorites</string>
+    <string name="files_remove_favorites">Remove from favorites</string>
+    <string name="files_favorites_empty_title">No favorites yet</string>
+    <string name="files_favorites_empty_body">Star a folder from its menu, or star selected items, to keep them here.</string>
+    <string name="files_favorite_unavailable">Unavailable</string>
+    <string name="files_favorite_color">Color</string>
+    <string name="files_favorite_color_title">Color for “%1$s”</string>
+    <string name="files_favorite_color_auto">Theme</string>
+    <string name="files_favorite_color_x">Color %1$d</string>
+    <string name="files_show_in_folder">Show in folder</string>
+    <string name="files_favorite_added">Added to favorites</string>
+    <string name="files_favorite_removed">Removed from favorites</string>
     <string name="files_open_failed">No app can open this file</string>
     <string name="files_property_path">Path</string>
     <string name="files_property_type">Type</string>

@@ -79,14 +79,19 @@ class FilePane(
         refresh()
     }
 
-    /** Steps out of the current folder, stopping at the volume chooser. Returns false at the top. */
+    /** Back to the Files home: the volumes and the favourites. */
+    fun goHome() {
+        setPath(null)
+        _entries.value = emptyList()
+        _selection.value = emptySet()
+        _isLoading.value = false
+    }
+
+    /** Steps out of the current folder, stopping at the Files home. Returns false at the top. */
     fun navigateUp(): Boolean {
         val path = _currentPath.value ?: return false
         if (roots.value.any { it.path == path }) {
-            setPath(null)
-            _entries.value = emptyList()
-            _selection.value = emptySet()
-            _isLoading.value = false
+            goHome()
             return true
         }
         val parent = File(path).parentFile?.absolutePath ?: return false

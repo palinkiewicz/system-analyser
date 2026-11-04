@@ -53,6 +53,7 @@ fit_screen
 folder
 folder_off
 folder_open
+folder_special
 format_list_numbered
 grid_view
 hard_drive
@@ -104,6 +105,7 @@ smartphone
 sort
 speed
 splitscreen
+star
 stop_circle
 storage
 swap_horiz

@@ -8,11 +8,14 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ListItemDefaults
@@ -29,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -42,8 +44,8 @@ import androidx.graphics.shapes.RoundedPolygon
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.domain.FileEntry
 import pl.dakil.appanalyser.domain.StandardFolder
-import pl.dakil.appanalyser.ui.designsystem.PolygonShape
 import pl.dakil.appanalyser.ui.designsystem.ShapedIcon
+import pl.dakil.appanalyser.ui.designsystem.icon.AppIcon
 import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbol
 import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbols
 import pl.dakil.appanalyser.ui.designsystem.pressScale
@@ -114,12 +116,19 @@ fun entryPolygon(entry: FileEntry): RoundedPolygon =
 
 /**
  * An entry's type badge: folders sit in a primary cookie, media in tertiary, packages in secondary,
- * and documents in a neutral rounded square, so a listing reads by kind at a glance.
+ * and documents in a neutral rounded square, so a listing reads by kind at a glance. A favourite
+ * takes its own colour instead and wears a small star.
  */
 @Composable
-fun EntryIcon(entry: FileEntry, modifier: Modifier = Modifier, size: Dp = LEADING_SIZE) {
+fun EntryIcon(
+    entry: FileEntry,
+    modifier: Modifier = Modifier,
+    size: Dp = LEADING_SIZE,
+    favorite: FavoriteTint? = null,
+) {
     val scheme = MaterialTheme.colorScheme
     val (container, content) = when {
+        favorite != null -> favorite.container to favorite.content
         entry.isDirectory -> scheme.primaryContainer to scheme.onPrimaryContainer
         entry.extension in IMAGE_EXTENSIONS || entry.extension in VIDEO_EXTENSIONS ->
             scheme.tertiaryContainer to scheme.onTertiaryContainer
@@ -127,16 +136,36 @@ fun EntryIcon(entry: FileEntry, modifier: Modifier = Modifier, size: Dp = LEADIN
             scheme.secondaryContainer to scheme.onSecondaryContainer
         else -> scheme.surfaceContainerHighest to scheme.onSurfaceVariant
     }
-    ShapedIcon(
-        symbol = iconForEntry(entry),
-        polygon = entryPolygon(entry),
-        size = size,
-        iconSize = size * 0.55f,
-        containerColor = container,
-        contentColor = content,
-        filled = entry.isDirectory,
-        modifier = modifier,
-    )
+    Box(modifier) {
+        ShapedIcon(
+            symbol = iconForEntry(entry),
+            polygon = entryPolygon(entry),
+            size = size,
+            iconSize = size * 0.55f,
+            containerColor = container,
+            contentColor = content,
+            filled = entry.isDirectory,
+        )
+        if (favorite != null) {
+            // A star tucked into the corner, on a surface-coloured coin so it reads on any badge.
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .offset(x = size * 0.12f, y = size * 0.12f)
+                    .size(size * 0.45f)
+                    .background(scheme.surfaceContainerLowest, CircleShape),
+            ) {
+                AppIcon(
+                    AppSymbols.Star,
+                    contentDescription = null,
+                    tint = favorite.accent,
+                    filled = true,
+                    modifier = Modifier.size(size * 0.32f),
+                )
+            }
+        }
+    }
 }
 
 /**
@@ -168,6 +197,7 @@ fun FileRow(
     dropHighlighted: Boolean = false,
     onIconClick: (() -> Unit)? = null,
     compact: Boolean = false,
+    favorite: FavoriteTint? = null,
 ) {
     val context = LocalContext.current
     val haptics = rememberHaptics()
@@ -218,16 +248,16 @@ fun FileRow(
                         }
                     } else if (onIconClick != null) {
                         val interactionSource = remember { MutableInteractionSource() }
-                        val shape = remember(entry.isDirectory) { PolygonShape(entryPolygon(entry)) }
+                        // An unbounded ripple rather than a clip, which would cut off a favourite's star.
                         EntryIcon(
                             entry,
                             size = leadingSize,
+                            favorite = favorite,
                             modifier = Modifier
                                 .pressScale(interactionSource, pressedScale = 0.85f)
-                                .clip(shape)
                                 .clickable(
                                     interactionSource = interactionSource,
-                                    indication = ripple(),
+                                    indication = ripple(bounded = false, radius = leadingSize / 2 + 4.dp),
                                     role = Role.Checkbox,
                                     onClickLabel = stringResource(R.string.files_select),
                                 ) {
@@ -237,7 +267,7 @@ fun FileRow(
                                 .alpha(entryAlpha),
                         )
                     } else {
-                        EntryIcon(entry, Modifier.alpha(entryAlpha), size = leadingSize)
+                        EntryIcon(entry, Modifier.alpha(entryAlpha), size = leadingSize, favorite = favorite)
                     }
                 }
             }
