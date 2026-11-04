@@ -104,8 +104,9 @@
     <string name="settings_dark_dark">Ciemny</string>
     <string name="settings_pure_black">Czysta czerń</string>
     <string name="settings_pure_black_description">Całkowicie czarne tło w trybie ciemnym, oszczędza baterię na ekranach OLED</string>
+    <string name="settings_general">Ogólne</string>
     <string name="settings_start_screen">Ekran startowy</string>
-    <string name="settings_start_screen_description">Karta, na której otwiera się aplikacja. Zmiana zadziała przy następnym uruchomieniu.</string>
+    <string name="settings_start_screen_description">Karta, na której otwiera się aplikacja, od następnego uruchomienia</string>
     <string name="settings_feel">Wrażenia</string>
     <string name="settings_haptics">Reakcje haptyczne</string>
     <string name="settings_haptics_description">Delikatne wibracje przy przełączaniu, przeciąganiu i potwierdzaniu</string>

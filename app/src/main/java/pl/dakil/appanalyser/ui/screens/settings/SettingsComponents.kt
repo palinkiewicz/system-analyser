@@ -30,6 +30,7 @@ import kotlin.math.roundToInt
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.AppColorTheme
 import pl.dakil.appanalyser.data.DarkThemeOption
+import pl.dakil.appanalyser.data.StartTab
 import pl.dakil.appanalyser.domain.DualPaneStyle
 import pl.dakil.appanalyser.domain.FileCompactView
 import pl.dakil.appanalyser.domain.FileDropAction
@@ -311,6 +312,17 @@ fun AppColorTheme.label(): String = stringResource(
         AppColorTheme.SUNSET -> R.string.theme_sunset
         AppColorTheme.ROSE -> R.string.theme_rose
         AppColorTheme.TEAL -> R.string.theme_teal
+    }
+)
+
+/** The same names as the bottom bar, so the choice reads as "open on this tab". */
+@Composable
+fun StartTab.label(): String = stringResource(
+    when (this) {
+        StartTab.HOME -> R.string.nav_home
+        StartTab.DEVICE -> R.string.nav_device
+        StartTab.APPS -> R.string.nav_apps
+        StartTab.FILES -> R.string.nav_files
     }
 )
 

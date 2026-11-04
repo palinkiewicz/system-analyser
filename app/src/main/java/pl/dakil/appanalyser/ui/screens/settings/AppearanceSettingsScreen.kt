@@ -109,24 +109,16 @@ fun AppearanceSettingsScreen(
             )
         }
 
-        SectionHeader(stringResource(R.string.settings_start_screen))
-        // The same glyphs and names as the bottom bar, so the choice reads as "open on this tab".
-        ConnectedToggleRow(
-            options = listOf(
-                ToggleOption(StartTab.HOME, stringResource(R.string.nav_home), AppSymbols.Home),
-                ToggleOption(StartTab.DEVICE, stringResource(R.string.nav_device), AppSymbols.PhoneAndroid),
-                ToggleOption(StartTab.APPS, stringResource(R.string.nav_apps), AppSymbols.Apps),
-                ToggleOption(StartTab.FILES, stringResource(R.string.nav_files), AppSymbols.Folder),
-            ),
-            selected = startTab,
-            onSelect = { viewModel.setStartTab(it) },
-        )
-        Text(
-            text = stringResource(R.string.settings_start_screen_description),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = Spacing.l, vertical = Spacing.xs),
-        )
+        SectionHeader(stringResource(R.string.settings_general))
+        SegmentedGroup {
+            SelectRow(
+                title = stringResource(R.string.settings_start_screen),
+                summary = stringResource(R.string.settings_start_screen_description),
+                selectedLabel = startTab.label(),
+                options = StartTab.entries.map { it to it.label() },
+                onSelect = { viewModel.setStartTab(it) }
+            )
+        }
 
         SectionHeader(stringResource(R.string.settings_feel))
         SegmentedGroup {

@@ -100,8 +100,9 @@
     <string name="settings_dark_dark">Dark</string>
     <string name="settings_pure_black">Pure black</string>
     <string name="settings_pure_black_description">Fully black background in dark mode, saves battery on OLED screens</string>
+    <string name="settings_general">General</string>
     <string name="settings_start_screen">Start screen</string>
-    <string name="settings_start_screen_description">The tab the app opens on. Takes effect the next time you launch it.</string>
+    <string name="settings_start_screen_description">The tab the app opens on, from the next launch</string>
     <string name="settings_feel">Feel</string>
     <string name="settings_haptics">Haptic feedback</string>
     <string name="settings_haptics_description">Subtle vibrations when you switch, drag or confirm something</string>
