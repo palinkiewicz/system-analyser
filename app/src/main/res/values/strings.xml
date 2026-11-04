@@ -400,6 +400,13 @@
     <string name="files_copy_to_other">Copy to other pane</string>
     <string name="files_move_to_other">Move to other pane</string>
     <string name="files_parent_folder">Parent folder</string>
+    <string name="files_pane_actions">Pane actions</string>
+    <string name="files_mirror_down">Show top folder below too</string>
+    <string name="files_mirror_up">Show bottom folder above too</string>
+    <string name="files_mirror_right">Show left folder on the right too</string>
+    <string name="files_mirror_left">Show right folder on the left too</string>
+    <string name="files_even_split">Even split</string>
+    <string name="files_close_split">Close split view</string>
     <string name="files_resize_panes">Resize panes</string>
     <string name="files_move">Move</string>
     <string name="files_transfer_copy_one">Copy “%1$s”?</string>

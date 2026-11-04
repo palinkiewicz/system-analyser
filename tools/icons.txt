@@ -24,6 +24,7 @@ check
 check_circle
 chevron_right
 close
+close_fullscreen
 code
 content_copy
 content_cut

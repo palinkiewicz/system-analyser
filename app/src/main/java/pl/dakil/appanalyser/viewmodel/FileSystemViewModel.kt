@@ -134,9 +134,12 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
     fun swapPanes() = primary.swapWith(secondary)
 
     /** Opens the active pane's folder in the other pane too (Total Commander's "="). */
-    fun syncOtherPane() {
-        val path = activePane.currentPath.value ?: return
-        pane(activePane.id.other).open(path)
+    fun syncOtherPane() = mirror(activePane.id)
+
+    /** Opens [from]'s folder in the other pane as well. */
+    fun mirror(from: PaneId) {
+        val path = pane(from).currentPath.value ?: return
+        pane(from.other).open(path)
     }
 
     /**

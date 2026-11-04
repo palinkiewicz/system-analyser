@@ -28,6 +28,7 @@ object AppSymbols {
     val CheckCircle = AppSymbol(R.drawable.sym_check_circle, R.drawable.sym_check_circle_fill)
     val ChevronRight = AppSymbol(R.drawable.sym_chevron_right, R.drawable.sym_chevron_right_fill)
     val Close = AppSymbol(R.drawable.sym_close, R.drawable.sym_close_fill)
+    val CloseFullscreen = AppSymbol(R.drawable.sym_close_fullscreen, R.drawable.sym_close_fullscreen_fill)
     val Code = AppSymbol(R.drawable.sym_code, R.drawable.sym_code_fill)
     val ContentCopy = AppSymbol(R.drawable.sym_content_copy, R.drawable.sym_content_copy_fill)
     val ContentCut = AppSymbol(R.drawable.sym_content_cut, R.drawable.sym_content_cut_fill)

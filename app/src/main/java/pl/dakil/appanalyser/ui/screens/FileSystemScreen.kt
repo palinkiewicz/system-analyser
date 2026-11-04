@@ -128,6 +128,7 @@ import pl.dakil.appanalyser.ui.components.filesystem.FileRow
 import pl.dakil.appanalyser.ui.components.filesystem.NameInputDialog
 import pl.dakil.appanalyser.ui.components.filesystem.NoNetworkDialog
 import pl.dakil.appanalyser.ui.components.filesystem.OperationProgressCard
+import pl.dakil.appanalyser.ui.components.filesystem.PaneActions
 import pl.dakil.appanalyser.ui.components.filesystem.PropertiesDialog
 import pl.dakil.appanalyser.ui.components.filesystem.ScanFolderDialog
 import pl.dakil.appanalyser.ui.components.filesystem.ShareMethodSheet
@@ -492,11 +493,20 @@ fun FileSystemScreen(
                 )
             }
 
+            val primaryPath by viewModel.primary.currentPath.collectAsState()
+            val secondaryPath by viewModel.secondary.currentPath.collectAsState()
+            val paneActions = PaneActions(
+                onSwap = { viewModel.swapPanes() },
+                onMirror = { viewModel.mirror(it) },
+                canMirror = { (if (it == PaneId.PRIMARY) primaryPath else secondaryPath) != null },
+                onClose = { viewModel.setDualPane(false) },
+            )
             DualPaneLayout(
                 dual = dual,
                 horizontal = sideBySide,
                 split = paneSplit,
                 onSplitChange = { viewModel.setPaneSplit(it) },
+                actions = paneActions,
                 modifier = Modifier
                     // Two panes use the whole width; a single list keeps its readable maximum.
                     .then(if (dual) Modifier else Modifier.widthIn(max = Spacing.maxContentWidth))

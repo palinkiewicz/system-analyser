@@ -414,6 +414,13 @@
     <string name="files_copy_to_other">Kopiuj do drugiego panelu</string>
     <string name="files_move_to_other">Przenieś do drugiego panelu</string>
     <string name="files_parent_folder">Folder nadrzędny</string>
+    <string name="files_pane_actions">Akcje paneli</string>
+    <string name="files_mirror_down">Pokaż górny folder także na dole</string>
+    <string name="files_mirror_up">Pokaż dolny folder także na górze</string>
+    <string name="files_mirror_right">Pokaż lewy folder także po prawej</string>
+    <string name="files_mirror_left">Pokaż prawy folder także po lewej</string>
+    <string name="files_even_split">Równy podział</string>
+    <string name="files_close_split">Zamknij widok dzielony</string>
     <string name="files_resize_panes">Zmień rozmiar paneli</string>
     <string name="files_move">Przenieś</string>
     <string name="files_transfer_copy_one">Skopiować „%1$s”?</string>
