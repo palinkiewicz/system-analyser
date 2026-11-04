@@ -401,6 +401,25 @@
         <item quantity="one">%1$d item</item>
         <item quantity="other">%1$d items</item>
     </plurals>
+    <plurals name="files_operation_copying_x">
+        <item quantity="one">Copying %1$d item</item>
+        <item quantity="other">Copying %1$d items</item>
+    </plurals>
+    <plurals name="files_operation_moving_x">
+        <item quantity="one">Moving %1$d item</item>
+        <item quantity="other">Moving %1$d items</item>
+    </plurals>
+    <plurals name="files_operation_deleting_x">
+        <item quantity="one">Deleting %1$d item</item>
+        <item quantity="other">Deleting %1$d items</item>
+    </plurals>
+    <string name="files_operation_preparing">Preparing…</string>
+    <string name="files_operation_bytes">%1$s of %2$s</string>
+    <plurals name="files_operation_files_x">
+        <item quantity="one">%1$d of %2$d file</item>
+        <item quantity="other">%1$d of %2$d files</item>
+    </plurals>
+    <string name="files_operation_cancelled">Cancelled</string>
     <string name="files_open_failed">No app can open this file</string>
     <string name="files_property_path">Path</string>
     <string name="files_property_type">Type</string>

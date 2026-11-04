@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.DiskUsageRepository
@@ -15,6 +17,7 @@ import pl.dakil.appanalyser.data.SettingsRepository
 import pl.dakil.appanalyser.domain.ClipboardOperation
 import pl.dakil.appanalyser.domain.FileClipboard
 import pl.dakil.appanalyser.domain.FileDropAction
+import pl.dakil.appanalyser.domain.FileOperationProgress
 import pl.dakil.appanalyser.domain.FileSortOrder
 import pl.dakil.appanalyser.domain.PaneId
 import pl.dakil.appanalyser.domain.StorageRoot
@@ -46,8 +49,12 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
 
     fun pane(id: PaneId): FilePane = if (id == PaneId.PRIMARY) primary else secondary
 
-    private val _isBusy = MutableStateFlow(false)
-    val isBusy: StateFlow<Boolean> = _isBusy
+    /** The running copy, move or delete, if any; only one runs at a time. */
+    private val _operation = MutableStateFlow<FileOperationProgress?>(null)
+    val operation: StateFlow<FileOperationProgress?> = _operation
+    private var operationJob: Job? = null
+
+    val isBusy: Boolean get() = operationJob?.isActive == true
 
     private val _clipboard = MutableStateFlow<FileClipboard?>(null)
     val clipboard: StateFlow<FileClipboard?> = _clipboard
@@ -144,23 +151,44 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
      * The [source] pane's selection is spent once the transfer starts.
      */
     fun transfer(paths: List<String>, destination: String, operation: ClipboardOperation, source: PaneId) {
-        if (paths.isEmpty()) return
+        if (paths.isEmpty() || isBusy) return
         pane(source).clearSelection()
-        viewModelScope.launch {
-            _isBusy.value = true
+        runOperation(changed = paths + destination) { report ->
             val ok = when (operation) {
-                ClipboardOperation.COPY -> repository.copy(paths, destination)
-                ClipboardOperation.MOVE -> repository.move(paths, destination)
+                ClipboardOperation.COPY -> repository.copy(paths, destination, report)
+                ClipboardOperation.MOVE -> repository.move(paths, destination, report)
             }
-            _isBusy.value = false
-            _messages.tryEmit(
-                when (operation) {
-                    ClipboardOperation.COPY -> if (ok) R.string.files_copy_success else R.string.files_copy_failed
-                    ClipboardOperation.MOVE -> if (ok) R.string.files_move_success else R.string.files_move_failed
-                }
-            )
-            refreshAfterChange(paths + destination)
+            when (operation) {
+                ClipboardOperation.COPY -> if (ok) R.string.files_copy_success else R.string.files_copy_failed
+                ClipboardOperation.MOVE -> if (ok) R.string.files_move_success else R.string.files_move_failed
+            }
         }
+    }
+
+    /**
+     * Runs one long operation: its progress is published for the progress card, and its result
+     * message, or "Cancelled", goes to the snackbar. Whatever happened, the touched paths re-list.
+     */
+    private fun runOperation(
+        changed: Collection<String>,
+        block: suspend (report: (FileOperationProgress) -> Unit) -> Int,
+    ) {
+        operationJob = viewModelScope.launch {
+            try {
+                _messages.tryEmit(block { _operation.value = it })
+            } catch (e: CancellationException) {
+                _messages.tryEmit(R.string.files_operation_cancelled)
+                throw e
+            } finally {
+                _operation.value = null
+                refreshAfterChange(changed)
+            }
+        }
+    }
+
+    /** Stops the running operation; the item in progress is rolled back, finished ones stay. */
+    fun cancelOperation() {
+        operationJob?.cancel()
     }
 
     // -----------------------------------------------------------------------
@@ -185,16 +213,14 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
     fun paste() {
         val clip = _clipboard.value ?: return
         val destination = activePane.currentPath.value ?: return
-        viewModelScope.launch {
-            _isBusy.value = true
+        if (isBusy) return
+        _clipboard.value = null
+        runOperation(changed = clip.paths + destination) { report ->
             val ok = when (clip.operation) {
-                ClipboardOperation.COPY -> repository.copy(clip.paths, destination)
-                ClipboardOperation.MOVE -> repository.move(clip.paths, destination)
+                ClipboardOperation.COPY -> repository.copy(clip.paths, destination, report)
+                ClipboardOperation.MOVE -> repository.move(clip.paths, destination, report)
             }
-            _isBusy.value = false
-            _clipboard.value = null
-            _messages.tryEmit(if (ok) R.string.files_paste_success else R.string.files_paste_failed)
-            refreshAfterChange(clip.paths + destination)
+            if (ok) R.string.files_paste_success else R.string.files_paste_failed
         }
     }
 
@@ -233,14 +259,10 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
     fun deleteSelection() {
         val pane = activePane
         val paths = pane.selection.value.toList()
-        if (paths.isEmpty()) return
-        viewModelScope.launch {
-            _isBusy.value = true
-            val ok = repository.delete(paths)
-            _isBusy.value = false
-            _messages.tryEmit(if (ok) R.string.files_delete_success else R.string.files_delete_failed)
-            pane.clearSelection()
-            refreshAfterChange(paths)
+        if (paths.isEmpty() || isBusy) return
+        pane.clearSelection()
+        runOperation(changed = paths) { report ->
+            if (repository.delete(paths, report)) R.string.files_delete_success else R.string.files_delete_failed
         }
     }
 

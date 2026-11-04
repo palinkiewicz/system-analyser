@@ -96,6 +96,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import java.io.File
 import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.NetworkInfoProvider
@@ -103,6 +104,7 @@ import pl.dakil.appanalyser.data.ShareServerRepository
 import pl.dakil.appanalyser.domain.ClipboardOperation
 import pl.dakil.appanalyser.domain.FileDropAction
 import pl.dakil.appanalyser.domain.FileEntry
+import pl.dakil.appanalyser.domain.FileOperationProgress
 import pl.dakil.appanalyser.domain.FileSortOrder
 import pl.dakil.appanalyser.domain.PaneId
 import pl.dakil.appanalyser.domain.ScanFreshness
@@ -124,6 +126,7 @@ import pl.dakil.appanalyser.ui.components.filesystem.FileDragState
 import pl.dakil.appanalyser.ui.components.filesystem.FileRow
 import pl.dakil.appanalyser.ui.components.filesystem.NameInputDialog
 import pl.dakil.appanalyser.ui.components.filesystem.NoNetworkDialog
+import pl.dakil.appanalyser.ui.components.filesystem.OperationProgressCard
 import pl.dakil.appanalyser.ui.components.filesystem.PropertiesDialog
 import pl.dakil.appanalyser.ui.components.filesystem.ScanFolderDialog
 import pl.dakil.appanalyser.ui.components.filesystem.ShareMethodSheet
@@ -180,7 +183,8 @@ fun FileSystemScreen(
     val hasAccess by viewModel.hasAccess.collectAsState()
     val roots by viewModel.roots.collectAsState()
     val clipboard by viewModel.clipboard.collectAsState()
-    val isBusy by viewModel.isBusy.collectAsState()
+    val operation by viewModel.operation.collectAsState()
+    val busy = operation != null
     val confirmDeletion by viewModel.confirmDeletion.collectAsState()
     val dual by viewModel.dualPane.collectAsState()
     val paneSplit by viewModel.paneSplit.collectAsState()
@@ -347,7 +351,8 @@ fun FileSystemScreen(
             }
 
             override fun onDrop(payload: FileDragPayload, target: DropTarget?, pointer: Offset) {
-                if (target == null) {
+                // One operation at a time; the progress card is already showing the running one.
+                if (target == null || viewModel.isBusy) {
                     haptics.reject()
                     return
                 }
@@ -406,7 +411,7 @@ fun FileSystemScreen(
         // be pasted, so it never competes with the floating toolbars for the bottom edge.
         floatingActionButton = {
             AnimatedVisibility(
-                visible = inFolder && !selecting && clipboard == null,
+                visible = inFolder && !selecting && clipboard == null && !busy,
                 enter = scaleIn(MaterialTheme.motionScheme.fastSpatialSpec()) + fadeIn(),
                 exit = scaleOut(MaterialTheme.motionScheme.fastSpatialSpec()) + fadeOut(),
             ) {
@@ -440,7 +445,6 @@ fun FileSystemScreen(
                 FileBrowserPane(
                     pane = pane,
                     roots = roots,
-                    isBusy = isBusy,
                     dual = dual,
                     active = activeId == pane.id,
                     dragState = dragState,
@@ -488,7 +492,7 @@ fun FileSystemScreen(
             // Selection actions float over the list's bottom edge (five of them didn't fit the
             // top bar); the paste bar takes the same spot once something is on the clipboard.
             AnimatedVisibility(
-                visible = selecting,
+                visible = selecting && !busy,
                 enter = slideInVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) { it * 2 } + fadeIn(),
                 exit = slideOutVertically(MaterialTheme.motionScheme.fastSpatialSpec()) { it * 2 } + fadeOut(),
                 modifier = Modifier
@@ -522,7 +526,7 @@ fun FileSystemScreen(
                 )
             }
             AnimatedVisibility(
-                visible = clipboard != null && inFolder && !selecting,
+                visible = clipboard != null && inFolder && !selecting && !busy,
                 enter = slideInVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) { it * 2 } + fadeIn(),
                 exit = slideOutVertically(MaterialTheme.motionScheme.fastSpatialSpec()) { it * 2 } + fadeOut(),
                 modifier = Modifier
@@ -566,6 +570,35 @@ fun FileSystemScreen(
                         AppIcon(AppSymbols.ContentPaste, contentDescription = null, modifier = Modifier.size(18.dp))
                         Text(stringResource(R.string.files_paste), modifier = Modifier.padding(start = Spacing.s))
                     }
+                }
+            }
+
+            // A long operation takes the toolbars' spot. It only appears once the operation has run
+            // for a moment, so a quick rename-move or a small copy never flashes it.
+            var showProgress by remember { mutableStateOf(false) }
+            LaunchedEffect(busy) {
+                if (busy) delay(PROGRESS_CARD_DELAY_MS)
+                showProgress = busy
+            }
+            // Kept through the exit animation, after the operation itself has finished.
+            val shownOperation = remember { LastOperation() }
+            operation?.let { shownOperation.value = it }
+            AnimatedVisibility(
+                visible = showProgress && busy,
+                enter = slideInVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) { it * 2 } + fadeIn(),
+                exit = slideOutVertically(MaterialTheme.motionScheme.fastSpatialSpec()) { it * 2 } + fadeOut(),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = Spacing.l, start = Spacing.gutter, end = Spacing.gutter),
+            ) {
+                shownOperation.value?.let { progress ->
+                    OperationProgressCard(
+                        progress = progress,
+                        onCancel = {
+                            haptics.reject()
+                            viewModel.cancelOperation()
+                        },
+                    )
                 }
             }
 
@@ -749,7 +782,6 @@ fun FileSystemScreen(
 private fun FileBrowserPane(
     pane: FilePane,
     roots: List<StorageRoot>,
-    isBusy: Boolean,
     dual: Boolean,
     active: Boolean,
     dragState: FileDragState,
@@ -867,7 +899,7 @@ private fun FileBrowserPane(
 
         Box(Modifier.weight(1f)) {
             when {
-                isLoading || isBusy -> Box(Modifier.fillMaxSize(), Alignment.Center) {
+                isLoading -> Box(Modifier.fillMaxSize(), Alignment.Center) {
                     LoadingIndicator(Modifier.size(64.dp))
                 }
                 currentPath == null -> StorageRootList(
@@ -932,6 +964,11 @@ private fun FileBrowserPane(
         }
     }
 }
+
+/** How long an operation runs before its progress card appears. */
+private const val PROGRESS_CARD_DELAY_MS = 400L
+
+private class LastOperation(var value: FileOperationProgress? = null)
 
 /** Pixels per frame at the very edge of a pane while carried items auto-scroll it. */
 private const val MAX_AUTO_SCROLL_PER_FRAME = 24f

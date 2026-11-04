@@ -9,14 +9,13 @@ import android.os.storage.StorageManager
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import pl.dakil.appanalyser.domain.FileEntry
+import pl.dakil.appanalyser.domain.FileOperationProgress
 import pl.dakil.appanalyser.domain.FileSortOrder
 import pl.dakil.appanalyser.domain.StorageRoot
 import pl.dakil.appanalyser.domain.TextLoadResult
 import java.io.File
-import kotlin.coroutines.coroutineContext
 
 /**
  * Plain `java.io.File` access for the File system tab.
@@ -170,98 +169,24 @@ class FileSystemRepository(private val context: Context) {
     }
 
     /** Deletes files and whole directory trees. Returns false if any item failed. */
-    suspend fun delete(paths: Collection<String>): Boolean = withContext(Dispatchers.IO) {
-        var allOk = true
-        for (path in paths) {
-            coroutineContext.ensureActive()
-            val ok = runCatching {
-                val file = File(path)
-                if (file.isDirectory) file.deleteRecursively() else file.delete()
-            }.getOrDefault(false)
-            if (!ok) allOk = false
-        }
-        allOk
-    }
+    suspend fun delete(
+        paths: Collection<String>,
+        onProgress: (FileOperationProgress) -> Unit = {},
+    ): Boolean = FileOperations.delete(paths, onProgress)
 
-    /**
-     * Copies [sources] into [destinationDir], de-colliding names. [onProgress] is called with
-     * (done, total) after each top-level item.
-     */
+    /** Copies [sources] into [destinationDir], de-colliding names. See [FileOperations]. */
     suspend fun copy(
         sources: List<String>,
         destinationDir: String,
-        onProgress: (Int, Int) -> Unit = { _, _ -> },
-    ): Boolean = transfer(sources, destinationDir, move = false, onProgress = onProgress)
+        onProgress: (FileOperationProgress) -> Unit = {},
+    ): Boolean = FileOperations.copy(sources, destinationDir, onProgress)
 
-    /**
-     * Moves [sources] into [destinationDir]. Tries a rename first and falls back to copy+delete
-     * when the destination sits on a different volume.
-     */
+    /** Moves [sources] into [destinationDir], renaming where possible. See [FileOperations]. */
     suspend fun move(
         sources: List<String>,
         destinationDir: String,
-        onProgress: (Int, Int) -> Unit = { _, _ -> },
-    ): Boolean = transfer(sources, destinationDir, move = true, onProgress = onProgress)
-
-    private suspend fun transfer(
-        sources: List<String>,
-        destinationDir: String,
-        move: Boolean,
-        onProgress: (Int, Int) -> Unit,
-    ): Boolean = withContext(Dispatchers.IO) {
-        var allOk = true
-        sources.forEachIndexed { index, sourcePath ->
-            coroutineContext.ensureActive()
-            val ok = runCatching {
-                val source = File(sourcePath)
-                if (!source.exists()) return@runCatching false
-                // Copying a folder into itself would recurse forever.
-                if (source.isDirectory && isInside(destinationDir, sourcePath)) return@runCatching false
-                // Moving something into the folder it already lives in is a no-op, not a duplicate.
-                if (move && source.parentFile?.absolutePath == File(destinationDir).absolutePath) {
-                    return@runCatching true
-                }
-                val target = uniqueTarget(File(destinationDir), source.name)
-                if (move && source.renameTo(target)) return@runCatching true
-                if (source.isDirectory) {
-                    source.copyRecursively(target, overwrite = false)
-                } else {
-                    source.copyTo(target, overwrite = false)
-                }
-                if (move) {
-                    if (source.isDirectory) source.deleteRecursively() else source.delete()
-                } else {
-                    true
-                }
-            }.getOrDefault(false)
-            if (!ok) allOk = false
-            onProgress(index + 1, sources.size)
-        }
-        allOk
-    }
-
-    /** True when [candidate] is [ancestor] itself or lives underneath it. */
-    private fun isInside(candidate: String, ancestor: String): Boolean {
-        val normalizedAncestor = File(ancestor).absolutePath
-        val normalizedCandidate = File(candidate).absolutePath
-        return normalizedCandidate == normalizedAncestor ||
-            normalizedCandidate.startsWith("$normalizedAncestor${File.separator}")
-    }
-
-    /** `report.txt` → `report (1).txt` when the name is taken. */
-    private fun uniqueTarget(directory: File, name: String): File {
-        var candidate = File(directory, name)
-        if (!candidate.exists()) return candidate
-        val base = name.substringBeforeLast('.', name)
-        val extension = name.substringAfterLast('.', "")
-        var index = 1
-        while (candidate.exists()) {
-            val suffixed = if (extension.isEmpty()) "$base ($index)" else "$base ($index).$extension"
-            candidate = File(directory, suffixed)
-            index++
-        }
-        return candidate
-    }
+        onProgress: (FileOperationProgress) -> Unit = {},
+    ): Boolean = FileOperations.move(sources, destinationDir, onProgress)
 
     /** Spaces are legal in file names; path separators and the dot entries are not. */
     private fun isValidName(name: String): Boolean =
