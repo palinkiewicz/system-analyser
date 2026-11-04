@@ -33,7 +33,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.FilledTonalButton
@@ -68,6 +67,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -106,6 +106,7 @@ import pl.dakil.appanalyser.domain.FileEntry
 import pl.dakil.appanalyser.domain.FileSortOrder
 import pl.dakil.appanalyser.domain.PaneId
 import pl.dakil.appanalyser.domain.ScanFreshness
+import pl.dakil.appanalyser.domain.ScrollPosition
 import pl.dakil.appanalyser.domain.ShareState
 import pl.dakil.appanalyser.domain.StorageRoot
 import pl.dakil.appanalyser.service.ShareServerManager
@@ -434,11 +435,8 @@ fun FileSystemScreen(
                 .onGloballyPositioned { dragState.overlayOrigin = it.positionInRoot() },
             contentAlignment = Alignment.TopCenter,
         ) {
-            val primaryList = rememberLazyListState()
-            val secondaryList = rememberLazyListState()
-
             @Composable
-            fun Pane(pane: FilePane, listState: LazyListState, bottomPadding: Dp, outerPadding: PaddingValues) {
+            fun Pane(pane: FilePane, bottomPadding: Dp, outerPadding: PaddingValues) {
                 FileBrowserPane(
                     pane = pane,
                     roots = roots,
@@ -446,7 +444,6 @@ fun FileSystemScreen(
                     dual = dual,
                     active = activeId == pane.id,
                     dragState = dragState,
-                    listState = listState,
                     bottomPadding = bottomPadding,
                     outerPadding = outerPadding,
                     onActivate = { viewModel.setActivePane(pane.id) },
@@ -466,7 +463,6 @@ fun FileSystemScreen(
                 primary = {
                     Pane(
                         pane = viewModel.primary,
-                        listState = primaryList,
                         // Stacked, only the bottom pane runs under the floating bars.
                         bottomPadding = if (dual && !sideBySide) Spacing.s else FLOATING_BAR_CLEARANCE,
                         outerPadding = when {
@@ -479,7 +475,6 @@ fun FileSystemScreen(
                 secondary = {
                     Pane(
                         pane = viewModel.secondary,
-                        listState = secondaryList,
                         bottomPadding = FLOATING_BAR_CLEARANCE,
                         outerPadding = if (sideBySide) {
                             PaddingValues(end = Spacing.s, bottom = Spacing.s)
@@ -758,7 +753,6 @@ private fun FileBrowserPane(
     dual: Boolean,
     active: Boolean,
     dragState: FileDragState,
-    listState: LazyListState,
     bottomPadding: Dp,
     outerPadding: PaddingValues,
     onActivate: () -> Unit,
@@ -769,6 +763,19 @@ private fun FileBrowserPane(
     val selection by pane.selection.collectAsState()
     val isLoading by pane.isLoading.collectAsState()
     val selecting = selection.isNotEmpty()
+
+    // One list state per folder, opened where the folder was left if the user is coming back up to
+    // it (and at the top when going down), then reported back continuously. The pane keeps the
+    // positions, so a swap or a recomposition of the pane loses nothing.
+    val listState = remember(pane, currentPath) {
+        val saved = currentPath?.let { pane.scrollPositionFor(it) } ?: ScrollPosition.Top
+        LazyListState(saved.index, saved.offset)
+    }
+    LaunchedEffect(listState) {
+        val path = currentPath ?: return@LaunchedEffect
+        snapshotFlow { ScrollPosition(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset) }
+            .collect { pane.recordScroll(path, it) }
+    }
 
     // Published for hit-testing: the other pane at large drops into this folder.
     SideEffect { dragState.setPaneFolder(pane.id, currentPath) }
@@ -809,7 +816,7 @@ private fun FileBrowserPane(
     // dragged row pins itself in the list, so scrolling it out of view doesn't end the drag.
     val edge = with(LocalDensity.current) { AUTO_SCROLL_EDGE.toPx() }
     val carrying = dragState.payload != null
-    LaunchedEffect(carrying) {
+    LaunchedEffect(carrying, listState) {
         if (!carrying) return@LaunchedEffect
         while (true) {
             withFrameNanos { }

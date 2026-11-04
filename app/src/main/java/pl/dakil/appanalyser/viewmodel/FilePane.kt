@@ -8,6 +8,8 @@ import pl.dakil.appanalyser.data.FileSystemRepository
 import pl.dakil.appanalyser.data.SettingsRepository
 import pl.dakil.appanalyser.domain.FileEntry
 import pl.dakil.appanalyser.domain.PaneId
+import pl.dakil.appanalyser.domain.ScrollMemory
+import pl.dakil.appanalyser.domain.ScrollPosition
 import pl.dakil.appanalyser.domain.StorageRoot
 import java.io.File
 
@@ -36,6 +38,21 @@ class FilePane(
     private val _selection = MutableStateFlow<Set<String>>(emptySet())
     val selection: StateFlow<Set<String>> = _selection
 
+    /** Where the folders on the way here were scrolled to; travels with the location on a swap. */
+    private var scrollMemory = ScrollMemory()
+
+    /** Where [path]'s list should open: as it was left when coming back up, else the top. */
+    fun scrollPositionFor(path: String): ScrollPosition = scrollMemory.positionFor(path)
+
+    /** Fed continuously by the pane's list while it shows [path]. */
+    fun recordScroll(path: String, position: ScrollPosition) =
+        scrollMemory.record(path, position, _currentPath.value)
+
+    private fun setPath(path: String?) {
+        scrollMemory.trimTo(path)
+        _currentPath.value = path
+    }
+
     fun refresh() {
         val path = _currentPath.value ?: return
         scope.launch {
@@ -57,7 +74,7 @@ class FilePane(
     }
 
     fun open(path: String) {
-        _currentPath.value = path
+        setPath(path)
         _selection.value = emptySet()
         refresh()
     }
@@ -66,7 +83,7 @@ class FilePane(
     fun navigateUp(): Boolean {
         val path = _currentPath.value ?: return false
         if (roots.value.any { it.path == path }) {
-            _currentPath.value = null
+            setPath(null)
             _entries.value = emptyList()
             _selection.value = emptySet()
             _isLoading.value = false
@@ -82,6 +99,9 @@ class FilePane(
         val path = _currentPath.value
         val entries = _entries.value
         val selection = _selection.value
+        val memory = scrollMemory
+        scrollMemory = other.scrollMemory
+        other.scrollMemory = memory
         _currentPath.value = other._currentPath.value
         _entries.value = other._entries.value
         _selection.value = other._selection.value
