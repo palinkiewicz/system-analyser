@@ -421,6 +421,7 @@
     <string name="files_mirror_left">Pokaż prawy folder także po lewej</string>
     <string name="files_even_split">Równy podział</string>
     <string name="files_close_split">Zamknij widok dzielony</string>
+    <string name="files_release_to_close">Puść, aby zamknąć widok dzielony</string>
     <string name="files_resize_panes">Zmień rozmiar paneli</string>
     <string name="files_move">Przenieś</string>
     <string name="files_transfer_copy_one">Skopiować „%1$s”?</string>

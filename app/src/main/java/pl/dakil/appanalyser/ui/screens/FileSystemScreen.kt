@@ -500,6 +500,10 @@ fun FileSystemScreen(
                 onMirror = { viewModel.mirror(it) },
                 canMirror = { (if (it == PaneId.PRIMARY) primaryPath else secondaryPath) != null },
                 onClose = { viewModel.setDualPane(false) },
+                onCollapse = {
+                    haptics.toggle(false)
+                    viewModel.collapseTo(it)
+                },
             )
             DualPaneLayout(
                 dual = dual,

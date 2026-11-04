@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
@@ -17,7 +18,10 @@ import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.HorizontalFloatingToolbar
@@ -25,6 +29,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
@@ -35,12 +40,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.res.stringResource
@@ -57,6 +65,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.SettingsRepository
 import pl.dakil.appanalyser.domain.PaneId
@@ -71,14 +80,48 @@ private val DIVIDER_THICKNESS = 16.dp
 /** Within this distance of an even split the divider snaps to it. */
 private const val SNAP_BAND = 0.03f
 
+/** Past the normal split limits the divider follows the finger at this fraction of its travel. */
+private const val RUBBER_BAND = 0.5f
+
+/** A finger within this share of either end arms closing the pane on that side. */
+private const val COLLAPSE_BAND = 0.1f
+
+/**
+ * Where the divider is drawn for a finger at [raw] (0 = top/left edge, 1 = bottom/right edge), and
+ * which pane would be kept if it were let go there: past the usual limits it resists, and near an
+ * edge it arms closing the pane being squeezed out. Inside the limits it snaps to an even split.
+ */
+internal data class DividerPosition(val shown: Float, val keep: PaneId?)
+
+internal fun dividerPosition(raw: Float): DividerPosition {
+    val min = SettingsRepository.MIN_PANE_SPLIT
+    val max = SettingsRepository.MAX_PANE_SPLIT
+    return when {
+        raw < min -> DividerPosition(
+            shown = min - (min - raw) * RUBBER_BAND,
+            keep = if (raw < COLLAPSE_BAND) PaneId.SECONDARY else null,
+        )
+        raw > max -> DividerPosition(
+            shown = max + (raw - max) * RUBBER_BAND,
+            keep = if (raw > 1f - COLLAPSE_BAND) PaneId.PRIMARY else null,
+        )
+        abs(raw - 0.5f) < SNAP_BAND -> DividerPosition(0.5f, keep = null)
+        else -> DividerPosition(raw, keep = null)
+    }
+}
+
 /**
  * Hosts the Files tab's one or two browsers. With [dual] off only [primary] is composed and fills
  * the space, exactly like the single pane browser; turning it on slides [secondary] in below
  * ([horizontal] false) or beside it, with a draggable divider between them.
  *
  * [primary] stays at the same spot in the composition either way, so its list and scroll position
- * survive the toggle. Tapping the divider opens [actions] on a small floating toolbar. [split] is the primary pane's share; dragging previews locally and only
+ * survive the toggle. [split] is the primary pane's share; dragging previews locally and only
  * [onSplitChange]s once the finger lifts, so preferences aren't written every frame.
+ *
+ * Tapping the divider opens [actions] on a small floating toolbar. Dragging it far towards an edge
+ * squeezes that pane out: the pane fades, a "release" chip appears, and letting go there closes the
+ * split, keeping the other pane's folder ([PaneActions.onCollapse]).
  */
 @Composable
 fun DualPaneLayout(
@@ -102,32 +145,76 @@ fun DualPaneLayout(
         rawSplit = split
         shownSplit = split
     }
+    // A collapse leaves the shown split at "primary fills everything"; a new split starts over
+    // from the stored one, which a collapse never overwrites.
+    LaunchedEffect(dual) {
+        if (dual) {
+            rawSplit = split
+            shownSplit = split
+        }
+    }
+    // The pane that would survive a release right now, or null.
+    var keep by remember { mutableStateOf<PaneId?>(null) }
     // The length the panes share, recorded by the measure pass for converting drag pixels into a
     // fraction. Not state: nothing should recompose or relayout when it is written.
     val length = remember { SplitLength() }
+    val scope = rememberCoroutineScope()
+    val settleSpec = MaterialTheme.motionScheme.fastSpatialSpec<Float>()
 
+    /** Returns true when the drag just crossed something worth a haptic: the snap or the edge. */
     fun moveSplitTo(target: Float): Boolean {
-        rawSplit = target.coerceIn(SettingsRepository.MIN_PANE_SPLIT, SettingsRepository.MAX_PANE_SPLIT)
-        val snapped = if (abs(rawSplit - 0.5f) < SNAP_BAND) 0.5f else rawSplit
-        val snappedNow = snapped == 0.5f && shownSplit != 0.5f
-        shownSplit = snapped
-        return snappedNow
+        rawSplit = target.coerceIn(0f, 1f)
+        val position = dividerPosition(rawSplit)
+        val crossed = (position.shown == 0.5f && shownSplit != 0.5f) || position.keep != keep
+        shownSplit = position.shown
+        keep = position.keep
+        return crossed
     }
+
+    fun settle() {
+        val kept = keep
+        val from = shownSplit
+        scope.launch {
+            if (kept != null) {
+                // Finish squeezing the pane out, then hand over; the primary slot fills the space
+                // once the panes have been swapped (if the secondary is the one kept).
+                animate(from, if (kept == PaneId.PRIMARY) 1f else 0f, animationSpec = settleSpec) { value, _ ->
+                    shownSplit = value
+                }
+                keep = null
+                shownSplit = 1f
+                actions.onCollapse(kept)
+            } else {
+                val clamped = from.coerceIn(SettingsRepository.MIN_PANE_SPLIT, SettingsRepository.MAX_PANE_SPLIT)
+                if (clamped != from) {
+                    animate(from, clamped, animationSpec = settleSpec) { value, _ -> shownSplit = value }
+                }
+                rawSplit = clamped
+                onSplitChange(clamped)
+            }
+        }
+    }
+
+    // The pane being squeezed out fades, so it is clear which one a release would close.
+    val effects = MaterialTheme.motionScheme.fastEffectsSpec<Float>()
+    val primaryAlpha by animateFloatAsState(if (keep == PaneId.SECONDARY) LEAVING_ALPHA else 1f, effects, label = "primaryAlpha")
+    val secondaryAlpha by animateFloatAsState(if (keep == PaneId.PRIMARY) LEAVING_ALPHA else 1f, effects, label = "secondaryAlpha")
 
     Layout(
         modifier = modifier,
         content = {
-            Box { primary() }
+            Box(Modifier.graphicsLayer { alpha = primaryAlpha }) { primary() }
             if (progress > 0f) {
                 PaneDivider(
                     horizontal = horizontal,
                     split = shownSplit,
+                    keep = keep,
                     onDrag = { delta -> moveSplitTo(rawSplit + delta / length.pixels.coerceAtLeast(1f)) },
                     onSet = { target ->
                         moveSplitTo(target)
                         onSplitChange(shownSplit)
                     },
-                    onSettle = { onSplitChange(shownSplit) },
+                    onSettle = { settle() },
                     onReset = {
                         rawSplit = 0.5f
                         shownSplit = 0.5f
@@ -135,7 +222,7 @@ fun DualPaneLayout(
                     },
                     actions = actions,
                 )
-                Box { secondary() }
+                Box(Modifier.graphicsLayer { alpha = secondaryAlpha }) { secondary() }
             }
         },
     ) { measurables, constraints ->
@@ -160,13 +247,14 @@ fun DualPaneLayout(
 
         layout(constraints.maxWidth, constraints.maxHeight) {
             primaryPlaceable.place(0, 0)
-            val dividerOffset = primarySize - (DIVIDER_THICKNESS.roundToPx() - divider) / 2
-            dividerPlaceable?.let {
-                if (horizontal) it.place(dividerOffset, 0) else it.place(0, dividerOffset)
-            }
             secondaryPlaceable?.let {
                 val offset = primarySize + divider
                 if (horizontal) it.place(offset, 0) else it.place(0, offset)
+            }
+            // Placed last so it draws above both panes: the release chip overhangs its strip.
+            val dividerOffset = primarySize - (DIVIDER_THICKNESS.roundToPx() - divider) / 2
+            dividerPlaceable?.let {
+                if (horizontal) it.place(dividerOffset, 0) else it.place(0, dividerOffset)
             }
         }
     }
@@ -179,6 +267,8 @@ class PaneActions(
     val onMirror: (from: PaneId) -> Unit,
     val canMirror: (from: PaneId) -> Boolean,
     val onClose: () -> Unit,
+    /** The divider was dragged away and let go: leave dual pane mode showing [keep]'s folder. */
+    val onCollapse: (keep: PaneId) -> Unit,
 )
 
 /**
@@ -190,6 +280,8 @@ class PaneActions(
 private fun PaneDivider(
     horizontal: Boolean,
     split: Float,
+    /** Set while a release would close the split, keeping this pane. */
+    keep: PaneId?,
     /** Applies a drag delta in pixels; returns true when it snapped to an even split. */
     onDrag: (delta: Float) -> Boolean,
     /** Jumps straight to a split, for accessibility services. */
@@ -256,14 +348,49 @@ private fun PaneDivider(
                 )
             },
     ) {
+        val pillAlpha by animateFloatAsState(
+            if (keep != null) 0f else 1f,
+            MaterialTheme.motionScheme.fastEffectsSpec(),
+            label = "dividerPillAlpha",
+        )
         Box(
             Modifier
                 .size(
                     width = if (horizontal) 4.dp else pillLength,
                     height = if (horizontal) pillLength else 4.dp,
                 )
+                .graphicsLayer { alpha = pillAlpha }
                 .background(pillColor, CircleShape)
         )
+
+        // Overhangs the thin strip, so the promise of what letting go does is readable.
+        val spatial = MaterialTheme.motionScheme.fastSpatialSpec<Float>()
+        AnimatedVisibility(
+            visible = keep != null,
+            enter = scaleIn(spatial, initialScale = 0.5f) + fadeIn(MaterialTheme.motionScheme.fastEffectsSpec()),
+            exit = scaleOut(spatial, targetScale = 0.5f) + fadeOut(MaterialTheme.motionScheme.fastEffectsSpec()),
+            modifier = Modifier.wrapContentSize(unbounded = true),
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shadowElevation = 3.dp,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(start = 12.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+                ) {
+                    AppIcon(AppSymbols.CloseFullscreen, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text(
+                        stringResource(R.string.files_release_to_close),
+                        style = MaterialTheme.typography.labelLarge,
+                        maxLines = 1,
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
+            }
+        }
 
         if (toolbar.currentState || toolbar.targetState) {
             Popup(
@@ -384,3 +511,6 @@ private fun PaneToolbarButton(
 }
 
 private class SplitLength(var pixels: Float = 0f)
+
+/** How faint a pane gets while a release would close it. */
+private const val LEAVING_ALPHA = 0.35f

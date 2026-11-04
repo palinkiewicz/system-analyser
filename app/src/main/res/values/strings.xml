@@ -407,6 +407,7 @@
     <string name="files_mirror_left">Show right folder on the left too</string>
     <string name="files_even_split">Even split</string>
     <string name="files_close_split">Close split view</string>
+    <string name="files_release_to_close">Release to close split view</string>
     <string name="files_resize_panes">Resize panes</string>
     <string name="files_move">Move</string>
     <string name="files_transfer_copy_one">Copy “%1$s”?</string>

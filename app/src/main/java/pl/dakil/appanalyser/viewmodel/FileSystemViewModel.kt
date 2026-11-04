@@ -124,6 +124,12 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
         settings.setFilesDualPane(enabled)
     }
 
+    /** Leaves dual pane mode showing [keep]'s folder, whichever pane was active. */
+    fun collapseTo(keep: PaneId) {
+        _activePaneId.value = keep
+        setDualPane(false)
+    }
+
     fun setActivePane(id: PaneId) {
         _activePaneId.value = id
     }
