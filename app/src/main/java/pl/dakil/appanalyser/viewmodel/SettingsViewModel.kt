@@ -42,6 +42,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     val fileDropAction: StateFlow<FileDropAction> = settings.fileDropAction
     val dualPaneStyle: StateFlow<DualPaneStyle> = settings.dualPaneStyle
     val confirmFileTransfer: StateFlow<Boolean> = settings.confirmFileTransfer
+    val filesTransferDialog: StateFlow<Boolean> = settings.filesTransferDialog
     val editorMonospace: StateFlow<Boolean> = settings.editorMonospace
     val editorWordWrap: StateFlow<Boolean> = settings.editorWordWrap
     val editorSyntaxHighlighting: StateFlow<Boolean> = settings.editorSyntaxHighlighting
@@ -70,6 +71,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setFileDropAction(action: FileDropAction) = settings.setFileDropAction(action)
     fun setDualPaneStyle(style: DualPaneStyle) = settings.setDualPaneStyle(style)
     fun setConfirmFileTransfer(enabled: Boolean) = settings.setConfirmFileTransfer(enabled)
+    fun setFilesTransferDialog(enabled: Boolean) = settings.setFilesTransferDialog(enabled)
     fun setEditorMonospace(enabled: Boolean) = settings.setEditorMonospace(enabled)
     fun setEditorWordWrap(enabled: Boolean) = settings.setEditorWordWrap(enabled)
     fun setEditorSyntaxHighlighting(enabled: Boolean) = settings.setEditorSyntaxHighlighting(enabled)

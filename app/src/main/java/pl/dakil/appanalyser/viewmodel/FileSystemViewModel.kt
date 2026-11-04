@@ -24,6 +24,7 @@ import pl.dakil.appanalyser.domain.FileCompactView
 import pl.dakil.appanalyser.domain.FileDropAction
 import pl.dakil.appanalyser.domain.FileFavorite
 import pl.dakil.appanalyser.domain.FileOperationProgress
+import pl.dakil.appanalyser.domain.FileEntry
 import pl.dakil.appanalyser.domain.FileSortOrder
 import pl.dakil.appanalyser.domain.PaneId
 import pl.dakil.appanalyser.domain.StorageRoot
@@ -93,6 +94,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
     val paneSplit: StateFlow<Float> = settings.filesPaneSplit
     val dropAction: StateFlow<FileDropAction> = settings.fileDropAction
     val confirmTransfer: StateFlow<Boolean> = settings.confirmFileTransfer
+    val transferDialog: StateFlow<Boolean> = settings.filesTransferDialog
     val compactView: StateFlow<FileCompactView> = settings.fileCompactView
     val dualPaneStyle: StateFlow<DualPaneStyle> = settings.dualPaneStyle
 
@@ -374,4 +376,9 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
     fun diskScanFreshness(path: String) = diskUsage.freshnessFor(path, settings.diskScanMaxAgeHours.value)
 
     suspend fun childCount(path: String) = repository.childCount(path)
+
+    /** [path]'s subfolders by name, for the transfer dialog's folder picker; follows hidden files. */
+    suspend fun listFolders(path: String): List<FileEntry> =
+        repository.list(path, showHidden.value, FileSortOrder.NAME, descending = false)
+            .filter { it.isDirectory }
 }

@@ -137,6 +137,13 @@ class SettingsRepository private constructor(context: Context) {
     private val _confirmFileTransfer = MutableStateFlow(prefs.getBoolean(KEY_CONFIRM_FILE_TRANSFER, false))
     val confirmFileTransfer: StateFlow<Boolean> = _confirmFileTransfer.asStateFlow()
 
+    /**
+     * Off by default: one selection button for copy, move and share, opening a dialog where the
+     * destination can be changed (Total Commander mobile's transfer dialog).
+     */
+    private val _filesTransferDialog = MutableStateFlow(prefs.getBoolean(KEY_FILES_TRANSFER_DIALOG, false))
+    val filesTransferDialog: StateFlow<Boolean> = _filesTransferDialog.asStateFlow()
+
     private val _fileDropAction = MutableStateFlow(
         runCatching { FileDropAction.valueOf(prefs.getString(KEY_FILE_DROP_ACTION, null)!!) }
             .getOrDefault(FileDropAction.ASK)
@@ -300,6 +307,11 @@ class SettingsRepository private constructor(context: Context) {
         _confirmFileTransfer.value = enabled
     }
 
+    fun setFilesTransferDialog(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_FILES_TRANSFER_DIALOG, enabled).apply()
+        _filesTransferDialog.value = enabled
+    }
+
     fun setFileDropAction(action: FileDropAction) {
         prefs.edit().putString(KEY_FILE_DROP_ACTION, action.name).apply()
         _fileDropAction.value = action
@@ -366,6 +378,7 @@ class SettingsRepository private constructor(context: Context) {
         private const val KEY_DUAL_PANE_STYLE = "files_dual_pane_style"
         private const val KEY_FILE_DROP_ACTION = "file_drop_action"
         private const val KEY_CONFIRM_FILE_TRANSFER = "confirm_file_transfer"
+        private const val KEY_FILES_TRANSFER_DIALOG = "files_transfer_dialog"
         private const val KEY_EDITOR_MONOSPACE = "editor_monospace"
         private const val KEY_EDITOR_WORD_WRAP = "editor_word_wrap"
         private const val KEY_EDITOR_SYNTAX_HIGHLIGHTING = "editor_syntax_highlighting"

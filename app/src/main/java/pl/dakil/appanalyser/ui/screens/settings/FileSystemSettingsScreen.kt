@@ -41,6 +41,7 @@ fun FileSystemSettingsScreen(
     val compactView by viewModel.fileCompactView.collectAsState()
     val dropAction by viewModel.fileDropAction.collectAsState()
     val confirmTransfer by viewModel.confirmFileTransfer.collectAsState()
+    val transferDialog by viewModel.filesTransferDialog.collectAsState()
     val dualPaneStyle by viewModel.dualPaneStyle.collectAsState()
     val monospace by viewModel.editorMonospace.collectAsState()
     val wordWrap by viewModel.editorWordWrap.collectAsState()
@@ -86,6 +87,12 @@ fun FileSystemSettingsScreen(
 
         SectionHeader(stringResource(R.string.settings_file_system_transfers))
         SegmentedGroup {
+            SwitchRow(
+                title = stringResource(R.string.settings_transfer_dialog),
+                summary = stringResource(R.string.settings_transfer_dialog_description),
+                checked = transferDialog,
+                onCheckedChange = { viewModel.setFilesTransferDialog(it) }
+            )
             SelectRow(
                 title = stringResource(R.string.settings_file_drop_action),
                 summary = stringResource(R.string.settings_file_drop_action_description),

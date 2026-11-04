@@ -54,6 +54,8 @@
     <string name="settings_file_system_transfers">Copy &amp; move</string>
     <string name="settings_confirm_transfer">Confirm copy and move</string>
     <string name="settings_confirm_transfer_description">Ask once more, showing where the items will go</string>
+    <string name="settings_transfer_dialog">Single transfer button</string>
+    <string name="settings_transfer_dialog_description">Copy, move and share from one dialog, where the destination can be changed</string>
     <string name="settings_file_drop_action">When dropping files</string>
     <string name="settings_file_drop_action_description">What dragging items onto the other pane or a folder does</string>
     <string name="settings_file_drop_ask">Ask</string>
@@ -440,6 +442,18 @@
     <string name="files_transfer_from">From</string>
     <string name="files_transfer_to">To</string>
     <string name="files_transfer_several_folders">Several folders</string>
+    <string name="files_transfer">Copy, move or share</string>
+    <string name="files_transfer_to_one">Copy or move “%1$s” to:</string>
+    <plurals name="files_transfer_to_x">
+        <item quantity="one">Copy or move %1$d item to:</item>
+        <item quantity="other">Copy or move %1$d items to:</item>
+    </plurals>
+    <string name="files_transfer_change_destination">Change destination</string>
+    <string name="files_pick_folder">Choose folder</string>
+    <string name="files_pick_folder_select">Select</string>
+    <string name="files_pick_folder_up">Up one level</string>
+    <string name="files_pick_folder_empty">No folders here</string>
+    <string name="files_pick_folder_volumes">Storage</string>
     <string name="files_drop_into">Into “%1$s”</string>
     <string name="files_drop_move_here">Move here</string>
     <string name="files_drop_copy_here">Copy here</string>

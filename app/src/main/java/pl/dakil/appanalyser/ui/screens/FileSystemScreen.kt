@@ -154,6 +154,7 @@ import pl.dakil.appanalyser.ui.components.filesystem.ScanFolderDialog
 import pl.dakil.appanalyser.ui.components.filesystem.ShareMethodSheet
 import pl.dakil.appanalyser.ui.components.filesystem.SwipePaneLayout
 import pl.dakil.appanalyser.ui.components.filesystem.TransferConfirmDialog
+import pl.dakil.appanalyser.ui.components.filesystem.TransferDialog
 import pl.dakil.appanalyser.ui.components.filesystem.fileDragSource
 import pl.dakil.appanalyser.ui.components.filesystem.openFile
 import pl.dakil.appanalyser.ui.components.filesystem.openHotspotSettings
@@ -197,6 +198,9 @@ private data class PendingTransfer(
     val source: PaneId?,
 )
 
+/** The single transfer button's dialog: the selection, captured when it opens, and where it starts. */
+private data class TransferRequest(val paths: List<String>, val destination: String)
+
 @Composable
 fun FileSystemScreen(
     onOpenEditor: (String) -> Unit,
@@ -223,6 +227,7 @@ fun FileSystemScreen(
     val paneSplit by viewModel.paneSplit.collectAsState()
     val dropAction by viewModel.dropAction.collectAsState()
     val confirmTransfer by viewModel.confirmTransfer.collectAsState()
+    val transferDialog by viewModel.transferDialog.collectAsState()
     val compactSetting by viewModel.compactView.collectAsState()
     val dualStyle by viewModel.dualPaneStyle.collectAsState()
     val favorites by viewModel.favorites.collectAsState()
@@ -279,6 +284,7 @@ fun FileSystemScreen(
     var scanPrompt by remember { mutableStateOf<Pair<String, ScanFreshness>?>(null) }
     var pendingDrop by remember { mutableStateOf<PendingDrop?>(null) }
     var pendingTransfer by remember { mutableStateOf<PendingTransfer?>(null) }
+    var transferRequest by remember { mutableStateOf<TransferRequest?>(null) }
     var colorTarget by remember { mutableStateOf<FileFavorite?>(null) }
 
     // Inside a folder the analyser opens on that folder. A current scan shows straight away;
@@ -680,6 +686,12 @@ fun FileSystemScreen(
                 SelectionToolbar(
                     single = selection.size == 1,
                     dual = dual,
+                    combined = transferDialog,
+                    onTransfer = {
+                        // The other pane in dual mode (unless it is on its home page), else this folder.
+                        val destination = (if (dual) otherPath else null) ?: currentPath
+                        if (destination != null) transferRequest = TransferRequest(selection.toList(), destination)
+                    },
                     otherPaneReady = otherPath != null,
                     onCopy = { viewModel.copySelection() },
                     onCut = { viewModel.cutSelection() },
@@ -884,6 +896,27 @@ fun FileSystemScreen(
             palette = rememberFavoritePalette(),
             onPick = { viewModel.setFavoriteColor(favorite.path, it) },
             onDismiss = { colorTarget = null },
+        )
+    }
+
+    transferRequest?.let { request ->
+        TransferDialog(
+            paths = request.paths,
+            initialDestination = request.destination,
+            roots = roots,
+            folderLabel = { folderLabel(it) },
+            canShare = request.paths.size == 1,
+            listFolders = { viewModel.listFolders(it) },
+            // The dialog is the confirmation, so this skips requestTransfer's optional one.
+            onTransfer = { target, operation ->
+                transferRequest = null
+                viewModel.transfer(request.paths, target, operation, activeId)
+            },
+            onShare = {
+                transferRequest = null
+                shareTarget = request.paths.single()
+            },
+            onDismiss = { transferRequest = null },
         )
     }
 
@@ -1537,12 +1570,16 @@ private fun SelectionTopBar(
 /**
  * The actions for the current selection, on a vibrant floating toolbar. In dual mode it leads with
  * Total Commander's copy/move to the other pane, and the clipboard's copy and cut move into an
- * overflow menu to keep the bar within a phone's width.
+ * overflow menu to keep the bar within a phone's width. With [combined] (the optional single
+ * transfer button), one button opening the transfer dialog stands in for copy, move and share,
+ * and the clipboard's copy and cut sit in the overflow menu in either mode.
  */
 @Composable
 private fun SelectionToolbar(
     single: Boolean,
     dual: Boolean,
+    combined: Boolean,
+    onTransfer: () -> Unit,
     otherPaneReady: Boolean,
     onCopy: () -> Unit,
     onCut: () -> Unit,
@@ -1559,24 +1596,30 @@ private fun SelectionToolbar(
         expanded = true,
         colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
     ) {
-        if (dual) {
-            ToolbarAction(AppSymbols.FileCopy, stringResource(R.string.files_copy_to_other), onCopyToOther, otherPaneReady)
-            ToolbarAction(AppSymbols.DriveFileMove, stringResource(R.string.files_move_to_other), onMoveToOther, otherPaneReady)
-        } else {
-            ToolbarAction(AppSymbols.ContentCopy, stringResource(R.string.files_copy), onCopy)
-            ToolbarAction(AppSymbols.ContentCut, stringResource(R.string.files_cut), onCut)
+        when {
+            combined -> ToolbarAction(AppSymbols.DriveFileMove, stringResource(R.string.files_transfer), onTransfer)
+            dual -> {
+                ToolbarAction(AppSymbols.FileCopy, stringResource(R.string.files_copy_to_other), onCopyToOther, otherPaneReady)
+                ToolbarAction(AppSymbols.DriveFileMove, stringResource(R.string.files_move_to_other), onMoveToOther, otherPaneReady)
+            }
+            else -> {
+                ToolbarAction(AppSymbols.ContentCopy, stringResource(R.string.files_copy), onCopy)
+                ToolbarAction(AppSymbols.ContentCut, stringResource(R.string.files_cut), onCut)
+            }
         }
         AnimatedVisibility(visible = single) {
             Row {
                 ToolbarAction(AppSymbols.DriveFileRenameOutline, stringResource(R.string.files_rename), onRename)
-                ToolbarAction(AppSymbols.Share, stringResource(R.string.files_share), onShare)
+                // Share lives in the transfer dialog when the single button is on.
+                if (!combined) ToolbarAction(AppSymbols.Share, stringResource(R.string.files_share), onShare)
             }
         }
         ToolbarAction(AppSymbols.Delete, stringResource(R.string.files_delete), onDelete)
         Box {
             ToolbarAction(AppSymbols.MoreVert, stringResource(R.string.files_more_options), { overflowExpanded = true })
             AppMenu(expanded = overflowExpanded, onDismissRequest = { overflowExpanded = false }) {
-                val groups = if (dual) 2 else 1
+                val clipboardInMenu = dual || combined
+                val groups = if (clipboardInMenu) 2 else 1
                 AppMenuGroup(index = 0, count = groups) {
                     AppMenuItem(
                         text = stringResource(
@@ -1589,7 +1632,7 @@ private fun SelectionToolbar(
                         },
                     )
                 }
-                if (dual) {
+                if (clipboardInMenu) {
                     AppMenuGroup(index = 1, count = groups) {
                         AppMenuItem(
                             text = stringResource(R.string.files_copy),

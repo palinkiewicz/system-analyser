@@ -147,10 +147,21 @@ fun TransferConfirmDialog(
     )
 }
 
+/** A folder as a shaped badge, its name and its path; shared with [TransferDialog]'s destination. */
 @Composable
-private fun RouteStop(caption: String, name: String, path: String?, highlighted: Boolean) {
+internal fun RouteStop(
+    caption: String?,
+    name: String,
+    path: String?,
+    highlighted: Boolean,
+    modifier: Modifier = Modifier,
+) {
     val scheme = MaterialTheme.colorScheme
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.m),
+    ) {
         ShapedIcon(
             symbol = path?.let { iconForFolder(it) } ?: AppSymbols.Folder,
             polygon = MaterialShapes.Cookie9Sided,
@@ -159,11 +170,13 @@ private fun RouteStop(caption: String, name: String, path: String?, highlighted:
             contentColor = if (highlighted) scheme.onPrimaryContainer else scheme.onSurfaceVariant,
         )
         Column(Modifier.weight(1f)) {
-            Text(
-                caption,
-                style = MaterialTheme.typography.labelSmall,
-                color = if (highlighted) scheme.primary else scheme.onSurfaceVariant,
-            )
+            if (caption != null) {
+                Text(
+                    caption,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (highlighted) scheme.primary else scheme.onSurfaceVariant,
+                )
+            }
             Text(
                 name,
                 style = MaterialTheme.typography.titleSmall,
