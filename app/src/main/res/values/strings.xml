@@ -341,6 +341,7 @@
     <string name="files_sort_type">Type</string>
     <string name="files_sort_descending">Descending</string>
     <string name="files_show_hidden">Show hidden files</string>
+    <string name="files_select">Select</string>
     <string name="files_select_all">Select all</string>
     <plurals name="files_selected_x">
         <item quantity="one">%1$d selected</item>

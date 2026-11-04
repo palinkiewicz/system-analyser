@@ -8,6 +8,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Checkbox
@@ -17,22 +19,31 @@ import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.graphics.shapes.RoundedPolygon
+import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.domain.FileEntry
 import pl.dakil.appanalyser.domain.StandardFolder
+import pl.dakil.appanalyser.ui.designsystem.PolygonShape
 import pl.dakil.appanalyser.ui.designsystem.ShapedIcon
 import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbol
 import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbols
+import pl.dakil.appanalyser.ui.designsystem.pressScale
 import pl.dakil.appanalyser.ui.designsystem.rememberHaptics
 import pl.dakil.appanalyser.ui.designsystem.segmentedItemColors
 
@@ -88,6 +99,10 @@ fun iconForEntry(entry: FileEntry): AppSymbol = when {
     else -> AppSymbols.Draft
 }
 
+/** The badge outline: a cookie for folders, a rounded square for everything else. */
+fun entryPolygon(entry: FileEntry): RoundedPolygon =
+    if (entry.isDirectory) MaterialShapes.Cookie9Sided else MaterialShapes.Square
+
 /**
  * An entry's type badge: folders sit in a primary cookie, media in tertiary, packages in secondary,
  * and documents in a neutral rounded square, so a listing reads by kind at a glance.
@@ -105,7 +120,7 @@ fun EntryIcon(entry: FileEntry, modifier: Modifier = Modifier, size: Dp = LEADIN
     }
     ShapedIcon(
         symbol = iconForEntry(entry),
-        polygon = if (entry.isDirectory) MaterialShapes.Cookie9Sided else MaterialShapes.Square,
+        polygon = entryPolygon(entry),
         size = size,
         iconSize = 22.dp,
         containerColor = container,
@@ -123,6 +138,9 @@ fun EntryIcon(entry: FileEntry, modifier: Modifier = Modifier, size: Dp = LEADIN
  * With [longPressExternal] the long press is left to a gesture handler on [modifier] (the file
  * drag), which would otherwise race this tile's own long-click; [onLongClick] then only serves
  * accessibility. [dropHighlighted] marks a folder that carried items would be dropped into.
+ *
+ * [onIconClick], when set, makes the type badge its own touch target that starts selection — the
+ * Gmail gesture, quicker to find than a long press. In selection mode the badge is a checkbox anyway.
  */
 @Composable
 fun FileRow(
@@ -136,6 +154,7 @@ fun FileRow(
     count: Int = 1,
     longPressExternal: Boolean = false,
     dropHighlighted: Boolean = false,
+    onIconClick: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val haptics = rememberHaptics()
@@ -181,6 +200,25 @@ fun FileRow(
                         ) {
                             Checkbox(checked = selected, onCheckedChange = { onClick() })
                         }
+                    } else if (onIconClick != null) {
+                        val interactionSource = remember { MutableInteractionSource() }
+                        val shape = remember(entry.isDirectory) { PolygonShape(entryPolygon(entry)) }
+                        EntryIcon(
+                            entry,
+                            Modifier
+                                .pressScale(interactionSource, pressedScale = 0.85f)
+                                .clip(shape)
+                                .clickable(
+                                    interactionSource = interactionSource,
+                                    indication = ripple(),
+                                    role = Role.Checkbox,
+                                    onClickLabel = stringResource(R.string.files_select),
+                                ) {
+                                    haptics.longPress()
+                                    onIconClick()
+                                }
+                                .alpha(entryAlpha),
+                        )
                     } else {
                         EntryIcon(entry, Modifier.alpha(entryAlpha))
                     }

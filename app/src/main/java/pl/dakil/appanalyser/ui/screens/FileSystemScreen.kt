@@ -914,6 +914,10 @@ private fun FileBrowserPane(
                                 }
                             },
                             onLongClick = { pane.toggleSelection(entry.path) },
+                            onIconClick = {
+                                onActivate()
+                                pane.toggleSelection(entry.path)
+                            },
                         )
                     }
                 }

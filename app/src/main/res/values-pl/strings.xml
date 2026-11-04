@@ -347,6 +347,7 @@
     <string name="files_sort_type">Typu</string>
     <string name="files_sort_descending">Malejąco</string>
     <string name="files_show_hidden">Pokazuj ukryte pliki</string>
+    <string name="files_select">Zaznacz</string>
     <string name="files_select_all">Zaznacz wszystko</string>
     <plurals name="files_selected_x">
         <item quantity="one">Zaznaczono %1$d element</item>
