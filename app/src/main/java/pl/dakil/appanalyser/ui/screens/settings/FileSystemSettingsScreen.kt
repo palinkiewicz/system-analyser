@@ -8,6 +8,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.SettingsRepository
+import pl.dakil.appanalyser.domain.FileCompactView
 import pl.dakil.appanalyser.domain.FileDropAction
 import pl.dakil.appanalyser.domain.ShareAccessMode
 import pl.dakil.appanalyser.ui.designsystem.SegmentedGroup
@@ -36,6 +37,7 @@ fun FileSystemSettingsScreen(
 ) {
     val showHidden by viewModel.showHiddenFiles.collectAsState()
     val confirmDeletion by viewModel.confirmFileDeletion.collectAsState()
+    val compactView by viewModel.fileCompactView.collectAsState()
     val dropAction by viewModel.fileDropAction.collectAsState()
     val confirmTransfer by viewModel.confirmFileTransfer.collectAsState()
     val monospace by viewModel.editorMonospace.collectAsState()
@@ -53,6 +55,13 @@ fun FileSystemSettingsScreen(
                 summary = stringResource(R.string.settings_show_hidden_files_description),
                 checked = showHidden,
                 onCheckedChange = { viewModel.setShowHiddenFiles(it) }
+            )
+            SelectRow(
+                title = stringResource(R.string.settings_compact_view),
+                summary = stringResource(R.string.settings_compact_view_description),
+                selectedLabel = compactView.label(),
+                options = FileCompactView.entries.map { it to it.label() },
+                onSelect = { viewModel.setFileCompactView(it) }
             )
             SwitchRow(
                 title = stringResource(R.string.settings_confirm_deletion),

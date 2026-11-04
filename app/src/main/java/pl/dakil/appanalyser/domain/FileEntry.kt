@@ -28,6 +28,9 @@ enum class PaneId {
 /** What a drag-and-drop between panes does: asks each time, or always moves or copies. */
 enum class FileDropAction { ASK, MOVE, COPY }
 
+/** When the file list drops to dense one-line rows: always, only while split in two, or never. */
+enum class FileCompactView { ALWAYS, DUAL_PANE, NEVER }
+
 /** Files staged by Copy/Cut, waiting for a Paste in some other directory. */
 data class FileClipboard(
     val paths: List<String>,

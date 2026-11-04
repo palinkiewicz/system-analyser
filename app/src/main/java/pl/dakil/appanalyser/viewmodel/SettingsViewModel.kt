@@ -8,6 +8,7 @@ import pl.dakil.appanalyser.data.DarkThemeOption
 import pl.dakil.appanalyser.data.PinnedNotificationsRepository
 import pl.dakil.appanalyser.data.SettingsRepository
 import pl.dakil.appanalyser.data.StartTab
+import pl.dakil.appanalyser.domain.FileCompactView
 import pl.dakil.appanalyser.domain.FileDropAction
 import pl.dakil.appanalyser.domain.PinnedCard
 import pl.dakil.appanalyser.domain.ShareAccessMode
@@ -32,6 +33,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     val pinnedCards: StateFlow<List<PinnedCard>> = pinnedNotifications.pinned
     val showHiddenFiles: StateFlow<Boolean> = settings.showHiddenFiles
     val confirmFileDeletion: StateFlow<Boolean> = settings.confirmFileDeletion
+    val fileCompactView: StateFlow<FileCompactView> = settings.fileCompactView
     val fileDropAction: StateFlow<FileDropAction> = settings.fileDropAction
     val confirmFileTransfer: StateFlow<Boolean> = settings.confirmFileTransfer
     val editorMonospace: StateFlow<Boolean> = settings.editorMonospace
@@ -55,6 +57,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun setShowHiddenFiles(enabled: Boolean) = settings.setShowHiddenFiles(enabled)
     fun setConfirmFileDeletion(enabled: Boolean) = settings.setConfirmFileDeletion(enabled)
+    fun setFileCompactView(mode: FileCompactView) = settings.setFileCompactView(mode)
     fun setFileDropAction(action: FileDropAction) = settings.setFileDropAction(action)
     fun setConfirmFileTransfer(enabled: Boolean) = settings.setConfirmFileTransfer(enabled)
     fun setEditorMonospace(enabled: Boolean) = settings.setEditorMonospace(enabled)

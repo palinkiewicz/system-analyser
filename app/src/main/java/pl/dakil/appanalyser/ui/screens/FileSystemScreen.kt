@@ -102,6 +102,7 @@ import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.NetworkInfoProvider
 import pl.dakil.appanalyser.data.ShareServerRepository
 import pl.dakil.appanalyser.domain.ClipboardOperation
+import pl.dakil.appanalyser.domain.FileCompactView
 import pl.dakil.appanalyser.domain.FileDropAction
 import pl.dakil.appanalyser.domain.FileEntry
 import pl.dakil.appanalyser.domain.FileOperationProgress
@@ -199,6 +200,12 @@ fun FileSystemScreen(
     val paneSplit by viewModel.paneSplit.collectAsState()
     val dropAction by viewModel.dropAction.collectAsState()
     val confirmTransfer by viewModel.confirmTransfer.collectAsState()
+    val compactSetting by viewModel.compactView.collectAsState()
+    val compact = when (compactSetting) {
+        FileCompactView.ALWAYS -> true
+        FileCompactView.DUAL_PANE -> dual
+        FileCompactView.NEVER -> false
+    }
 
     // Every folder-level action — the bars, the FAB, paste, back — follows the active pane. In
     // single pane mode that is always the primary one.
@@ -475,6 +482,7 @@ fun FileSystemScreen(
                     pane = pane,
                     roots = roots,
                     dual = dual,
+                    compact = compact,
                     active = activeId == pane.id,
                     dragState = dragState,
                     bottomPadding = bottomPadding,
@@ -832,6 +840,7 @@ private fun FileBrowserPane(
     pane: FilePane,
     roots: List<StorageRoot>,
     dual: Boolean,
+    compact: Boolean,
     active: Boolean,
     dragState: FileDragState,
     bottomPadding: Dp,
@@ -946,6 +955,12 @@ private fun FileBrowserPane(
             onOpen = { pane.open(it) },
         )
 
+        // Compact lists give the margins to the rows as well.
+        val listGutter = when {
+            compact -> Spacing.xs
+            dual -> Spacing.s
+            else -> Spacing.gutter
+        }
         Box(Modifier.weight(1f)) {
             when {
                 isLoading -> Box(Modifier.fillMaxSize(), Alignment.Center) {
@@ -971,8 +986,8 @@ private fun FileBrowserPane(
                 else -> LazyColumn(
                     state = listState,
                     contentPadding = PaddingValues(
-                        start = if (dual) Spacing.s else Spacing.gutter,
-                        end = if (dual) Spacing.s else Spacing.gutter,
+                        start = listGutter,
+                        end = listGutter,
                         top = Spacing.xs,
                         bottom = bottomPadding,
                     ),
@@ -1002,6 +1017,7 @@ private fun FileBrowserPane(
                                 }
                             },
                             onLongClick = { pane.toggleSelection(entry.path) },
+                            compact = compact,
                             onIconClick = {
                                 onActivate()
                                 pane.toggleSelection(entry.path)

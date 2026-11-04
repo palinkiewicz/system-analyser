@@ -30,6 +30,7 @@ import kotlin.math.roundToInt
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.AppColorTheme
 import pl.dakil.appanalyser.data.DarkThemeOption
+import pl.dakil.appanalyser.domain.FileCompactView
 import pl.dakil.appanalyser.domain.FileDropAction
 import pl.dakil.appanalyser.domain.ShareAccessMode
 import pl.dakil.appanalyser.domain.TemperatureUnit
@@ -327,6 +328,15 @@ fun FileDropAction.label(): String = stringResource(
         FileDropAction.ASK -> R.string.settings_file_drop_ask
         FileDropAction.MOVE -> R.string.settings_file_drop_move
         FileDropAction.COPY -> R.string.settings_file_drop_copy
+    }
+)
+
+@Composable
+fun FileCompactView.label(): String = stringResource(
+    when (this) {
+        FileCompactView.ALWAYS -> R.string.settings_compact_view_always
+        FileCompactView.DUAL_PANE -> R.string.settings_compact_view_dual
+        FileCompactView.NEVER -> R.string.settings_compact_view_never
     }
 )
 

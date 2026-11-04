@@ -39,6 +39,11 @@
     <string name="settings_file_system_editor">Edytor tekstu</string>
     <string name="settings_show_hidden_files">Pokazuj ukryte pliki</string>
     <string name="settings_show_hidden_files_description">Wyświetlaj pliki i foldery, których nazwa zaczyna się od kropki</string>
+    <string name="settings_compact_view">Widok kompaktowy</string>
+    <string name="settings_compact_view_description">Gęste, jednowierszowe wiersze mieszczące więcej plików</string>
+    <string name="settings_compact_view_always">Zawsze</string>
+    <string name="settings_compact_view_dual">W widoku dzielonym</string>
+    <string name="settings_compact_view_never">Nigdy</string>
     <string name="settings_confirm_deletion">Potwierdzaj usuwanie</string>
     <string name="settings_confirm_deletion_description">Pytaj o potwierdzenie przed usunięciem plików</string>
     <string name="settings_file_system_transfers">Kopiowanie i przenoszenie</string>

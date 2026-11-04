@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import pl.dakil.appanalyser.domain.DiskChartType
+import pl.dakil.appanalyser.domain.FileCompactView
 import pl.dakil.appanalyser.domain.FileDropAction
 import pl.dakil.appanalyser.domain.FileSortOrder
 import pl.dakil.appanalyser.domain.ShareAccessMode
@@ -84,6 +85,12 @@ class SettingsRepository private constructor(context: Context) {
 
     private val _showHiddenFiles = MutableStateFlow(prefs.getBoolean(KEY_SHOW_HIDDEN_FILES, false))
     val showHiddenFiles: StateFlow<Boolean> = _showHiddenFiles.asStateFlow()
+
+    private val _fileCompactView = MutableStateFlow(
+        runCatching { FileCompactView.valueOf(prefs.getString(KEY_FILE_COMPACT_VIEW, null)!!) }
+            .getOrDefault(FileCompactView.DUAL_PANE)
+    )
+    val fileCompactView: StateFlow<FileCompactView> = _fileCompactView.asStateFlow()
 
     private val _confirmFileDeletion = MutableStateFlow(prefs.getBoolean(KEY_CONFIRM_FILE_DELETION, true))
     val confirmFileDeletion: StateFlow<Boolean> = _confirmFileDeletion.asStateFlow()
@@ -214,6 +221,11 @@ class SettingsRepository private constructor(context: Context) {
         _showHiddenFiles.value = enabled
     }
 
+    fun setFileCompactView(mode: FileCompactView) {
+        prefs.edit().putString(KEY_FILE_COMPACT_VIEW, mode.name).apply()
+        _fileCompactView.value = mode
+    }
+
     fun setConfirmFileDeletion(enabled: Boolean) {
         prefs.edit().putBoolean(KEY_CONFIRM_FILE_DELETION, enabled).apply()
         _confirmFileDeletion.value = enabled
@@ -291,6 +303,7 @@ class SettingsRepository private constructor(context: Context) {
         private const val KEY_FILE_SORT_DESCENDING = "file_sort_descending"
         private const val KEY_SHOW_HIDDEN_FILES = "show_hidden_files"
         private const val KEY_CONFIRM_FILE_DELETION = "confirm_file_deletion"
+        private const val KEY_FILE_COMPACT_VIEW = "file_compact_view"
         private const val KEY_FILES_DUAL_PANE = "files_dual_pane"
         private const val KEY_FILES_PANE_SPLIT = "files_pane_split"
         private const val KEY_FILE_DROP_ACTION = "file_drop_action"

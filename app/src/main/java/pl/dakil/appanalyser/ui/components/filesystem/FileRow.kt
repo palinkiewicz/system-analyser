@@ -11,9 +11,12 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
@@ -46,11 +49,17 @@ import pl.dakil.appanalyser.ui.designsystem.icon.AppSymbols
 import pl.dakil.appanalyser.ui.designsystem.pressScale
 import pl.dakil.appanalyser.ui.designsystem.rememberHaptics
 import pl.dakil.appanalyser.ui.designsystem.segmentedItemColors
+import pl.dakil.appanalyser.ui.theme.tabular
 
 private const val HIDDEN_ALPHA = 0.6f
 
 /** Fixed leading slot so the row height never depends on selection mode. */
 private val LEADING_SIZE = 40.dp
+
+/** Compact rows: a smaller badge, tight padding and a lower floor than the list item's 56 dp. */
+private val COMPACT_LEADING_SIZE = 28.dp
+private val COMPACT_MIN_HEIGHT = 44.dp
+private val COMPACT_PADDING = PaddingValues(start = 10.dp, end = 12.dp, top = 4.dp, bottom = 4.dp)
 
 /** Extension groups worth a distinct icon; everything else falls back to a generic file. */
 private val IMAGE_EXTENSIONS = setOf("png", "jpg", "jpeg", "gif", "webp", "bmp", "heic", "svg", "ico")
@@ -122,7 +131,7 @@ fun EntryIcon(entry: FileEntry, modifier: Modifier = Modifier, size: Dp = LEADIN
         symbol = iconForEntry(entry),
         polygon = entryPolygon(entry),
         size = size,
-        iconSize = 22.dp,
+        iconSize = size * 0.55f,
         containerColor = container,
         contentColor = content,
         filled = entry.isDirectory,
@@ -141,6 +150,9 @@ fun EntryIcon(entry: FileEntry, modifier: Modifier = Modifier, size: Dp = LEADIN
  *
  * [onIconClick], when set, makes the type badge its own touch target that starts selection — the
  * Gmail gesture, quicker to find than a long press. In selection mode the badge is a checkbox anyway.
+ *
+ * [compact] drops to a dense single line — a smaller badge, the size trailing instead of a subtitle
+ * — for fitting more files on screen, notably in split view.
  */
 @Composable
 fun FileRow(
@@ -155,11 +167,13 @@ fun FileRow(
     longPressExternal: Boolean = false,
     dropHighlighted: Boolean = false,
     onIconClick: (() -> Unit)? = null,
+    compact: Boolean = false,
 ) {
     val context = LocalContext.current
     val haptics = rememberHaptics()
     val entryAlpha = if (entry.isHidden) HIDDEN_ALPHA else 1f
     val swapSpec = MaterialTheme.motionScheme.fastSpatialSpec<Float>()
+    val leadingSize = if (compact) COMPACT_LEADING_SIZE else LEADING_SIZE
     SegmentedListItem(
         selected = selected || dropHighlighted,
         onClick = onClick,
@@ -173,7 +187,9 @@ fun FileRow(
         },
         shapes = ListItemDefaults.segmentedShapes(index, count),
         colors = segmentedItemColors(),
-        modifier = if (longPressExternal) {
+        contentPadding = if (compact) COMPACT_PADDING else ListItemDefaults.ContentPadding,
+        modifier = (if (compact) Modifier.heightIn(min = COMPACT_MIN_HEIGHT) else Modifier).then(
+            if (longPressExternal) {
             modifier.semantics {
                 onLongClick {
                     onLongClick()
@@ -182,11 +198,11 @@ fun FileRow(
             }
         } else {
             modifier
-        },
+        }),
         leadingContent = {
             // Both leading states share one fixed slot: the checkbox's 48.dp minimum touch target
             // would otherwise make every row taller the moment selection mode starts.
-            Box(modifier = Modifier.size(LEADING_SIZE), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.size(leadingSize), contentAlignment = Alignment.Center) {
                 AnimatedContent(
                     targetState = selectionMode,
                     transitionSpec = {
@@ -205,7 +221,8 @@ fun FileRow(
                         val shape = remember(entry.isDirectory) { PolygonShape(entryPolygon(entry)) }
                         EntryIcon(
                             entry,
-                            Modifier
+                            size = leadingSize,
+                            modifier = Modifier
                                 .pressScale(interactionSource, pressedScale = 0.85f)
                                 .clip(shape)
                                 .clickable(
@@ -220,23 +237,40 @@ fun FileRow(
                                 .alpha(entryAlpha),
                         )
                     } else {
-                        EntryIcon(entry, Modifier.alpha(entryAlpha))
+                        EntryIcon(entry, Modifier.alpha(entryAlpha), size = leadingSize)
                     }
                 }
             }
         },
-        supportingContent = {
-            Text(
-                text = entrySubtitle(entry, context),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+        supportingContent = if (compact) {
+            null
+        } else {
+            {
+                Text(
+                    text = entrySubtitle(entry, context),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        },
+        // A compact row keeps only what tells files apart at a glance: the size.
+        trailingContent = if (compact && !entry.isDirectory) {
+            {
+                Text(
+                    text = Formatter.formatShortFileSize(context, entry.sizeBytes),
+                    style = MaterialTheme.typography.labelSmall.tabular(),
+                    maxLines = 1,
+                )
+            }
+        } else {
+            null
         },
     ) {
         Text(
             text = entry.name,
+            style = if (compact) MaterialTheme.typography.bodyMedium else LocalTextStyle.current,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+            overflow = if (compact) TextOverflow.MiddleEllipsis else TextOverflow.Ellipsis,
             modifier = Modifier.alpha(entryAlpha),
         )
     }
