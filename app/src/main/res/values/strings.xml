@@ -46,6 +46,11 @@
     <string name="settings_compact_view_never">Never</string>
     <string name="settings_confirm_deletion">Confirm before deleting</string>
     <string name="settings_confirm_deletion_description">Ask for confirmation before removing files</string>
+    <string name="settings_file_system_dual_pane">Dual pane</string>
+    <string name="settings_dual_pane_style">Dual pane style</string>
+    <string name="settings_dual_pane_style_description">On a portrait phone: both panes stacked, or one at a time with a swipe</string>
+    <string name="settings_dual_pane_style_split">Split screen</string>
+    <string name="settings_dual_pane_style_swipe">Swipe between</string>
     <string name="settings_file_system_transfers">Copy &amp; move</string>
     <string name="settings_confirm_transfer">Confirm copy and move</string>
     <string name="settings_confirm_transfer_description">Ask once more, showing where the items will go</string>
@@ -400,6 +405,8 @@
     <string name="files_copy_to_other">Copy to other pane</string>
     <string name="files_move_to_other">Move to other pane</string>
     <string name="files_parent_folder">Parent folder</string>
+    <string name="files_other_pane">Other pane</string>
+    <string name="files_pane_x_of_2">Pane %1$d of 2</string>
     <string name="files_pane_actions">Pane actions</string>
     <string name="files_mirror_down">Show top folder below too</string>
     <string name="files_mirror_up">Show bottom folder above too</string>

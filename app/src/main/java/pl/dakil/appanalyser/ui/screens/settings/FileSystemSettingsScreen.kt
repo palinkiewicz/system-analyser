@@ -8,6 +8,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.SettingsRepository
+import pl.dakil.appanalyser.domain.DualPaneStyle
 import pl.dakil.appanalyser.domain.FileCompactView
 import pl.dakil.appanalyser.domain.FileDropAction
 import pl.dakil.appanalyser.domain.ShareAccessMode
@@ -40,6 +41,7 @@ fun FileSystemSettingsScreen(
     val compactView by viewModel.fileCompactView.collectAsState()
     val dropAction by viewModel.fileDropAction.collectAsState()
     val confirmTransfer by viewModel.confirmFileTransfer.collectAsState()
+    val dualPaneStyle by viewModel.dualPaneStyle.collectAsState()
     val monospace by viewModel.editorMonospace.collectAsState()
     val wordWrap by viewModel.editorWordWrap.collectAsState()
     val highlighting by viewModel.editorSyntaxHighlighting.collectAsState()
@@ -68,6 +70,17 @@ fun FileSystemSettingsScreen(
                 summary = stringResource(R.string.settings_confirm_deletion_description),
                 checked = confirmDeletion,
                 onCheckedChange = { viewModel.setConfirmFileDeletion(it) }
+            )
+        }
+
+        SectionHeader(stringResource(R.string.settings_file_system_dual_pane))
+        SegmentedGroup {
+            SelectRow(
+                title = stringResource(R.string.settings_dual_pane_style),
+                summary = stringResource(R.string.settings_dual_pane_style_description),
+                selectedLabel = dualPaneStyle.label(),
+                options = DualPaneStyle.entries.map { it to it.label() },
+                onSelect = { viewModel.setDualPaneStyle(it) }
             )
         }
 

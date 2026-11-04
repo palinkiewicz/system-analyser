@@ -30,6 +30,7 @@ import kotlin.math.roundToInt
 import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.AppColorTheme
 import pl.dakil.appanalyser.data.DarkThemeOption
+import pl.dakil.appanalyser.domain.DualPaneStyle
 import pl.dakil.appanalyser.domain.FileCompactView
 import pl.dakil.appanalyser.domain.FileDropAction
 import pl.dakil.appanalyser.domain.ShareAccessMode
@@ -328,6 +329,14 @@ fun FileDropAction.label(): String = stringResource(
         FileDropAction.ASK -> R.string.settings_file_drop_ask
         FileDropAction.MOVE -> R.string.settings_file_drop_move
         FileDropAction.COPY -> R.string.settings_file_drop_copy
+    }
+)
+
+@Composable
+fun DualPaneStyle.label(): String = stringResource(
+    when (this) {
+        DualPaneStyle.SPLIT -> R.string.settings_dual_pane_style_split
+        DualPaneStyle.SWIPE -> R.string.settings_dual_pane_style_swipe
     }
 )
 

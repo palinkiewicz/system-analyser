@@ -46,6 +46,11 @@
     <string name="settings_compact_view_never">Nigdy</string>
     <string name="settings_confirm_deletion">Potwierdzaj usuwanie</string>
     <string name="settings_confirm_deletion_description">Pytaj o potwierdzenie przed usunięciem plików</string>
+    <string name="settings_file_system_dual_pane">Dwa panele</string>
+    <string name="settings_dual_pane_style">Styl dwóch paneli</string>
+    <string name="settings_dual_pane_style_description">Na telefonie w pionie: oba panele naraz albo jeden, przesuwany gestem</string>
+    <string name="settings_dual_pane_style_split">Podzielony ekran</string>
+    <string name="settings_dual_pane_style_swipe">Przesuwanie</string>
     <string name="settings_file_system_transfers">Kopiowanie i przenoszenie</string>
     <string name="settings_confirm_transfer">Potwierdzaj kopiowanie i przenoszenie</string>
     <string name="settings_confirm_transfer_description">Zapytaj jeszcze raz i pokaż, dokąd trafią elementy</string>
@@ -414,6 +419,8 @@
     <string name="files_copy_to_other">Kopiuj do drugiego panelu</string>
     <string name="files_move_to_other">Przenieś do drugiego panelu</string>
     <string name="files_parent_folder">Folder nadrzędny</string>
+    <string name="files_other_pane">Drugi panel</string>
+    <string name="files_pane_x_of_2">Panel %1$d z 2</string>
     <string name="files_pane_actions">Akcje paneli</string>
     <string name="files_mirror_down">Pokaż górny folder także na dole</string>
     <string name="files_mirror_up">Pokaż dolny folder także na górze</string>

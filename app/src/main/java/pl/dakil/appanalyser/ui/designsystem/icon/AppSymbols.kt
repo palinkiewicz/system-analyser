@@ -26,6 +26,7 @@ object AppSymbols {
     val Category = AppSymbol(R.drawable.sym_category, R.drawable.sym_category_fill)
     val Check = AppSymbol(R.drawable.sym_check, R.drawable.sym_check_fill)
     val CheckCircle = AppSymbol(R.drawable.sym_check_circle, R.drawable.sym_check_circle_fill)
+    val ChevronLeft = AppSymbol(R.drawable.sym_chevron_left, R.drawable.sym_chevron_left_fill)
     val ChevronRight = AppSymbol(R.drawable.sym_chevron_right, R.drawable.sym_chevron_right_fill)
     val Close = AppSymbol(R.drawable.sym_close, R.drawable.sym_close_fill)
     val CloseFullscreen = AppSymbol(R.drawable.sym_close_fullscreen, R.drawable.sym_close_fullscreen_fill)

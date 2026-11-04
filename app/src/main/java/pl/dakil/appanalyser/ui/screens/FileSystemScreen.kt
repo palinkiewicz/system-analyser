@@ -102,6 +102,7 @@ import pl.dakil.appanalyser.R
 import pl.dakil.appanalyser.data.NetworkInfoProvider
 import pl.dakil.appanalyser.data.ShareServerRepository
 import pl.dakil.appanalyser.domain.ClipboardOperation
+import pl.dakil.appanalyser.domain.DualPaneStyle
 import pl.dakil.appanalyser.domain.FileCompactView
 import pl.dakil.appanalyser.domain.FileDropAction
 import pl.dakil.appanalyser.domain.FileEntry
@@ -132,6 +133,7 @@ import pl.dakil.appanalyser.ui.components.filesystem.PaneActions
 import pl.dakil.appanalyser.ui.components.filesystem.PropertiesDialog
 import pl.dakil.appanalyser.ui.components.filesystem.ScanFolderDialog
 import pl.dakil.appanalyser.ui.components.filesystem.ShareMethodSheet
+import pl.dakil.appanalyser.ui.components.filesystem.SwipePaneLayout
 import pl.dakil.appanalyser.ui.components.filesystem.TransferConfirmDialog
 import pl.dakil.appanalyser.ui.components.filesystem.fileDragSource
 import pl.dakil.appanalyser.ui.components.filesystem.openFile
@@ -202,11 +204,7 @@ fun FileSystemScreen(
     val dropAction by viewModel.dropAction.collectAsState()
     val confirmTransfer by viewModel.confirmTransfer.collectAsState()
     val compactSetting by viewModel.compactView.collectAsState()
-    val compact = when (compactSetting) {
-        FileCompactView.ALWAYS -> true
-        FileCompactView.DUAL_PANE -> dual
-        FileCompactView.NEVER -> false
-    }
+    val dualStyle by viewModel.dualPaneStyle.collectAsState()
 
     // Every folder-level action — the bars, the FAB, paste, back — follows the active pane. In
     // single pane mode that is always the primary one.
@@ -358,6 +356,14 @@ fun FileSystemScreen(
     val density = LocalDensity.current
     val sideBySide = windowSize.width > windowSize.height ||
         with(density) { windowSize.width.toDp() } >= 600.dp
+    // Swipe style only applies where the panes would otherwise be stacked; wide layouts have room.
+    val paged = dual && dualStyle == DualPaneStyle.SWIPE && !sideBySide
+    // "In split view" means both panes on screen at once; a swiped pane gets the whole screen.
+    val compact = when (compactSetting) {
+        FileCompactView.ALWAYS -> true
+        FileCompactView.DUAL_PANE -> dual && !paged
+        FileCompactView.NEVER -> false
+    }
 
     // The drag itself is tracked by the state; what a drag *means* is decided here, where the
     // selection, the haptics and the drop setting live.
@@ -505,7 +511,28 @@ fun FileSystemScreen(
                     viewModel.collapseTo(it)
                 },
             )
-            DualPaneLayout(
+            if (paged) {
+                SwipePaneLayout(
+                    activePane = activeId,
+                    onActivePaneChange = { viewModel.setActivePane(it) },
+                    dragState = dragState,
+                    modifier = Modifier.fillMaxSize(),
+                    primary = {
+                        Pane(
+                            pane = viewModel.primary,
+                            bottomPadding = FLOATING_BAR_CLEARANCE,
+                            outerPadding = PaddingValues(start = Spacing.s, end = Spacing.s, bottom = Spacing.s),
+                        )
+                    },
+                    secondary = {
+                        Pane(
+                            pane = viewModel.secondary,
+                            bottomPadding = FLOATING_BAR_CLEARANCE,
+                            outerPadding = PaddingValues(start = Spacing.s, end = Spacing.s, bottom = Spacing.s),
+                        )
+                    },
+                )
+            } else DualPaneLayout(
                 dual = dual,
                 horizontal = sideBySide,
                 split = paneSplit,

@@ -21,7 +21,7 @@ KT = ROOT / "app/src/main/java/pl/dakil/appanalyser/ui/designsystem/icon/AppSymb
 URL = "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/android/{n}/materialsymbolsrounded/{f}"
 
 # Directional glyphs that must flip in right-to-left layouts.
-MIRRORED = {"arrow_back", "chevron_right", "undo", "redo", "send", "open_in_new", "wrap_text", "sort"}
+MIRRORED = {"arrow_back", "chevron_left", "chevron_right", "undo", "redo", "send", "open_in_new", "wrap_text", "sort"}
 
 
 def fetch(name: str, filled: bool) -> str | None:

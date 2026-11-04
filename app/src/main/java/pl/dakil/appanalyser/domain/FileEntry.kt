@@ -28,6 +28,12 @@ enum class PaneId {
 /** What a drag-and-drop between panes does: asks each time, or always moves or copies. */
 enum class FileDropAction { ASK, MOVE, COPY }
 
+/**
+ * How dual pane mode uses a portrait phone: both panes stacked at once, or one at a time with a
+ * swipe between them. Wide layouts always show both side by side.
+ */
+enum class DualPaneStyle { SPLIT, SWIPE }
+
 /** When the file list drops to dense one-line rows: always, only while split in two, or never. */
 enum class FileCompactView { ALWAYS, DUAL_PANE, NEVER }
 

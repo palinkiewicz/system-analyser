@@ -8,6 +8,7 @@ import pl.dakil.appanalyser.data.DarkThemeOption
 import pl.dakil.appanalyser.data.PinnedNotificationsRepository
 import pl.dakil.appanalyser.data.SettingsRepository
 import pl.dakil.appanalyser.data.StartTab
+import pl.dakil.appanalyser.domain.DualPaneStyle
 import pl.dakil.appanalyser.domain.FileCompactView
 import pl.dakil.appanalyser.domain.FileDropAction
 import pl.dakil.appanalyser.domain.PinnedCard
@@ -35,6 +36,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     val confirmFileDeletion: StateFlow<Boolean> = settings.confirmFileDeletion
     val fileCompactView: StateFlow<FileCompactView> = settings.fileCompactView
     val fileDropAction: StateFlow<FileDropAction> = settings.fileDropAction
+    val dualPaneStyle: StateFlow<DualPaneStyle> = settings.dualPaneStyle
     val confirmFileTransfer: StateFlow<Boolean> = settings.confirmFileTransfer
     val editorMonospace: StateFlow<Boolean> = settings.editorMonospace
     val editorWordWrap: StateFlow<Boolean> = settings.editorWordWrap
@@ -59,6 +61,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setConfirmFileDeletion(enabled: Boolean) = settings.setConfirmFileDeletion(enabled)
     fun setFileCompactView(mode: FileCompactView) = settings.setFileCompactView(mode)
     fun setFileDropAction(action: FileDropAction) = settings.setFileDropAction(action)
+    fun setDualPaneStyle(style: DualPaneStyle) = settings.setDualPaneStyle(style)
     fun setConfirmFileTransfer(enabled: Boolean) = settings.setConfirmFileTransfer(enabled)
     fun setEditorMonospace(enabled: Boolean) = settings.setEditorMonospace(enabled)
     fun setEditorWordWrap(enabled: Boolean) = settings.setEditorWordWrap(enabled)

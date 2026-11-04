@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import pl.dakil.appanalyser.domain.DiskChartType
+import pl.dakil.appanalyser.domain.DualPaneStyle
 import pl.dakil.appanalyser.domain.FileCompactView
 import pl.dakil.appanalyser.domain.FileDropAction
 import pl.dakil.appanalyser.domain.FileSortOrder
@@ -98,6 +99,12 @@ class SettingsRepository private constructor(context: Context) {
     /** Total Commander-style two-browser layout of the Files tab, toggled from its top bar. */
     private val _filesDualPane = MutableStateFlow(prefs.getBoolean(KEY_FILES_DUAL_PANE, false))
     val filesDualPane: StateFlow<Boolean> = _filesDualPane.asStateFlow()
+
+    private val _dualPaneStyle = MutableStateFlow(
+        runCatching { DualPaneStyle.valueOf(prefs.getString(KEY_DUAL_PANE_STYLE, null)!!) }
+            .getOrDefault(DualPaneStyle.SPLIT)
+    )
+    val dualPaneStyle: StateFlow<DualPaneStyle> = _dualPaneStyle.asStateFlow()
 
     /** The primary pane's share of the dual pane split, moved by dragging the divider. */
     private val _filesPaneSplit = MutableStateFlow(
@@ -236,6 +243,11 @@ class SettingsRepository private constructor(context: Context) {
         _filesDualPane.value = enabled
     }
 
+    fun setDualPaneStyle(style: DualPaneStyle) {
+        prefs.edit().putString(KEY_DUAL_PANE_STYLE, style.name).apply()
+        _dualPaneStyle.value = style
+    }
+
     fun setFilesPaneSplit(fraction: Float) {
         val clamped = fraction.coerceIn(MIN_PANE_SPLIT, MAX_PANE_SPLIT)
         prefs.edit().putFloat(KEY_FILES_PANE_SPLIT, clamped).apply()
@@ -306,6 +318,7 @@ class SettingsRepository private constructor(context: Context) {
         private const val KEY_FILE_COMPACT_VIEW = "file_compact_view"
         private const val KEY_FILES_DUAL_PANE = "files_dual_pane"
         private const val KEY_FILES_PANE_SPLIT = "files_pane_split"
+        private const val KEY_DUAL_PANE_STYLE = "files_dual_pane_style"
         private const val KEY_FILE_DROP_ACTION = "file_drop_action"
         private const val KEY_CONFIRM_FILE_TRANSFER = "confirm_file_transfer"
         private const val KEY_EDITOR_MONOSPACE = "editor_monospace"

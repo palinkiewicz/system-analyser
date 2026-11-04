@@ -16,6 +16,7 @@ import pl.dakil.appanalyser.data.FileSystemRepository
 import pl.dakil.appanalyser.data.SettingsRepository
 import pl.dakil.appanalyser.domain.ClipboardOperation
 import pl.dakil.appanalyser.domain.FileClipboard
+import pl.dakil.appanalyser.domain.DualPaneStyle
 import pl.dakil.appanalyser.domain.FileCompactView
 import pl.dakil.appanalyser.domain.FileDropAction
 import pl.dakil.appanalyser.domain.FileOperationProgress
@@ -80,6 +81,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
     val dropAction: StateFlow<FileDropAction> = settings.fileDropAction
     val confirmTransfer: StateFlow<Boolean> = settings.confirmFileTransfer
     val compactView: StateFlow<FileCompactView> = settings.fileCompactView
+    val dualPaneStyle: StateFlow<DualPaneStyle> = settings.dualPaneStyle
 
     /** Re-checks the permission and loads whatever the current locations are. */
     fun refreshAccess() {

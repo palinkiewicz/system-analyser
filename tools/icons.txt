@@ -22,6 +22,7 @@ camera_roll
 category
 check
 check_circle
+chevron_left
 chevron_right
 close
 close_fullscreen
